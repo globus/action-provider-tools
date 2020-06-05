@@ -1,0 +1,15 @@
+{
+    "$id": "whattimeisitnow.provider.input.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "whattimeisitnow Provider Input Schema",
+    "type": "object",
+    "properties": {
+        "utc_offset": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "utc_offset"
+    ],
+    "additionalProperties": false
+}
