@@ -23,7 +23,7 @@ from unittest import mock
 import pytest
 
 from globus_action_provider_tools.data_types import ActionStatusValue
-from globus_action_provider_tools.mocks import mock_authstate
+from globus_action_provider_tools.testing.mocks import mock_authstate
 
 # This is how you mock away the need to provide a valid CLIENT_ID and
 # CLIENT_SECRET for your ActionProvider during testing. Without the patch
