@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# whattimeisitrightnow example provider's database file
+whattimeisitrightnow.example.db
