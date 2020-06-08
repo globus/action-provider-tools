@@ -491,7 +491,7 @@ Server and create required Scopes.
             library will not be able to, and will therefore not attempt to, retrieve
             a user's groups and so no policies based on Groups may be used. We
             encourage you to consult the `Globus Auth Documentation
-            <https://docs.globus.org/api/auth/>`_ for more information on creation
+            <https://docs.globus.org/api/auth/>`__ for more information on creation
             and management of Scopes for more advanced scenarios such as other
             dependent Globus Auth based services such as Globus Transfer.
             
@@ -765,11 +765,13 @@ documents and output documents within the service as follows.
     )
     
     # Validating a request
-    request = ValidationRequest(provider_doc_type='ActionRequest', request_data=<input data>)
+    request = ValidationRequest(provider_doc_type='ActionRequest', 
+        request_data={"input_data":""})
     result = request_validator.validate(request)
     
     # Or a response:
-    response = ValidationRequest(provider_doc_type='ActionStatus', request_data=<output data>)
+    response = ValidationRequest(provider_doc_type='ActionStatus', 
+        request_data={"output_data":""})
     result = response_validator.validate(response)
     
     # get list of errors
@@ -848,8 +850,8 @@ application's URL namespace.
 
 A brief example of setting up the flask helper is provided immediately below. A
 more complete example showing implementation of all the required functions is
-provided in the Appendix. It is appropriate to use the skeleton in the Appendix
-as a starting point for any new Action Providers which are developed.
+provided in the *examples/watchasay* directory. It is appropriate to use the
+example as a starting point for any new Action Providers which are developed.
 
 .. code-block:: python
                 
@@ -902,188 +904,3 @@ prior to invoking the ``action_run`` function. As long as the return value from
 the various functions is of type ``ActionStatus``, the framework will also
 insure that the returned JSON data conforms to the Action Provider Interface.
 The example in the Appendix demonstrates how these functions can be implemented.
-
-
-Appendix: Example Action Provider
-=================================
-
-
-.. code-block:: python
-
-    import datetime
-    import uuid
-    from typing import Dict, Optional, Tuple
-
-    from flask import Blueprint, Flask
-    from werkzeug.exceptions import Conflict, NotFound
-
-    from globus_action_provider_tools.authorization import authorize_action_access_or_404
-    from globus_action_provider_tools.data_types import (
-        ActionProviderDescription,
-        ActionRequest,
-        ActionStatus,
-        ActionStatusValue,
-        AuthState,
-    )
-    from globus_action_provider_tools.flask import (
-        ActionStatusReturn,
-        add_action_routes_to_blueprint,
-    )
-
-    skeleton_blueprint = Blueprint("skeleton", __name__, url_prefix="/skeleton")
-
-    input_schema = {
-        "$id": "https://automate.globus.org/skeleton_action_provider.input.schema.json",
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Skeleton Action Provider Input Schema",
-        "type": "object",
-        "properties": {"input_string": {"type": "string"}},
-        "additionalProperties": False,
-        "required": ["input_string"],
-    }
-
-    provider_description = ActionProviderDescription(
-        globus_auth_scope="https://auth.globus.org/scopes/16e16447-209a-4825-ae19-25e279d91642/action_all_with_groups",
-        title="skeleton_action_provider",
-        admin_contact="support@globus.org",
-        synchronous=True,
-        input_schema=input_schema,
-        log_supported=False,  # This provider doesn't implement the log callback
-    )
-
-    # A simulated database mapping input user action requests identifiers to a previously
-    # seen request id and the corresponding action id
-    _fake_request_db: Dict[str, Tuple[ActionRequest, str]] = {}
-
-    _fake_action_db: Dict[str, ActionStatus] = {}
-
-
-    def _retrieve_action_status(action_id: str) -> ActionStatus:
-        status = _fake_action_db.get(action_id)
-        if status is None:
-            raise NotFound(f"No Action with id {action_id}")
-        return status
-
-
-    def action_run(request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
-        """
-        Asynchronous actions most likely need to implement retry logic here to 
-        prevent duplicate requests with matching request_ids from launching 
-        another job. In the event that a request with an existing request_id 
-        and creator_id arrives, this function should simply return the action's 
-        status via the action_status function.
-
-        Synchronous actions or actions where it makes sense to execute repeated 
-        runs with the same parameters need not implement retry logic.
-        """
-
-        caller_id = auth.effective_identity
-        request_id = request.request_id
-        full_request_id = f"{caller_id}:{request_id}"
-        prev_request = _fake_request_db.get(full_request_id)
-        if prev_request is not None:
-            if prev_request[0] == request:
-                return action_status(prev_request[1], auth)
-            else:
-                raise Conflict(
-                    f"Request with id {request_id} already present with different parameters "
-                )
-        # Local processing would happen here
-        result_details = {
-            # This is safe because the input has been validated against the input schema
-            "you_said": request.body["input_string"]
-        }
-        status = ActionStatus(
-            status=ActionStatusValue.SUCCEEDED,
-            creator_id=caller_id,
-            monitor_by=request.monitor_by,
-            manage_by=request.manage_by,
-            start_time=str(datetime.datetime.now().isoformat()),
-            completion_time=str(datetime.datetime.now().isoformat()),
-            release_after=request.release_after or "P30D",
-            display_status=ActionStatusValue.SUCCEEDED.name,
-            details=result_details,
-        )
-        _fake_request_db[full_request_id] = (request, status.action_id)
-        _fake_action_db[status.action_id] = status
-        return status
-
-
-    def action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
-        """
-        action_status retrieves the most recent state of the action. This endpoint 
-        requires the user authenticate with a principal value which is in the 
-        monitor_by list established when the Action was started.
-        """
-        status = _retrieve_action_status(action_id)
-        authorize_action_access_or_404(status, auth)
-        return status, 200
-
-
-    def action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
-        """ 
-        Asynchronous actions need not ensure a running action is immediately 
-        completed or terminated. In this scenario, action_cancel should return 
-        an action in a non-completion state. If it has completed, return the action's
-        status.
-
-        Synchronous actions need not implement any logic in action_cancel. All 
-        processing happens in the action_run callback so that action_cancel 
-        simply returns the action_id's status.
-        """
-        status = _retrieve_action_status(action_id)
-        authorize_action_access_or_404(status, auth)
-        if status.status in (ActionStatusValue.SUCCEEDED, ActionStatusValue.FAILED):
-            return status
-        # Process Action cancellation
-        status.status = ActionStatusValue.FAILED
-        status.display_status = "Canceled by user request"
-        return status
-
-
-    def action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
-        """ 
-        If the Action is not already in a completion state, action_release should 
-        return an error as this operation does not attempt to stop execution.
-        Synchronous actions need not determine if the action_id is still in a 
-        processing state. All processing starts and completes in the action_run 
-        callback so that action_release simply removes the action_id and request_id 
-        from history and returns the action_id's completion status.
-        """
-        status = _retrieve_action_status(action_id)
-        authorize_action_access_or_404(status, auth)
-        if status.status not in (ActionStatusValue.SUCCEEDED, ActionStatusValue.FAILED):
-            raise Conflict("Action is not complete")
-        _fake_action_db.pop(action_id)
-        # Both fake and badly inefficient
-        remove_req_id: Optional[str] = None
-        for req_id, req_and_action_id in _fake_request_db.items():
-            if req_and_action_id[1] == action_id:
-                remove_req_id = req_id
-                break
-        if remove_req_id is not None:
-            _fake_request_db.pop(remove_req_id)
-        return status, 200
-
-
-    def main():
-        app = Flask(__name__)
-        app.url_map.strict_slashes = False
-        add_action_routes_to_blueprint(
-            skeleton_blueprint,
-            CLIENT_ID,
-            CLIENT_SECRET,
-            None,
-            provider_description,
-            action_run,
-            action_status,
-            action_cancel,
-            action_release,
-        )
-        app.register_blueprint(skeleton_blueprint)
-        app.run(debug=True)
-
-
-    if __name__ == "__main__":
-        main()
-
