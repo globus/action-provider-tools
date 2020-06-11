@@ -1,0 +1,26 @@
+<div class="use-termynal" data-termynal>
+    <span data-ty=input>
+        globus-automate action run \
+    </span>
+    <span data-ty=input data-ty-prompt="">--action-url
+        https://actions.automate.globus.org/transfer/transfer \</span>
+    <span data-ty=input data-ty-prompt="">--action-scope
+        https://auth.globus.org/scopes/actions.globus.org/transfer/transfer \</span>
+    <span data-ty=input data-ty-prompt="">
+        --body '{
+        "source_endpoint_id": "go#ep1",
+        "destination_endpoint_id": "go#ep2",
+        "transfer_items": [
+        {
+        "source_path": "/~/NOT_A_THING",
+        "destination_path": "/~/ALSO_NOT_A_THING"
+        }
+        ]
+        }'
+    </span>
+    <span data-ty>everything is <span style="color: green; font-weight: bold;">good</span></span>
+</div>
+<script>
+    containers = document.querySelectorAll(".use-termynal");
+    containers.forEach(container => new Termynal(container))
+</script>

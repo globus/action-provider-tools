@@ -1,0 +1,17 @@
+<div class="use-termynal" data-termynal>
+    <span data-ty=input>cat example_action_request.json</span>
+    <span data-ty>{
+        "request_id": "0112358132134",
+        "monitor_by": [
+        "urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c",
+        "urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035"
+        ],
+        "body": {
+        "utc_offset": 1
+        }
+        }</span>
+</div>
+<script>
+    containers = document.querySelectorAll(".use-termynal");
+    containers.forEach(container => new Termynal(container))
+</script>
