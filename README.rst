@@ -903,4 +903,5 @@ also provide validation of input ``ActionRequest`` data to the ``/run`` method
 prior to invoking the ``action_run`` function. As long as the return value from
 the various functions is of type ``ActionStatus``, the framework will also
 insure that the returned JSON data conforms to the Action Provider Interface.
-The example in the Appendix demonstrates how these functions can be implemented.
+The **watchasay** example in the ``examples/`` directory demonstrates how these
+functions can be implemented.

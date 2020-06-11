@@ -5,6 +5,7 @@
     "type": "object",
     "properties": {
         "utc_offset": {
+            "description": "The utc_offset to return the time right now as",
             "type": "string"
         }
     },

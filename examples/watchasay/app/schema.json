@@ -5,6 +5,7 @@
     "type": "object",
     "properties": {
         "input_string": {
+            "description": "A string to be replayed back to the user",
             "type": "string"
         }
     },

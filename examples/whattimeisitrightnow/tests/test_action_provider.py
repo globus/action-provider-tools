@@ -32,7 +32,7 @@ with mock.patch(
     "globus_action_provider_tools.authentication.TokenChecker.check_token",
     return_value=mock_authstate(),
 ) as patched_check_token:
-    from examples.flask.whattimeisitrightnow.app.app import app, schema
+    from examples.whattimeisitrightnow.app.app import app, schema
 
 
 @pytest.fixture

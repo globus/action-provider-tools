@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 from flask import Blueprint, Flask
 from werkzeug.exceptions import Conflict, NotFound
 
-from examples.flask.watchasay.app import config
+from examples.watchasay.app import config
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,

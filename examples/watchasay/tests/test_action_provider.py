@@ -22,7 +22,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from examples.flask.watchasay.app.provider import create_app, load_schema
+from examples.watchasay.app.provider import create_app, load_schema
 from globus_action_provider_tools.data_types import ActionStatusValue
 from globus_action_provider_tools.testing.patches import (
     flask_api_helpers_tokenchecker_patch,
