@@ -1,0 +1,16 @@
+{
+    "$id": "https://automate.globus.org/skeleton_action_provider.input.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Skeleton Action Provider Input Schema",
+    "type": "object",
+    "properties": {
+        "input_string": {
+            "description": "A string to be replayed back to the user",
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "input_string"
+    ]
+}
