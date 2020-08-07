@@ -5,7 +5,7 @@ We provide an overview of the *Action Provider Interface* as a guide for use
 when implementing an *Action Provider*. 
 
 .. raw:: html
-    :file: cli/example.html
+    :file: cli/example_action_run.html
 
 The Action Provider Interface is a RESTful model for starting, monitoring,
 canceling and removing state associated with the invocation of an Action.
@@ -125,11 +125,19 @@ the following fields:
     the ``body``. Thus, the Action Provider must provide documentation on the format
     for the ``body`` property.
 
-Example
+.. code-block:: JSON
+   :caption: Action Request Document for running the Hellow World Action Provider
 
-.. raw:: html
-    :file: cli/example_action_request.html
-
+    {
+        "request_id": "0112358132134",
+        "monitor_by": [
+            "urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c",
+            "urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035"
+        ],
+        "body": {
+            "echo_string": "Hello there!"
+        }
+    }
 
 Any request to the ``/run`` method which contains an Action Request which
 adheres to the input schema will return an Action Status document as described
@@ -287,3 +295,9 @@ following properties:
 
 * | ``details`` (optional): An object providing additional and structured Action
     Provider-specific representation of the log record.
+
+Next Steps
+^^^^^^^^^^
+Now that you're familiar with the Action Provider Interface and capabilities,
+you're one step closer to writing your own Action Provider. The next step is to
+create a :doc:`Globus Auth Resource Server<setting_up_auth>`.

@@ -1,0 +1,15 @@
+<div class="use-termynal" data-ty-lineDelay="0" data-termynal>
+    <span data-ty># Target FQDN is https://auth.globus.org/scopes/actions.globus.org/transfer/transfer</span>
+    <span data-ty=input>export SCOPE_STRING=https://auth.globus.org/scopes/actions.globus.org/transfer/transfer
+    </span>
+    <span data-ty=input>curl -s -u "$CLIENT_ID:$CLIENT_SECRET"
+        "https://auth.globus.org/v2/api/scopes?scope_strings=$SCOPE_STRING" | jq
+        ".scopes[0].id"</span>
+    <span data-ty style="color: green;">"ef21bc32-cc97-4e90-9568-b7379a7cc336"</span>
+
+
+</div>
+<script>
+    containers = document.querySelectorAll(".use-termynal");
+    containers.forEach(container => new Termynal(container))
+</script>
