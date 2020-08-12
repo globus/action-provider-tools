@@ -182,6 +182,7 @@ def create_app():
         synchronous=True,
         input_schema=load_schema(),
         log_supported=False,  # This provider doesn't implement the log callback
+        visible_to=["public"],
     )
 
     # Use the flask helper function to register the endpoint callbacks onto the
@@ -196,6 +197,9 @@ def create_app():
         action_status_callback=action_status,
         action_cancel_callback=action_cancel,
         action_release_callback=action_release,
+        additional_scopes=[
+            "https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/secondary_scope"
+        ],
     )
 
     # Register the blueprint with your flask app before returning it

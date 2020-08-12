@@ -1,4 +1,6 @@
-client_id = "16e16447-209a-4825-ae19-25e279d91642"
-client_secret = "SECRET"
-our_scope = "https://auth.globus.org/scopes/16e16447-209a-4825-ae19-25e279d91642/action_all_with_groups"
+client_id = ""
+client_secret = ""
+our_scope = (
+    "https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/action_all"
+)
 token_audience = None

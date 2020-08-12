@@ -1,0 +1,78 @@
+type: object
+required: [action_id, status, details, creator_id]
+description: The status of an Action which has already been initiated with the /run operation.
+properties:
+  action_id:
+    type: string
+    description: The id of the Action itself.
+  status:
+    type: string
+    description: The current state of the Action
+    enum:
+      - SUCCEEDED
+      - FAILED
+      - ACTIVE
+      - INACTIVE
+  creator_id:
+    $ref: "#/components/schemas/PrincipalURN"
+  label:
+    type: string
+    description: A short human presentable description of the Action
+    minLength: 1
+    maxLength: 64
+  monitor_by:
+    type: array
+    items:
+      $ref: "#/components/schemas/PrincipalURN"
+    description: A list of principal URNs containing identities which are allowed to monitor the progress of the action using the /status and /log operations. When not provided, defaults to the user that initiated the action.
+    uniqueItems: true
+  manage_by:
+    type: array
+    items:
+      $ref: "#/components/schemas/PrincipalURN"
+    description: A list of principal URN containing identities which are allowed to manage the progress of the action using the /cancel and /release operations. When not provided, defaults to the user that initiated the action.
+    uniqueItems: true
+  start_time:
+    type: string
+    format: date-time
+    description: The time in ISO8601 format when the Action started executing (not necessarily the exact same time when the action /run operation was invoked).
+  completion_time:
+    type: string
+    format: date-time
+    description: The time in ISO8601 format when the Action reached a terminal (SUCCEEDED or FAILED) status
+  release_after:
+    $ref: "#/components/schemas/ISO8601_duration"
+    description: An ISO8601 time duration value indicating how long retention of the status of the action be retained after it reaches a completed state.
+  display_status:
+    type: string
+    description: A short, human consumable string describing the current status of this action. This can be used to provide more detailed, presentable summary of the Action status. For example, a batch system may use "Queued" or "Running" as display_status when the Action has status "ACTIVE". Similarly, a reason the action is blocked, such as requiring additional authentication may be used when the status is "INACTIVE."
+    minLength: 1
+    maxLength: 64
+  details:
+    type: object
+    description: A provider-specific object representing the full state of the Action. When the Action is in a SUCCEEDED state, this may be considered the result or return value from the Action. When the Action is in a FAILED state, this represents the cause or reason for failure. While running, the details MAY provide information about the Action in progress such as a measure of its progress to completion.
+example:
+  action_id: "6529"
+  status: ACTIVE
+  creator_id: urn:globus:auth:identity:ae2a1750-d274-11e5-b867-e74762c29f57
+  details:
+    estimated_complete: 2019-06-21T17:15:04.805868+00:00
+  manage_by:
+    - urn:globus:auth:identity:ca73e829-715f-4522-9dec-a507fe57a661
+    - urn:globus:auth:identity:ae2a1750-d274-11e5-b867-e74762c29f57
+  monitor_by:
+    - urn:globus:auth:identity:ca73e829-715f-4522-9dec-a507fe57a661
+    - urn:globus:auth:identity:ae2a1750-d274-11e5-b867-e74762c29f57
+  release_after: P30D
+  start_time: 2019-06-21T17:01:55.806781+00:00
+
+components:
+  schemas:
+    PrincipalURN:
+      type: string
+      pattern: "^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$"
+      description: A URN representation of an Identity in Globus either of a user from Globus Auth or a group from Globus Groups.
+    ISO8601_duration:
+      type: string
+      pattern: '^P(?!$)(\d+(?:\.\d+)?Y)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?W)?(\d+(?:\.\d+)?D)?(T(?=\d)(\d+(?:\.\d+)?H)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?S)?)?$'
+      description: ISO8601 duration format. Regex sourced from https://stackoverflow.com/a/32045167/845210
