@@ -10,7 +10,7 @@ The simplest way to install the Globus Action Provider SDK is using the ``pip``
 package manager (https://pypi.python.org/pypi/pip), which is included in most
 Python installations:
 
-::
+.. code-block:: BASH
 
     pip install globus-action-provider-tools
 

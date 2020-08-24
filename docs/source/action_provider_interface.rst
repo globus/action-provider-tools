@@ -5,7 +5,7 @@ We provide an overview of the *Action Provider Interface* as a guide for use
 when implementing an *Action Provider*. 
 
 .. raw:: html
-    :file: cli/example.html
+    :file: cli/example_action_run.html
 
 The Action Provider Interface is a RESTful model for starting, monitoring,
 canceling and removing state associated with the invocation of an Action.
@@ -30,7 +30,7 @@ Action Life-cycle
 The Life-cycle of an Action defines the set of states that the Action may be in,
 and how it can transition between the states. The states are defined as follows:
 
-*  ``ACTIVE``: The Action is executing and is making progress toward completion
+*  ``ACTIVE``: The Action is executing and is making progress toward completion.
 
 * | ``INACTIVE``: The Action is paused in its execution and is not making
     progress toward completion. Out-of-band (i.e. not via the Action Provider
@@ -88,7 +88,7 @@ the type of Action being executed.
 
 .. note:: 
     For brevity and clear presentation, in the descriptions of document types in
-    the following  sections, we present the key concepts, but do not enumerate
+    the following sections, we present the key concepts, but do not enumerate
     every option or field on the documents. Refer to the toolkit components,
     including the OpenAPI format specification (as described in the toolkit
     section), for a complete definition.
@@ -125,11 +125,19 @@ the following fields:
     the ``body``. Thus, the Action Provider must provide documentation on the format
     for the ``body`` property.
 
-Example
+.. code-block:: JSON
+   :caption: Action Request Document for running the Hellow World Action Provider
 
-.. raw:: html
-    :file: cli/example_action_request.html
-
+    {
+        "request_id": "0112358132134",
+        "monitor_by": [
+            "urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c",
+            "urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035"
+        ],
+        "body": {
+            "echo_string": "Hello there!"
+        }
+    }
 
 Any request to the ``/run`` method which contains an Action Request which
 adheres to the input schema will return an Action Status document as described
@@ -144,7 +152,7 @@ log operation which is optional and is described briefly below). Notable fields
 of the Action Status document include:
 
 * | ``action_id``: The unique identifier for this particular action. The
-    ``action_id`` may be any string, and it should be treated as an opaque value
+    ``action_id`` is a string, and it should be treated as an opaque value
     (that is, having no semantic or implied meaning) by the client. The client will
     first learn of an Action's ``action_id`` in the Action Status returned by the
     ``/run`` method.
@@ -171,7 +179,7 @@ of the Action Status document include:
     ``FAILED``) respectively. Action Providers are not required to continuously
     monitor the progress of Actions, so the ``completion_time`` noted may be
     different than the executed Action's actual completion time.  These values
-    **may** be the same in the case of a synchronous operation, but
+    *may* be the same in the case of a synchronous operation, but
     ``completion_time`` must never be before ``start_time``.
 
 * | ``release_after``: As stated above, Action state is automatically removed
@@ -271,7 +279,7 @@ Action's life. This detailed log is typically larger, more complex, or more
 fine-grain than the snapshot of the status returned by the ``/status`` method.
 Not all Action Providers or Actions are suitable for logging, so support is
 considered optional and will be advertised by the Action Provider in its
-description (see below). The request to retrieve the log takes the form ``GET
+description (see above). The request to retrieve the log takes the form ``GET
 /<action_id>/log?<filters,pagination>``. The filters and pagination query
 parameters are used to limit (e.g. based on start time) which log records to
 retrieve and the pagination parameter is used to scroll through a long set of
@@ -287,3 +295,9 @@ following properties:
 
 * | ``details`` (optional): An object providing additional and structured Action
     Provider-specific representation of the log record.
+
+Next Steps
+^^^^^^^^^^
+Now that you're familiar with the Action Provider Interface and capabilities,
+you're one step closer to writing your own Action Provider. The next step is to
+create a :doc:`Globus Auth Resource Server<setting_up_auth>`.

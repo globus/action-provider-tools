@@ -40,6 +40,8 @@ throughout the Globus Automate platform.
    :maxdepth: 2
 
    action_provider_interface
+   setting_up_auth
    installation
+   toolkit
    examples
    license
