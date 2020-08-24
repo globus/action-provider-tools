@@ -37,7 +37,7 @@ Once logged in, perform the following steps
     "Add new app"
 
   - | Provide a name for the specific app within the project. This will be a
-      common name displayed to  users when they make use of the Action Provider.
+      common name displayed to users when they make use of the Action Provider.
       "Redirects" is not used, but a value must be provided. You can use a
       URL associated with your service or a placeholder value like "https://localhost".
 
@@ -191,7 +191,7 @@ Step 3. Create your Action Provider's Scope
     library will not be able to, and will therefore not attempt to, retrieve
     a user's groups and so no policies based on Groups may be used. We
     encourage you to consult the `Globus Auth Documentation
-    <https://docs.globus.org/api/auth/>`__ for more information on creation
+    <https://docs.globus.org/api/auth/>`_ for more information on creation
     and management of Scopes for more advanced scenarios such as other
     dependent Globus Auth based services such as Globus Transfer.
             
