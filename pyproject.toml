@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "globus-action-provider-tools"
-version = "0.9.4"
+version = "0.9.5"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
     "Jim Pruyne <pruyne@globus.org>",
@@ -51,12 +51,9 @@ flask = "^1"
 isodate = "^0.6.0"
 pytest-xdist = "^1.32.0"
 pytest-cov = "^2.8.1"
+docutils = "^0.16"
 rstcheck = "^3.3.1"
 pygments = "^2.6.1"
-rst = "^0.1"
-sphinx = "^3.1.0"
-sphinx-autobuild = "^0.7.1"
-sphinx_material = "^0.0.30"
 
 [tool.isort]
 multi_line_output = 3
@@ -67,5 +64,3 @@ line_length = 88
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
-
-

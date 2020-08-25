@@ -1,0 +1,53 @@
+type: object
+required: [request_id, body]
+additionalProperties: false
+properties:
+  request_id:
+    type: string
+    description: A unique identifier representing the *request* to start an action. Multiple uses of the same request_id must have the same content or they will be rejected. Only one instance of the operation will be executed, so requests with the same request_id may be repeated to attempt to guarantee execution of an action
+  body:
+    type: object
+    description: The action-provider specific content describing the action to run. Format for the body may be provided in the input_schema field of the Action Provider Description
+  label:
+    type: string
+    description: A short human presentable description of the Action requested
+    minLength: 1
+    maxLength: 64
+  monitor_by:
+    type: array
+    items:
+      $ref: "#/components/schemas/PrincipalURN"
+    description: A list of principal URNs containing identities which are allowed to monitor the progress of the action using the /status and /log operations. When not provided, defaults to the user that initiated the action.
+    uniqueItems: true
+  manage_by:
+    type: array
+    items:
+      $ref: "#/components/schemas/PrincipalURN"
+    description: A list of principal URN containing identities which are allowed to manage the progress of the action using the /cancel and /release operations. When not provided, defaults to the user that initiated the action.
+    uniqueItems: true
+  allowed_clients:
+    type: array
+    items:
+      $ref: "#/components/schemas/AllowedClients"
+  deadline:
+    type: string
+    format: date-time
+    description: A timestamp indicating by which time the action must complete. The request may be rejected if the Action Provider does not expect to be able to complete the action before the deadline or if it represents a time greater than the maximum_deadline specified in the Provider Description.
+  release_after:
+    $ref: "#/components/schemas/ISO8601_duration"
+    description: An ISO8601 time duration value indicating how long retention of the status of the action be retained after it reaches a completed state. Action Providers may limit the maximum value. It is recommended that Providers provide a default release_after value of approximately 30 days.
+
+components:
+  schemas:
+    PrincipalURN:
+      type: string
+      pattern: "^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$"
+      description: A URN representation of an Identity in Globus either of a user from Globus Auth or a group from Globus Groups.
+    ISO8601_duration:
+      type: string
+      pattern: '^P(?!$)(\d+(?:\.\d+)?Y)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?W)?(\d+(?:\.\d+)?D)?(T(?=\d)(\d+(?:\.\d+)?H)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?S)?)?$'
+      description: ISO8601 duration format. Regex sourced from https://stackoverflow.com/a/32045167/845210
+    AllowedClients:
+      type: string
+      description: ""
+      pattern: "^(public|globus|creator|.$)$"
