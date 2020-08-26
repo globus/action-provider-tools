@@ -83,7 +83,7 @@ register functions which implement your ActionProvider's logic:
     It's required that your decorated functions accept two positional arguments
     with the correct types. For the `action_run` function, the argument types
     need to be an ``ActionRequest`` and an ``AuthState``. The rest of the
-    functions, will have argument types of ``str`` and ``AuthState``. Within
+    functions will have argument types of ``str`` and ``AuthState``. Within
     your function, you will have access to the requestors Globus Authentication
     information.
 
