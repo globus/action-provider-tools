@@ -1,3 +1,5 @@
+.. _globus_auth_setup:
+
 Set Up an Action Provider in Globus Auth
 ========================================
 

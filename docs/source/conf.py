@@ -25,7 +25,7 @@ copyright = "2020, University of Chicago"
 author = "Uriel Mandujano"
 
 # The full version, including alpha/beta/rc tags
-# release = globus_action_provider_tools.__version__s
+# release = globus_action_provider_tools.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -33,7 +33,9 @@ author = "Uriel Mandujano"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = ["sphinx.ext.autodoc"]
+autodoc_typehints = "description"
+add_module_names = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -52,12 +54,12 @@ master_doc = "index"
 # a list of builtin themes.
 #
 html_theme = "sphinx_material"
+html_logo = "_static/images/globus_110x110.png"
 
 # Material theme options (see theme.conf for more information)
 html_theme_options = {
     # Set the name of the project to appear in the navigation.
     "nav_title": "Globus Action Provider Tools",
-    "logo_icon": "&#xe869",
     # Set the color and the accent color
     "color_primary": "blue",
     "color_accent": "light-blue",
@@ -65,9 +67,9 @@ html_theme_options = {
     "repo_url": "https://github.com/globus/action-provider-tools",
     "repo_name": "Action Provider Tools",
     # Visible levels of the global TOC; -1 means unlimited
-    "globaltoc_depth": 1,
+    "globaltoc_depth": 2,
     # If False, expand all TOC entries
-    "globaltoc_collapse": False,
+    "globaltoc_collapse": True,
     # If True, show hidden TOC entries
     "globaltoc_includehidden": False,
     "repo_type": "github",
