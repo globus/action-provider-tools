@@ -47,13 +47,13 @@ def load_schema():
 
 def action_run(request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
     """
-    Asynchronous actions most likely need to implement retry logic here to 
-    prevent duplicate requests with matching request_ids from launching 
-    another job. In the event that a request with an existing request_id 
-    and creator_id arrives, this function should simply return the action's 
+    Asynchronous actions most likely need to implement retry logic here to
+    prevent duplicate requests with matching request_ids from launching
+    another job. In the event that a request with an existing request_id
+    and creator_id arrives, this function should simply return the action's
     status via the action_status function.
 
-    Synchronous actions or actions where it makes sense to execute repeated 
+    Synchronous actions or actions where it makes sense to execute repeated
     runs with the same parameters need not implement retry logic.
     """
 
@@ -100,8 +100,8 @@ def action_run(request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
 
 def action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
     """
-    action_status retrieves the most recent state of the action. This endpoint 
-    requires the user authenticate with a principal value which is in the 
+    action_status retrieves the most recent state of the action. This endpoint
+    requires the user authenticate with a principal value which is in the
     monitor_by list established when the Action was started.
     """
     status = _retrieve_action_status(action_id)
@@ -110,14 +110,14 @@ def action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
 
 
 def action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
-    """ 
-    Asynchronous actions need not ensure a running action is immediately 
-    completed or terminated. In this scenario, action_cancel should return 
+    """
+    Asynchronous actions need not ensure a running action is immediately
+    completed or terminated. In this scenario, action_cancel should return
     an action in a non-completion state. If it has completed, return the action's
     status.
 
-    Synchronous actions need not implement any logic in action_cancel. All 
-    processing happens in the action_run callback so that action_cancel 
+    Synchronous actions need not implement any logic in action_cancel. All
+    processing happens in the action_run callback so that action_cancel
     simply returns the action_id's status.
 
     This endpoint requires the user authenticate with a principal value which is
@@ -137,12 +137,12 @@ def action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
 
 
 def action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
-    """ 
-    If the Action is not already in a completion state, action_release should 
+    """
+    If the Action is not already in a completion state, action_release should
     return an error as this operation does not attempt to stop execution.
-    Synchronous actions need not determine if the action_id is still in a 
-    processing state. All processing starts and completes in the action_run 
-    callback so that action_release simply removes the action_id and request_id 
+    Synchronous actions need not determine if the action_id is still in a
+    processing state. All processing starts and completes in the action_run
+    callback so that action_release simply removes the action_id and request_id
     from history and returns the action_id's completion status.
 
     This endpoint requires the user authenticate with a principal value which is

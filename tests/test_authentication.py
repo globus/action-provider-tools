@@ -47,7 +47,9 @@ def bad_credentials_error(live_api, monkeypatch):
 def test_token_checker_bad_credentials():
     with pytest.raises(ConfigurationError):
         TokenChecker(
-            client_id="bogus", client_secret="bogus", expected_scopes=("fakescope",),
+            client_id="bogus",
+            client_secret="bogus",
+            expected_scopes=("fakescope",),
         )
 
 

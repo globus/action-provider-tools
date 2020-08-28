@@ -66,14 +66,14 @@ def handle_invalid_usage(error) -> Response:
 @app.before_request
 def before_request() -> None:
     """
-    Here we handle some authorization and request validation before the request 
-    ever makes it to our ActionProvider. We also attach authentication 
+    Here we handle some authorization and request validation before the request
+    ever makes it to our ActionProvider. We also attach authentication
     information to the request to make it easier to inspect.
 
-    flask_validate_request ensurse that we are receiving a valid request 
+    flask_validate_request ensurse that we are receiving a valid request
     body from the user.
 
-    token_checker.check_token ensure that the requestor provided a valid, 
+    token_checker.check_token ensure that the requestor provided a valid,
     Globus recognized token for interacting with the Provider.
     """
     validation_result = flask_validate_request(request)
@@ -93,10 +93,10 @@ def before_request() -> None:
 @app.route("/", methods=["GET"])
 def introspect() -> Tuple[Response, int]:
     """
-    The base endpoint of an ActionProvider should serve as documentation, 
-    enabling users to introspect the JSON schema required to launch an action. 
+    The base endpoint of an ActionProvider should serve as documentation,
+    enabling users to introspect the JSON schema required to launch an action.
     This endpoint can be publicly accessible or not. The
-    ActionProviderDescription visible_to field public access by default.    
+    ActionProviderDescription visible_to field public access by default.
     """
     description = ActionProviderDescription(
         globus_auth_scope=config.our_scope,
@@ -125,13 +125,13 @@ def introspect() -> Tuple[Response, int]:
 @app.route("/run", methods=["POST"])
 def run() -> Tuple[Response, int]:
     """
-    This function implements Action Provider interface for launching an 
+    This function implements Action Provider interface for launching an
     action instance.
 
-    This function parses the request_id from a request body and from it 
-    determines whether a new action should be launched or whether to 
+    This function parses the request_id from a request body and from it
+    determines whether a new action should be launched or whether to
     return the status of a previously launched action. To accomplish this,
-    it is necessary to store a mapping of request_ids to action_ids in 
+    it is necessary to store a mapping of request_ids to action_ids in
     addition to a history of actions.
     """
     req = request.get_json(force=True)
@@ -150,9 +150,9 @@ def run() -> Tuple[Response, int]:
 
 def run_action(req) -> ActionStatus:
     """
-    A wrapper function to handle executing 'business logic', creating the 
-    ActionStatus and storing both the request_id:action_id mapping and the 
-    action_id:action_status mapping. 
+    A wrapper function to handle executing 'business logic', creating the
+    ActionStatus and storing both the request_id:action_id mapping and the
+    action_id:action_status mapping.
     """
     now = datetime.now(tz=timezone.utc)
 
@@ -183,8 +183,8 @@ def run_action(req) -> ActionStatus:
 
 def _filter_private_fields(action_status: ActionStatus) -> ActionStatus:
     """
-    Helper function to demonstrate how an ActionStatus object can 
-    hold private data in its details field and how to filter this 
+    Helper function to demonstrate how an ActionStatus object can
+    hold private data in its details field and how to filter this
     data before returning an ActionStatus to the requestor
     """
     if action_status.details is not None:
@@ -195,10 +195,10 @@ def _filter_private_fields(action_status: ActionStatus) -> ActionStatus:
 def _magic_business_logic(now, request_body) -> Dict[str, Any]:
     """
     This function computes the current time in a different timezone.
-    It accepts "utc_offset" to determine the target timezone before 
+    It accepts "utc_offset" to determine the target timezone before
     converting the time and storing it into the results dictionary.
-    
-    This function demonstrates how private data can be computed and 
+
+    This function demonstrates how private data can be computed and
     stored.
     """
     try:
@@ -238,8 +238,8 @@ def _magic_business_logic(now, request_body) -> Dict[str, Any]:
 @app.route("/<action_id>/status", methods=["GET"])
 def status(action_id) -> Tuple[Response, int]:
     """
-    This function implements Action Provider interface for looking up an 
-    action's status. This endpoint is used to query actions that may 
+    This function implements Action Provider interface for looking up an
+    action's status. This endpoint is used to query actions that may
     still be executing or may have completed.
     """
     # Ensure the requested action_id exists
@@ -273,10 +273,10 @@ def _get_action_status_or_404(action_id: str) -> ActionStatus:
 
 def _reconcile_action_status(action_status: ActionStatus) -> ActionStatus:
     """
-    Helper function to determine if an Action should have completed, and to 
-    update its status if necessary. If the Action is already in a completed 
-    state, its record is returned. If the action is still not scheduled to 
-    complete, its record is returned umodified. If the record was scheduled 
+    Helper function to determine if an Action should have completed, and to
+    update its status if necessary. If the Action is already in a completed
+    state, its record is returned. If the action is still not scheduled to
+    complete, its record is returned umodified. If the record was scheduled
     to complete, its status is updated, stored and returned.
     """
     # If status is in a completion state, return
@@ -314,7 +314,7 @@ def _reconcile_action_status(action_status: ActionStatus) -> ActionStatus:
 def cancel(action_id: str) -> Tuple[Response, int]:
     """
     This function implements the ActionProvider interface for cancelling an
-    action. As noted in the documentation, this operation does not need to 
+    action. As noted in the documentation, this operation does not need to
     force the action to immediately cancel.
     """
     # Ensure the requested action_id exists
@@ -351,8 +351,8 @@ def _cancel_job(action_status) -> ActionStatus:
 @app.route("/<action_id>/release", methods=["POST"])
 def release(action_id: str) -> Tuple[Response, int]:
     """
-    Releasing an Action erases all records of its execution from the 
-    Provider's history. Subsequent lookups for the Action's execution 
+    Releasing an Action erases all records of its execution from the
+    Provider's history. Subsequent lookups for the Action's execution
     will fail.
     """
     # Ensure the requested action_id exists

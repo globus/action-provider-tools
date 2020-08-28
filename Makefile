@@ -3,13 +3,36 @@ PYTHON_VERSION ?= python3.6
 POETRY ?= poetry
 MIN_TEST_COVERAGE ?= 40
 
-.PHONY: specdoc clean install
+.PHONY: help docs test install
 
-specdoc: docs/action_provider_api.html
+define HELPTEXT
+Please use "make <target>" where <target> is one of
+ docs:   to build the project's documentation
+ lint:   to run autoformatters and linters
+ clean:  to remove any built artifacts or environments
+ test:   to run the full suite of tests
+ test-toolkit:
+	to run the toolkit's source code tests
+ test-examples:
+ 	to run the example Action Providers' tests
+ poetry.lock:
+	to generate this project's poetry.lock file
+ requirements.txt:
+	to generate this project's requirements.txt file
+ install | venv | $(VIRTUAL_ENV):
+	to install this project and its dependencies into a virtual 
+	environment at $(VIRTUAL_ENV)
+endef
+export HELPTEXT
+
+help:
+	@echo "$$HELPTEXT"
+
+#specdoc: docs/action_provider_api.html
 
 # Generates human-friendly HTML from OpenAPI spec yaml
-docs/action_provider_api.html:
-	<globus_action_provider_tools/actions_spec.openapi.yaml docs/swagger-yaml-to-html.py > docs/actions_api.html
+#docs/action_provider_api.html:
+#	<globus_action_provider_tools/actions_spec.openapi.yaml docs/swagger-yaml-to-html.py > docs/actions_api.html
 
 poetry.lock: pyproject.toml
 	$(POETRY) lock
@@ -35,13 +58,14 @@ clean:
 	rm -rf .coverage
 	rm -rf .mypy_cache
 	rm -rf .pytest_cache
+	rm -rf docs/build/*
 
 lint:
 	poetry run black --check \
 		globus_action_provider_tools/ \
 		tests/ \
 		examples/
-	poetry run isort --recursive --check-only --diff \
+	poetry run isort --check-only --diff \
 		globus_action_provider_tools/ \
 		tests/ \
 		examples/
@@ -54,11 +78,15 @@ lint:
 		examples/whattimeisitrightnow \
 		examples/apt_blueprint
 
-test:
+test: test-toolkit test-examples
+
+test-toolkit:
 	poetry run pytest -n auto \
 		--cov=globus_action_provider_tools \
 		--cov-report= \
 		--cov-fail-under=${MIN_TEST_COVERAGE} tests/
+
+test-examples:
 	poetry run pytest -n auto \
 		--cov=examples/watchasay \
 		--cov-report= \
@@ -68,4 +96,7 @@ test:
 		--cov=examples/whattimeisitrightnow \
 		--cov-report= \
 		--cov-fail-under=${MIN_TEST_COVERAGE} \
-		examples/whattimeisitrightnow
+		examples/whattimeisitrightnow	
+
+docs:
+	poetry run make --directory=docs html

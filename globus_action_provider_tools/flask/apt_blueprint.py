@@ -77,7 +77,10 @@ def methdispatch(func):
 
 class ActionProviderBlueprint(Blueprint):
     def __init__(
-        self, provider_description, *args, **kwarg,
+        self,
+        provider_description,
+        *args,
+        **kwarg,
     ):
         super().__init__(*args, **kwarg)
 
@@ -111,13 +114,13 @@ class ActionProviderBlueprint(Blueprint):
 
     def register(self, app, options, first_registration=False):
         """
-        Override the built in Blueprint register function to allow our 
+        Override the built in Blueprint register function to allow our
         Blueprint to pull configuration data once it is registered with the
         Flask app to create its internal instance of a TokenChecker.
 
         We first check the environment to see if a blueprint-specific client ID
         and client secret were provided. If we cannot pull those from the
-        environment, we backoff and search for generic client id and secret values.  
+        environment, we backoff and search for generic client id and secret values.
         """
         provider_prefix = self.name.upper() + "_"
         client_id = app.config.get(provider_prefix + "CLIENT_ID")
@@ -152,7 +155,7 @@ class ActionProviderBlueprint(Blueprint):
 
     def action_run(self, func: ActionRunType) -> Callable[[], ViewReturn]:
         """
-        Decorates a function to be run as an Action Provider's run endpoint. 
+        Decorates a function to be run as an Action Provider's run endpoint.
         """
 
         @functools.wraps(func)
@@ -280,7 +283,10 @@ class ActionProviderBlueprint(Blueprint):
             return jsonify(status), 200
 
         self.add_url_rule(
-            "/<string:action_id>/release", func.__name__, wrapper, methods=["POST"],
+            "/<string:action_id>/release",
+            func.__name__,
+            wrapper,
+            methods=["POST"],
         )
         print(f'Registered action release plugin "{func.__name__}"')
         return wrapper
@@ -345,11 +351,11 @@ class ActionProviderBlueprint(Blueprint):
         action_savers with different backends can be registered and each backend
         will save a copy of the ActionStatus. If any action_savers are
         registered and they fail to save an ActionStatus, an error will be
-        thrown. 
+        thrown.
 
         #TODO pickup here, what should the behavior for an action_saver be? When
         should it be called?
-        # TODO the return of the action_loader is an action, the return for the plugins 
+        # TODO the return of the action_loader is an action, the return for the plugins
         # are actionStatusReturns, which are DIFFERENT [THANKS MYPY]
         """
 
@@ -376,7 +382,7 @@ class ActionProviderBlueprint(Blueprint):
     def _check_token(self) -> None:
         """
         Parses a token from a request to generate an auth_state object which is
-        then made available as the second argument to decorated functions. 
+        then made available as the second argument to decorated functions.
         """
         access_token = (
             request.headers.get("Authorization", "").strip().lstrip("Bearer ")
