@@ -13,6 +13,10 @@ Action Provider Tools Introduction
     :target: https://badge.fury.io/py/globus-action-provider-tools
     :alt: PyPi Package
 
+.. image:: https://img.shields.io/pypi/pyversions/globus-action-provider-tools
+    :target: https://pypi.org/project/globus-action-provider-tools/
+    :alt: Compatible Python Versions
+
 This is an experimental toolkit to help developers build Action Providers for
 use in Globus Automate including for invocation via Globus Flows.
 
