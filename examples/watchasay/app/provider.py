@@ -1,7 +1,7 @@
 import datetime
 import json
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Set, Tuple
 
 from flask import Blueprint, Flask
 from werkzeug.exceptions import Conflict, NotFound
@@ -43,6 +43,48 @@ def load_schema():
     ) as f:
         schema = json.load(f)
     return schema
+
+
+def action_enumerate(auth: AuthState, params: Dict[str, Set]):
+    """
+    This is an optional endpoint, useful for allowing requestors to enumerate
+    actions filtered by ActionStatus and role.
+
+    The params argument will always be a dict containing the incoming request's
+    validated query arguments. There will be two keys, 'statuses' and 'roles',
+    where each maps to a set containing the filter values for the key. A typical
+    params object will look like:
+
+        {
+            "statuses": {<ActionStatusValue.ACTIVE: 3>},
+            "roles": {"creator_id"}
+        }
+
+    Notice that the value for the "statuses" key is an Enum value.
+    """
+    statuses = params["statuses"]
+    roles = params["roles"]
+    matches = []
+
+    for _, action in _fake_action_db.items():
+        if action.status in statuses:
+            # Create a set of identities that are allowed to access this action,
+            # based on the roles being queried for
+            allowed_set = set()
+            for role in roles:
+                identities = getattr(action, role)
+                if isinstance(identities, str):
+                    allowed_set.add(identities)
+                else:
+                    allowed_set.update(identities)
+
+            # Determine if this request's auth allows access based on the
+            # allowed_set
+            authorized = auth.check_authorization(allowed_set)
+            if authorized:
+                matches.append(action)
+
+    return matches
 
 
 def action_run(request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
@@ -197,6 +239,7 @@ def create_app():
         action_status_callback=action_status,
         action_cancel_callback=action_cancel,
         action_release_callback=action_release,
+        action_enumeration_callback=action_enumerate,
         additional_scopes=[
             "https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/secondary_scope"
         ],

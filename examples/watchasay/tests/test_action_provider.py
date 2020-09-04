@@ -47,6 +47,11 @@ def test_introspection_endpoint(client):
     assert json.loads(response.data)["input_schema"] == load_schema()
 
 
+def test_enumeration_endpoint(client):
+    response = client.get("/skeleton/actions")
+    assert response.status_code == 200
+
+
 def test_run_endpoint(client):
     request_id = str(uuid.uuid4())
     data = {

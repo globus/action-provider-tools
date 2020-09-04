@@ -1,10 +1,16 @@
+"""
+This module essentially contains the pieces required for creating a Flask app
+using either the Decorator helper or the add_action_routes_to_blueprint helper.
+These pieces are meant to be imported and used in a fixture to assemble the
+Flask app according to what needs to be tested.
+"""
+
 from datetime import datetime, timezone
 from typing import Dict, List, Set
 
 from flask import request
 from werkzeug.exceptions import Conflict, NotFound
 
-from examples.apt_blueprint.backend import simple_backend
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
@@ -18,62 +24,38 @@ from globus_action_provider_tools.data_types import (
 )
 from globus_action_provider_tools.flask.apt_blueprint import (
     ActionLogReturn,
-    ActionProviderBlueprint,
     ActionStatusReturn,
 )
 
-from .backend import simple_backend
+simple_backend: Dict[str, ActionStatus] = {}
 
-description = ActionProviderDescription(
+ap_description = ActionProviderDescription(
     globus_auth_scope="https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/action_all",
-    title="What Time Is It Right Now?",
-    admin_contact="support@whattimeisrightnow.example",
+    title="Test ActionProviderDescription",
+    admin_contact="test@globus.org",
     synchronous=True,
     input_schema={
         "$id": "whattimeisitnow.provider.input.schema.json",
         "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "whattimeisitnow Provider Input Schema",
+        "title": "Test Provider Input Schema",
         "type": "object",
-        "properties": {"utc_offset": {"type": "string"}},
-        "required": ["utc_offset"],
+        "properties": {"echo_string": {"type": "string"}},
+        "required": ["echo_string"],
         "additionalProperties": False,
     },
     api_version="1.0",
-    subtitle="Another exciting promotional tie-in for whattimeisitrightnow.com",
-    description="",
-    keywords=["time", "whattimeisitnow", "productivity"],
+    subtitle="Test ActionProviderDescription",
+    description="Only for Testing",
+    keywords=["Testing"],
     visible_to=["public"],
     runnable_by=["all_authenticated_users"],
-    administered_by=["support@whattimeisrightnow.example"],
+    administered_by=["test@globus.org"],
 )
 
 
-aptb = ActionProviderBlueprint(
-    name="apt",
-    import_name=__name__,
-    url_prefix="/apt",
-    provider_description=description,
-)
-
-
-@aptb.action_enumerate
-def action_enumeration(auth: AuthState, params: Dict[str, Set]) -> List[ActionStatus]:
-    """
-    This is an optional endpoint, useful for allowing requestors to enumerate
-    actions filtered by ActionStatus and role.
-
-    The params argument will always be a dict containing the incoming request's
-    validated query arguments. There will be two keys, 'statuses' and 'roles',
-    where each maps to a set containing the filter values for the key. A typical
-    params object will look like:
-
-        {
-            "statuses": {<ActionStatusValue.ACTIVE: 3>},
-            "roles": {"creator_id"}
-        }
-
-    Notice that the value for the "statuses" key is an Enum value.
-    """
+def test_action_enumeration(
+    auth: AuthState, params: Dict[str, Set]
+) -> List[ActionStatus]:
     statuses = params["statuses"]
     roles = params["roles"]
     matches = []
@@ -99,13 +81,9 @@ def action_enumeration(auth: AuthState, params: Dict[str, Set]) -> List[ActionSt
     return matches
 
 
-@aptb.action_run
-def my_action_run(action_request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
-    """
-    Implement custom business logic related to instantiating an Action here.
-    Once launched, collect details on the Action and create an ActionStatus
-    which records information on the instantiated Action and gets stored.
-    """
+def test_action_run(
+    action_request: ActionRequest, auth: AuthState
+) -> ActionStatusReturn:
     action_status = ActionStatus(
         status=ActionStatusValue.ACTIVE,
         creator_id=str(auth.effective_identity),
@@ -122,13 +100,7 @@ def my_action_run(action_request: ActionRequest, auth: AuthState) -> ActionStatu
     return action_status
 
 
-@aptb.action_status
-def my_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
-    """
-    Query for the action_id in some storage backend to return the up-to-date
-    ActionStatus. It's possible that some ActionProviders will require querying
-    an external system to get up to date information on an Action's status.
-    """
+def test_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise NotFound(f"No action with {action_id}")
@@ -136,14 +108,7 @@ def my_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
     return action_status
 
 
-@aptb.action_cancel
-def my_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
-    """
-    Only Actions that are not in a completed state may be cancelled.
-    Cancellations do not necessarily require that an Action's execution be
-    stopped. Once cancelled, the ActionStatus object should be updated and
-    stored.
-    """
+def test_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise NotFound(f"No action with {action_id}")
@@ -159,13 +124,7 @@ def my_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
     return action_status
 
 
-@aptb.action_release
-def my_action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
-    """
-    Only Actions that are in a completed state may be released. The release
-    operation removes the ActionStatus object from the data store. The final, up
-    to date ActionStatus is returned after a successful release.
-    """
+def test_action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise NotFound(f"No action with {action_id}")
@@ -179,14 +138,7 @@ def my_action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
     return action_status
 
 
-@aptb.action_log
-def my_action_log(action_id: str, auth: AuthState) -> ActionLogReturn:
-    """
-    Action Providers can optionally support a logging endpoint to return
-    detailed information on an Action's execution history. Pagination and
-    filters are supported as query parameters and can be used to control what
-    details are returned to the requestor.
-    """
+def test_action_log(action_id: str, auth: AuthState) -> ActionLogReturn:
     pagination = request.args.get("pagination")
     filters = request.args.get("filters")
     return {

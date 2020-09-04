@@ -1,8 +1,19 @@
 import functools
 import json
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    overload,
+)
 
-from flask import Blueprint, Response, current_app, g, jsonify, request
+from flask import Blueprint, Response, blueprints, current_app, g, jsonify, request
 from jsonschema.validators import Draft7Validator
 from werkzeug.exceptions import BadRequest, NotFound, NotImplemented, Unauthorized
 
@@ -16,11 +27,16 @@ from globus_action_provider_tools.data_types import (
     ActionProviderJsonEncoder,
     ActionRequest,
     ActionStatus,
+    ActionStatusValue,
     AuthState,
 )
 from globus_action_provider_tools.flask import (
     blueprint_error_handler,
     flask_validate_request,
+)
+from globus_action_provider_tools.flask.helpers import (
+    parse_query_args,
+    query_args_to_enum,
 )
 
 ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
@@ -32,6 +48,7 @@ ActionLogType = Callable[[str, AuthState], ActionLogReturn]
 ActionRunType = Callable[[ActionRequest, AuthState], ActionStatusReturn]
 ActionCancelType = ActionStatusType
 ActionReleaseType = ActionStatusType
+ActionEnumerationType = Callable[[AuthState, Dict[str, Set]], Sequence[ActionStatus]]
 
 ViewReturn = Union[Tuple[Response, int], Tuple[str, int]]
 
@@ -81,33 +98,44 @@ class ActionProviderBlueprint(Blueprint):
         self.json_encoder = ActionProviderJsonEncoder
         self.before_request(self._check_token)
         self.register_error_handler(Exception, blueprint_error_handler)
+        self.record_once(self._create_token_checker)
 
         self.add_url_rule(
-            "", "action_introspect", self.action_introspect, methods=["GET"]
+            "", "action_introspect", self._action_introspect, methods=["GET"]
         )
+
+        # If using an action-loader, it's possible that the status and cancel
+        # endpoints do not need to be implemented. Therefore, we initialize the
+        # API route for those operations with "auto" functions that
+        # Old-style AP API endpoints
         self.add_url_rule(
             "/<string:action_id>/status",
-            "action_status",
+            None,
             self._auto_action_status,
             methods=["GET"],
         )
         self.add_url_rule(
             "/<string:action_id>/cancel",
+            None,
+            self._auto_action_cancel,
+            methods=["POST"],
+        )
+        # Add new-style AP API endpoints
+        self.add_url_rule(
+            "/actions/<string:action_id>",
+            "action_status",
+            self._auto_action_status,
+            methods=["GET"],
+        )
+        self.add_url_rule(
+            "/actions/<string:action_id>/cancel",
             "action_cancel",
             self._auto_action_cancel,
             methods=["POST"],
         )
 
-    def register(self, app, options, first_registration=False):
-        """
-        Override the built in Blueprint register function to allow our
-        Blueprint to pull configuration data once it is registered with the
-        Flask app to create its internal instance of a TokenChecker.
-
-        We first check the environment to see if a blueprint-specific client ID
-        and client secret were provided. If we cannot pull those from the
-        environment, we backoff and search for generic client id and secret values.
-        """
+    def _create_token_checker(self, setup_state: blueprints.BlueprintSetupState):
+        app = setup_state.app
         provider_prefix = self.name.upper() + "_"
         client_id = app.config.get(provider_prefix + "CLIENT_ID")
         client_secret = app.config.get(provider_prefix + "CLIENT_SECRET")
@@ -125,9 +153,8 @@ class ActionProviderBlueprint(Blueprint):
             expected_scopes=scopes,
             expected_audience=self.globus_auth_client_name,
         )
-        super().register(app, options, first_registration)
 
-    def action_introspect(self):
+    def _action_introspect(self):
         """
         Runs as an Action Provider's introspection endpoint.
         """
@@ -142,6 +169,47 @@ class ActionProviderBlueprint(Blueprint):
             raise NotFound
 
         return jsonify(self.provider_description), 200
+
+    def action_enumerate(self, func: ActionEnumerationType):
+        """
+        Decorates a function to be run as an Action Provider's enumeration
+        endpoint.
+        """
+
+        @functools.wraps(func)
+        def wrapper():
+            if not g.auth_state.check_authorization(
+                self.provider_description.runnable_by,
+                allow_public=True,
+                allow_all_authenticated_users=True,
+            ):
+                current_app.logger.info(
+                    f'User "{g.auth_state.effective_identity}" is unauthorized to enumerate Actions'
+                )
+                raise NotFound
+
+            valid_statuses = set(e.name.lower() for e in ActionStatusValue)
+            statuses = parse_query_args(
+                "status", default_value="active", valid_vals=valid_statuses
+            )
+            statuses = query_args_to_enum(statuses, ActionStatusValue)
+            roles = parse_query_args(
+                "roles",
+                default_value="creator_id",
+                valid_vals={"creator_id", "monitor_by", "manage_by"},
+            )
+            query_params = {"statuses": statuses, "roles": roles}
+            enumeration = func(g.auth_state, query_params)
+            return jsonify(enumeration), 200
+
+        self.add_url_rule(
+            "/actions",
+            "action_enumerate",
+            wrapper,
+            methods=["GET"],
+        )
+        print(f'Registered action enumeration plugin "{func.__name__}"')
+        return wrapper
 
     def action_run(self, func: ActionRunType) -> Callable[[], ViewReturn]:
         """
@@ -173,7 +241,9 @@ class ActionProviderBlueprint(Blueprint):
             self._save_action(status)
             return self._action_status_return_to_view_return(status, 202)
 
-        self.add_url_rule("/run", func.__name__, wrapper, methods=["POST"])
+        # Add new and old-style AP API endpoints
+        self.add_url_rule("/run", None, wrapper, methods=["POST"])
+        self.add_url_rule("/actions", func.__name__, wrapper, methods=["POST"])
         print(f'Registered action run plugin "{func.__name__}"')
         return wrapper
 
@@ -314,9 +384,16 @@ class ActionProviderBlueprint(Blueprint):
             status = func(action_id, g.auth_state)  # type: ignore
             return self._action_status_return_to_view_return(status, 200)
 
+        # Add new and old-style AP API endpoints
         self.add_url_rule(
             "/<string:action_id>/release",
-            func.__name__,
+            None,
+            wrapper,
+            methods=["POST"],
+        )
+        self.add_url_rule(
+            "/actions/<string:action_id>/release",
+            "action_release",
             wrapper,
             methods=["POST"],
         )
@@ -339,8 +416,10 @@ class ActionProviderBlueprint(Blueprint):
             status = func(action_id, g.auth_state)
             return jsonify(status), 200
 
+        # Add new and old-style AP API endpoints
+        self.add_url_rule("/<string:action_id>/log", None, wrapper, methods=["GET"])
         self.add_url_rule(
-            "/<string:action_id>/log", func.__name__, wrapper, methods=["GET"]
+            "/actions/<string:action_id>/log", "action_log", wrapper, methods=["GET"]
         )
         print(f'Registered action log plugin "{func.__name__}"')
         return wrapper

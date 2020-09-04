@@ -296,6 +296,42 @@ following properties:
 * | ``details`` (optional): An object providing additional and structured Action
     Provider-specific representation of the log record.
 
+Optional Endpoint: Action Enumeration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In some cases, it may be useful for an Action Provider to provide an endpoint
+through which Action execution histories can be queried. This is particularly
+useful for administrators who are interested in collecting success and failure
+information from the Action Provider, or for users who simply want a list of
+currently executing Actions that may be waiting for some external action. This
+enumeration endpoint supports filters via query parameters to indicate to the
+type of ActionStatuses to return. 
+
+The supported query parameters are ``roles`` and ``status``, where roles can
+be any one or more of ``creator_id``, ``monitor_by``, ``manage_by``.
+Using the ``roles`` filter will only retrieve Actions where the requestor's
+identity is listed in the selected Action's field. If unset, this parameter
+defaults to ``creator_id``.
+
+The ``status`` query can be any one or more of ``active``, ``inactive``,
+``failed``, ``succeded``, which corresponds exactly to all possible Action
+states.  If multiple statuses are queried for, the set of Actions returned will
+each have a status that was in the query set. If unset, this parameter defaults
+to ``active``.
+
+When both of these filters are used together, the resulting set of Actions will
+contain the result of applying a logical AND between the results of the two
+filters. That is, the Actions in the returned set will contain actions with a
+status listed in the ``status`` filter and the returned actions will also list
+the requestor as an identity in the queried ``roles``. The query takes the form 
+of ``GET /actions?roles=role1,role2,role3&status=status_1,status2``.
+
+.. note::
+
+    Please note that as this is an optional endpoint, not all Action Providers
+    implement this functionality.
+
+
 Next Steps
 ^^^^^^^^^^
 Now that you're familiar with the Action Provider Interface and capabilities,

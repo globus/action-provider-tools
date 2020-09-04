@@ -5,6 +5,7 @@ from .api_helpers import (
     flask_validate_request,
     flask_validate_response,
 )
+from .apt_blueprint import ActionProviderBlueprint
 
 __all__ = (
     "add_action_routes_to_blueprint",
@@ -12,4 +13,5 @@ __all__ = (
     "flask_validate_request",
     "flask_validate_response",
     "blueprint_error_handler",
+    "ActionProviderBlueprint",
 )

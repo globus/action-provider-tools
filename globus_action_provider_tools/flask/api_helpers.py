@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import asdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 from urllib.parse import urlsplit, urlunsplit
 
 import flask
@@ -15,6 +15,11 @@ from globus_action_provider_tools.data_types import (
     ActionProviderJsonEncoder,
     ActionRequest,
     ActionStatus,
+    ActionStatusValue,
+)
+from globus_action_provider_tools.flask.helpers import (
+    parse_query_args,
+    query_args_to_enum,
 )
 from globus_action_provider_tools.validation import (
     ValidationRequest,
@@ -40,6 +45,7 @@ ActionReleaseType = ActionStatusType
 ActionLogType = Callable[
     [str, AuthState], Dict[str, Any]
 ]  # TODO: This is not right at this point
+ActionEnumerationType = Callable[[AuthState], Sequence[ActionStatus]]
 
 
 _request_schema_types = {"run": "ActionRequest"}
@@ -156,6 +162,7 @@ def add_action_routes_to_blueprint(
     action_release_callback: ActionReleaseType,
     action_log_callback: Optional[ActionLogType] = None,
     additional_scopes: Optional[List[str]] = None,
+    action_enumeration_callback: ActionEnumerationType = None,
 ) -> None:
     """Add routes to a Flask Blueprint to implement the required operations of the Action
     Provider Interface: Introspect, Run, Status, Cancel and Release. The route handlers
@@ -257,6 +264,7 @@ def add_action_routes_to_blueprint(
             raise NotFound()
         return jsonify(asdict(provider_description)), 200
 
+    @blueprint.route("/actions", methods=["POST"])
     @blueprint.route("/run", methods=["POST"])
     def action_run() -> ViewReturn:
         auth_state = _check_token(request, checker)
@@ -288,6 +296,7 @@ def add_action_routes_to_blueprint(
         return _action_status_return_to_view_return(status, 201)
 
     @blueprint.route("/<string:action_id>/status", methods=["GET"])
+    @blueprint.route("/actions/<string:action_id>", methods=["GET"])
     def action_status(action_id: str) -> ViewReturn:
         auth_state = _check_token(request, checker)
         return _action_status_return_to_view_return(
@@ -295,6 +304,7 @@ def add_action_routes_to_blueprint(
         )
 
     @blueprint.route("/<string:action_id>/cancel", methods=["POST"])
+    @blueprint.route("/actions/<string:action_id>/cancel", methods=["POST"])
     def action_cancel(action_id: str) -> ViewReturn:
         auth_state = _check_token(request, checker)
         return _action_status_return_to_view_return(
@@ -302,6 +312,7 @@ def add_action_routes_to_blueprint(
         )
 
     @blueprint.route("/<string:action_id>/release", methods=["POST"])
+    @blueprint.route("/actions/<string:action_id>/release", methods=["POST"])
     def action_release(action_id: str) -> ViewReturn:
         auth_state = _check_token(request, checker)
         return _action_status_return_to_view_return(
@@ -310,7 +321,27 @@ def add_action_routes_to_blueprint(
 
     if action_log_callback is not None:
 
+        @blueprint.route("/actions/<string:action_id>/log", methods=["GET"])
         @blueprint.route("/<string:action_id>/log", methods=["GET"])
         def action_log(action_id: str) -> ViewReturn:
             auth_state = _check_token(request, checker)
             return jsonify({"log": "message"}), 200
+
+    if action_enumeration_callback is not None:
+
+        @blueprint.route("/actions", methods=["GET"])
+        def action_enumeration():
+            auth_state = _check_token(request, checker)
+
+            valid_statuses = set(e.name.lower() for e in ActionStatusValue)
+            statuses = parse_query_args(
+                "status", default_value="active", valid_vals=valid_statuses
+            )
+            statuses = query_args_to_enum(statuses, ActionStatusValue)
+            roles = parse_query_args(
+                "roles",
+                default_value="creator_id",
+                valid_vals={"creator_id", "monitor_by", "manage_by"},
+            )
+            query_params = {"statuses": statuses, "roles": roles}
+            return jsonify(action_enumeration_callback(auth_state, query_params)), 200
