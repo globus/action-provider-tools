@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from flask import request
 from werkzeug.exceptions import Conflict, NotFound
 
-from backend import simple_backend
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
@@ -20,6 +19,8 @@ from globus_action_provider_tools.flask.apt_blueprint import (
     ActionProviderBlueprint,
     ActionStatusReturn,
 )
+
+from .backend import simple_backend
 
 description = ActionProviderDescription(
     globus_auth_scope="https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/action_all",
@@ -139,7 +140,7 @@ def my_action_log(action_id: str, auth: AuthState) -> ActionLogReturn:
     Action Providers can optionally support a logging endpoint to return
     detailed information on an Action's execution history. Pagination and
     filters are supported as query parameters and can be used to control what
-    details are returned to the requestor.  
+    details are returned to the requestor.
     """
     pagination = request.args.get("pagination")
     filters = request.args.get("filters")
