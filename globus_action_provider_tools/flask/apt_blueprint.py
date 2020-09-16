@@ -2,11 +2,14 @@ import functools
 import inspect
 import json
 import logging
-import time
 from functools import singledispatch, update_wrapper
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union
 
-from flask import Blueprint, Request, Response, current_app, g, jsonify, request
+from flask import Blueprint, Response, current_app, g, jsonify, request
+from globus_action_provider_tools.flask import (
+    blueprint_error_handler,
+    flask_validate_request,
+)
 from jsonschema.validators import Draft7Validator
 from werkzeug.exceptions import BadRequest, NotFound, NotImplemented, Unauthorized
 
@@ -16,15 +19,13 @@ from globus_action_provider_tools.authorization import (
     authorize_action_management_or_404,
 )
 from globus_action_provider_tools.data_types import (
+    ActionProviderDescription,
     ActionProviderJsonEncoder,
     ActionRequest,
     ActionStatus,
     AuthState,
 )
-from globus_action_provider_tools.flask import (
-    blueprint_error_handler,
-    flask_validate_request,
-)
+
 
 ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
 ActionLogReturn = Dict[str, Any]
@@ -78,10 +79,32 @@ def methdispatch(func):
 class ActionProviderBlueprint(Blueprint):
     def __init__(
         self,
-        provider_description,
+        provider_description: ActionProviderDescription,
         *args,
+        globus_auth_client_name: Optional[str] = None,
+        additional_scopes: Iterable[str] = (),
         **kwarg,
     ):
+        """Create a new ActionProviderBlueprint. All arguments not listed here are the
+        same as a Flask Blueprint.
+
+        :param provider_description: A Provider Description which will be
+        returned from introspection calls to this Blueprint.
+
+        :param globus_auth_client_name: The name of the Globus Auth Client (also
+        known as the resource server name). This will be used to validate the
+        intended audience for tokens passed to the operations on this
+        Blueprint. By default, the client id will be used for checkign audience,
+        and unless the client has explicitly been given a resource server name
+        in Globus Auth, this will be proper behavior.
+
+        :param additional_scopes: Additional scope strings the Action Provider
+        should allow scopes in addition to the one specified by the
+        ``globus_auth_scope`` value of the input provider description. Only
+        needed if more than one scope has been allocated for the Action
+        Provider's Globus Auth client_id.
+        """
+
         super().__init__(*args, **kwarg)
 
         self.action_status_plugin: ActionStatusType = None
@@ -91,6 +114,8 @@ class ActionProviderBlueprint(Blueprint):
 
         self.provider_description = provider_description
         self.input_body_validator = self._load_input_body_validator()
+        self.globus_auth_client_name = globus_auth_client_name
+        self.additional_scopes = additional_scopes
 
         self.json_encoder = ActionProviderJsonEncoder
         self.before_request(self._check_token)
@@ -130,10 +155,14 @@ class ActionProviderBlueprint(Blueprint):
             client_id = app.config.get("CLIENT_ID")
             client_secret = app.config.get("CLIENT_SECRET")
 
+        scopes = [self.provider_description.globus_auth_scope]
+        scopes.extend(self.additional_scopes)
+
         self.checker = TokenChecker(
             client_id=client_id,
             client_secret=client_secret,
-            expected_scopes=[self.provider_description.globus_auth_scope],
+            expected_scopes=scopes,
+            expected_audience=self.globus_auth_client_name,
         )
         super().register(app, options, first_registration)
 
@@ -181,7 +210,7 @@ class ActionProviderBlueprint(Blueprint):
             self._validate_input(action_request.body)
             status = func(action_request, g.auth_state)
             self._save_action(status)
-            return self._action_status_return_to_view_return(status, 201)
+            return self._action_status_return_to_view_return(status, 202)
 
         self.add_url_rule("/run", func.__name__, wrapper, methods=["POST"])
         print(f'Registered action run plugin "{func.__name__}"')
@@ -255,7 +284,7 @@ class ActionProviderBlueprint(Blueprint):
             authorize_action_management_or_404(action, g.auth_state)
             try:
                 action = self._generic_action_cancel(action, g.auth_state)
-            except NotImplemented as e:
+            except NotImplemented:
                 # Once an action_loader is registered, if the ActionProvider is
                 # synchronous, there is no reason to register an action_cancel.
                 # Therefore, an exception here might be ok
@@ -280,7 +309,7 @@ class ActionProviderBlueprint(Blueprint):
                 authorize_action_management_or_404(action, g.auth_state)
 
             status = func(action_id, g.auth_state)  # type: ignore
-            return jsonify(status), 200
+            return self._action_status_return_to_view_return(status, 200)
 
         self.add_url_rule(
             "/<string:action_id>/release",
@@ -445,6 +474,6 @@ class ActionProviderBlueprint(Blueprint):
         """
         if isinstance(status, ActionStatus):
             status_code = default_status_code
-        else:
+        elif isinstance(status, tuple):
             status, status_code = status
         return jsonify(status), status_code

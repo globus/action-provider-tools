@@ -105,3 +105,6 @@ venv.bak/
 
 # whattimeisitrightnow example provider's database file
 whattimeisitrightnow.example.db
+
+# Emacs config
+.dir-locals.el

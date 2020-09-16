@@ -83,7 +83,7 @@ class AuthState(object):
             aud = resp.get("aud", [])
             assert (
                 self.expected_audience in aud
-            ), f"Token not intended for us: audience={aud}"
+            ), f"Token not intended for us: audience={aud}, expected={self.expected_audience}"
             assert "identity_set" in resp, "Missing identity_set"
         except AssertionError as err:
             our_err = TokenValidationError(err)
