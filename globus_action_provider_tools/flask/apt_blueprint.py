@@ -38,6 +38,8 @@ ActionStatusType = Union[
 ActionCancelType = ActionStatusType
 ActionReleaseType = ActionStatusType
 ActionLogType = Callable[[str, AuthState], ActionLogReturn]
+ActionLoaderType = Tuple[Callable[[str, Any], ActionStatus], Any]
+ActionSaverType = Tuple[Callable[[ActionStatus, Any], None], Any]
 
 
 def methdispatch(func):
@@ -108,8 +110,8 @@ class ActionProviderBlueprint(Blueprint):
 
         self.action_status_plugin: Optional[ActionStatusType] = None
         self.action_cancel_plugin: Optional[ActionCancelType] = None
-        self.action_loader_plugin = None
-        self.action_saver_plugin = None
+        self.action_loader_plugin: Optional[ActionLoaderType] = None
+        self.action_saver_plugin: Optional[ActionSaverType] = None
 
         self.provider_description = provider_description
         self.input_body_validator = self._load_input_body_validator()
@@ -366,6 +368,9 @@ class ActionProviderBlueprint(Blueprint):
         If the actiond_id is not found in the registered action_loader, we
         assume the ActionStatus is non-recoverable.
         """
+        if self.action_loader_plugin is None:
+            raise NotFound
+
         func, backend = self.action_loader_plugin
         action = func(action_id, backend)
         if action:
