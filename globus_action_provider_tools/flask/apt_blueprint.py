@@ -6,10 +6,6 @@ from functools import singledispatch, update_wrapper
 from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union
 
 from flask import Blueprint, Response, current_app, g, jsonify, request
-from globus_action_provider_tools.flask import (
-    blueprint_error_handler,
-    flask_validate_request,
-)
 from jsonschema.validators import Draft7Validator
 from werkzeug.exceptions import BadRequest, NotFound, NotImplemented, Unauthorized
 
@@ -25,7 +21,10 @@ from globus_action_provider_tools.data_types import (
     ActionStatus,
     AuthState,
 )
-
+from globus_action_provider_tools.flask import (
+    blueprint_error_handler,
+    flask_validate_request,
+)
 
 ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
 ActionLogReturn = Dict[str, Any]
@@ -107,8 +106,8 @@ class ActionProviderBlueprint(Blueprint):
 
         super().__init__(*args, **kwarg)
 
-        self.action_status_plugin: ActionStatusType = None
-        self.action_cancel_plugin: ActionCancelType = None
+        self.action_status_plugin: Optional[ActionStatusType] = None
+        self.action_cancel_plugin: Optional[ActionCancelType] = None
         self.action_loader_plugin = None
         self.action_saver_plugin = None
 
