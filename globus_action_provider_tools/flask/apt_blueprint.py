@@ -1,9 +1,6 @@
 import functools
-import inspect
 import json
-import logging
-from functools import singledispatch, update_wrapper
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union, overload
 
 from flask import Blueprint, Response, current_app, g, jsonify, request
 from jsonschema.validators import Draft7Validator
@@ -27,54 +24,19 @@ from globus_action_provider_tools.flask import (
 )
 
 ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
+ActionStatusType = Callable[[Union[str, ActionStatus], AuthState], ActionStatusReturn]
+
 ActionLogReturn = Dict[str, Any]
-ViewReturn = Union[Tuple[Response, int], Tuple[str, int]]
+ActionLogType = Callable[[str, AuthState], ActionLogReturn]
 
 ActionRunType = Callable[[ActionRequest, AuthState], ActionStatusReturn]
-ActionStatusType = Union[
-    Callable[[str, AuthState], ActionStatusReturn],
-    Callable[[ActionStatus, AuthState], ActionStatusReturn],
-]
 ActionCancelType = ActionStatusType
 ActionReleaseType = ActionStatusType
-ActionLogType = Callable[[str, AuthState], ActionLogReturn]
+
+ViewReturn = Union[Tuple[Response, int], Tuple[str, int]]
+
 ActionLoaderType = Tuple[Callable[[str, Any], ActionStatus], Any]
 ActionSaverType = Tuple[Callable[[ActionStatus, Any], None], Any]
-
-
-def methdispatch(func):
-    """
-    Allows singledispatch to work on a mix of Class methods and regular functions.
-    Huge shoutout to https://stackoverflow.com/a/24602374.
-
-    This decorator decorates a base function which we want to call in a
-    "generic" way where generic means that the first argument to the function
-    call can have multiple types, and the function called differs
-    according to the arg type supplied. The dispatch is essentially a lookup
-    based on type:
-
-    {
-        class:Object: my_func,
-        class:Str: my_func_for_strs,
-        class:Int: my_func_for_ints,
-        class:ActionStatus: my_func_for_ActionStatus
-    }
-    """
-    dispatcher = singledispatch(func)
-
-    def wrapper(*args, **kw):
-        matching_func = dispatcher.dispatch(args[1].__class__)
-
-        # If the dispatched function is user-supplied, it isn't an instance
-        # method so we remove the first arg which is the "self" reference
-        if matching_func is not dispatcher.dispatch(object):
-            args = args[1:]
-
-        return matching_func(*args, **kw)
-
-    wrapper.register = dispatcher.register
-    update_wrapper(wrapper, func)
-    return wrapper
 
 
 class ActionProviderBlueprint(Blueprint):
@@ -108,8 +70,6 @@ class ActionProviderBlueprint(Blueprint):
 
         super().__init__(*args, **kwarg)
 
-        self.action_status_plugin: Optional[ActionStatusType] = None
-        self.action_cancel_plugin: Optional[ActionCancelType] = None
         self.action_loader_plugin: Optional[ActionLoaderType] = None
         self.action_saver_plugin: Optional[ActionSaverType] = None
 
@@ -217,22 +177,31 @@ class ActionProviderBlueprint(Blueprint):
         print(f'Registered action run plugin "{func.__name__}"')
         return wrapper
 
-    @methdispatch
-    def _generic_action_status(self, *args, **kwargs):
-        raise NotImplemented(
-            f"No action_status function registered to handle type {type(args[0])}"
-        )
+    @overload
+    def action_status(self, func: Callable[[str, AuthState], ActionStatusReturn]):
+        """
+        Using these stubs w/ @overload tells mypy that the actual implementation
+        for action_status can accept a str or ActionStatus as the first arg type
+        NOTE: typing_extensions.Protocol would be better if not for it's poor
+        error messages
+        """
+        ...
 
-    def action_status(self, func: ActionStatusType):
+    @overload
+    def action_status(
+        self, func: Callable[[ActionStatus, AuthState], ActionStatusReturn]
+    ):
+        """
+        Using these stubs w/ @overload tells mypy that the actual implementation
+        for action_status can accept a str or ActionStatus as the first arg type
+        """
+        ...
+
+    def action_status(self, func) -> None:
         """
         Decorates a function to be run as an Action Provider's status endpoint.
         """
-        _, first_param = list(inspect.signature(func).parameters.items())[0]
-        if first_param.annotation == first_param.empty:
-            # There's no annotation available, assume the function handles str
-            self._generic_action_status.register(str, func)
-        else:
-            self._generic_action_status.register(first_param.annotation, func)
+        self._action_status: ActionStatusType = func
         print(f'Registered action status plugin "{func.__name__}"')
 
     def _auto_action_status(self, action_id: str) -> ViewReturn:
@@ -247,31 +216,42 @@ class ActionProviderBlueprint(Blueprint):
             action = self._load_action_by_id(action_id)
             authorize_action_access_or_404(action, g.auth_state)
             try:
-                action = self._generic_action_status(action, g.auth_state)
-            except NotImplemented:
+                result = self._action_status(action, g.auth_state)
+            except AttributeError:
                 # Once an action_loader is registered, there is no reason to
-                # register an action_status. Therefore, an exception here is ok
-                pass
+                # register an action_status. Therefore, an exception here is ok,
+                # in which case just return the bare action as the result
+                result = action
         else:
-            action = self._generic_action_status(action_id, g.auth_state)
-        return self._action_status_return_to_view_return(action, 200)
+            try:
+                result = self._action_status(action_id, g.auth_state)
+            except AttributeError:
+                raise NotImplemented("No status endpoint is available")
+        return self._action_status_return_to_view_return(result, 200)
 
-    @methdispatch
-    def _generic_action_cancel(self, *args, **kwargs):
-        raise NotImplemented(
-            f"No action_cancel function registered to handle type {type(args[0])}"
-        )
+    @overload
+    def action_cancel(self, func: Callable[[str, AuthState], ActionStatusReturn]):
+        """
+        Using these stubs w/ @overload tells mypy that the actual implementation
+        for action_cancel can accept a str or ActionStatus as the first arg type
+        """
+        ...
 
-    def action_cancel(self, func: ActionCancelType) -> None:
+    @overload
+    def action_cancel(
+        self, func: Callable[[ActionStatus, AuthState], ActionStatusReturn]
+    ):
+        """
+        Using these stubs w/ @overload tells mypy that the actual implementation
+        for action_cancel can accept a str or ActionStatus as the first arg type
+        """
+        ...
+
+    def action_cancel(self, func) -> None:
         """
         Decorates a function to be run as an Action Provider's cancel endpoint.
         """
-        _, first_param = list(inspect.signature(func).parameters.items())[0]
-        if first_param.annotation == first_param.empty:
-            # There's no annotation available, assume the function handles str
-            self._generic_action_cancel.register(str, func)
-        else:
-            self._generic_action_cancel.register(first_param.annotation, func)
+        self._action_cancel: ActionCancelType = func
         print(f'Registered action cancel plugin "{func.__name__}"')
 
     def _auto_action_cancel(self, action_id: str) -> ViewReturn:
@@ -284,19 +264,41 @@ class ActionProviderBlueprint(Blueprint):
             action = self._load_action_by_id(action_id)
             authorize_action_management_or_404(action, g.auth_state)
             try:
-                action = self._generic_action_cancel(action, g.auth_state)
-            except NotImplemented:
+                result = self._action_cancel(action, g.auth_state)
+            except AttributeError:
                 # Once an action_loader is registered, if the ActionProvider is
                 # synchronous, there is no reason to register an action_cancel.
-                # Therefore, an exception here might be ok
-                pass
+                # Therefore, an exception here might be ok, in which case just
+                # return the bare action as the result
+                result = action
             finally:
                 self._save_action(action)
         else:
-            action = self._generic_action_cancel(action_id, g.auth_state)
-        return self._action_status_return_to_view_return(action, 200)
+            try:
+                result = self._action_cancel(action_id, g.auth_state)
+            except AttributeError:
+                raise NotImplemented("No cancel endpoint is available")
+        return self._action_status_return_to_view_return(result, 200)
 
-    def action_release(self, func: ActionReleaseType) -> Callable[[str], ViewReturn]:
+    @overload
+    def action_release(self, func: Callable[[str, AuthState], ActionStatusReturn]):
+        """
+        Using these stubs w/ @overload tells mypy that the actual implementation
+        for action_release can accept a str or ActionStatus as the first arg type
+        """
+        ...
+
+    @overload
+    def action_release(
+        self, func: Callable[[ActionStatus, AuthState], ActionStatusReturn]
+    ):
+        """
+        Using these stubs w/ @overload tells mypy that the actual implementation
+        for action_release can accept a str or ActionStatus as the first arg type
+        """
+        ...
+
+    def action_release(self, func) -> Callable[[str], ViewReturn]:
         """
         Decorates a function to be run as an Action Provider's release endpoint.
         """
@@ -358,8 +360,8 @@ class ActionProviderBlueprint(Blueprint):
 
         # TODO figure out how to get a type annotation working on this inner func
         def wrapper(func):
-            print(f"Registered action loader '{func.__name__}'")
             self.action_loader_plugin = (func, storage_backend)
+            print(f"Registered action loader '{func.__name__}'")
 
         return wrapper
 
@@ -393,8 +395,8 @@ class ActionProviderBlueprint(Blueprint):
         """
 
         def wrapper(func):
+            self.action_saver_plugin: ActionSaverType = (func, storage_backend)
             print(f"Registered action saver '{func.__name__}'")
-            self.action_saver_plugin = (func, storage_backend)
 
         return wrapper
 
