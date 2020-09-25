@@ -15,10 +15,7 @@ without valid Tokens are accepted and acted upon.
 
 These patches should ONLY be used during testing.
 """
-
-import json
 import uuid
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -40,71 +37,59 @@ def client():
         yield app.test_client()
 
 
+@pytest.fixture(scope="function")
+def running_action_id(client):
+    data = {
+        "request_id": str(uuid.uuid4()),
+        "body": {"input_string": "Wh-wh-wh-what did you say?"},
+    }
+    response = client.post("/skeleton/run", json=data)
+    return response.json["action_id"]
+
+
 def test_introspection_endpoint(client):
     response = client.get("/skeleton")
 
     assert response.status_code == 200
-    assert json.loads(response.data)["input_schema"] == load_schema()
+    assert response.json["input_schema"] == load_schema()
 
 
-def test_enumeration_endpoint(client):
-    response = client.get("/skeleton/actions")
+def test_enumeration_endpoint(client, running_action_id):
+    data = {"status": "ACTIVE,INACTIVE,Failed,Succeeded"}
+    response = client.get("/skeleton/actions", query_string=data)
     assert response.status_code == 200
+    assert len(response.json) == 1
 
 
 def test_run_endpoint(client):
-    request_id = str(uuid.uuid4())
     data = {
-        "request_id": request_id,
+        "request_id": str(uuid.uuid4()),
         "body": {"input_string": "Wh-wh-wh-what did you say?"},
     }
-    response = client.post("/skeleton/run", data=json.dumps(data))
+    response = client.post("/skeleton/run", json=data)
 
     assert response.status_code == 201
-    assert json.loads(response.data)["status"] == ActionStatusValue.SUCCEEDED.name
+    assert response.json["status"] == ActionStatusValue.SUCCEEDED.name
 
 
-def test_status_endpoint(client):
-    request_id = str(uuid.uuid4())
-    data = {
-        "request_id": request_id,
-        "body": {"input_string": "Wh-wh-wh-what did you say?"},
-    }
-    response = client.post("/skeleton/run", data=json.dumps(data))
-    action_id = json.loads(response.data)["action_id"]
-    response = client.get(f"/skeleton/{action_id}/status")
+def test_status_endpoint(client, running_action_id):
+    response = client.get(f"/skeleton/{running_action_id}/status")
 
     assert response.status_code == 200
-    assert json.loads(response.data)["status"] == ActionStatusValue.SUCCEEDED.name
+    assert response.json["status"] == ActionStatusValue.SUCCEEDED.name
 
 
-def test_cancel_endpoint(client):
-    request_id = str(uuid.uuid4())
-    data = {
-        "request_id": request_id,
-        "body": {"input_string": "Wh-wh-wh-what did you say?"},
-    }
-    response = client.post("/skeleton/run", data=json.dumps(data))
-    action_id = json.loads(response.data)["action_id"]
-
+def test_cancel_endpoint(client, running_action_id):
     # Cancels should always succeed since action is synchronous
-    response = client.post(f"/skeleton/{action_id}/cancel")
+    response = client.post(f"/skeleton/{running_action_id}/cancel")
 
     assert response.status_code == 200
-    assert json.loads(response.data)["status"] == ActionStatusValue.SUCCEEDED.name
+    assert response.json["status"] == ActionStatusValue.SUCCEEDED.name
 
 
-def test_release_endpoint(client):
-    request_id = str(uuid.uuid4())
-    data = {
-        "request_id": request_id,
-        "body": {"input_string": "Wh-wh-wh-what did you say?"},
-    }
-    response = client.post("/skeleton/run", data=json.dumps(data))
-    action_id = json.loads(response.data)["action_id"]
-
+def test_release_endpoint(client, running_action_id):
     # Immediate release should succeed since action is synchronous
-    response = client.post(f"/skeleton/{action_id}/release")
+    response = client.post(f"/skeleton/{running_action_id}/release")
 
     assert response.status_code == 200
-    assert json.loads(response.data)["status"] == ActionStatusValue.SUCCEEDED.name
+    assert response.json["status"] == ActionStatusValue.SUCCEEDED.name

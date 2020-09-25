@@ -188,13 +188,17 @@ class ActionProviderBlueprint(Blueprint):
                 )
                 raise NotFound
 
-            valid_statuses = set(e.name.lower() for e in ActionStatusValue)
+            valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
             statuses = parse_query_args(
-                "status", default_value="active", valid_vals=valid_statuses
+                request,
+                arg_name="status",
+                default_value="active",
+                valid_vals=valid_statuses,
             )
             statuses = query_args_to_enum(statuses, ActionStatusValue)
             roles = parse_query_args(
-                "roles",
+                request,
+                arg_name="roles",
                 default_value="creator_id",
                 valid_vals={"creator_id", "monitor_by", "manage_by"},
             )
@@ -208,7 +212,6 @@ class ActionProviderBlueprint(Blueprint):
             wrapper,
             methods=["GET"],
         )
-        print(f'Registered action enumeration plugin "{func.__name__}"')
         return wrapper
 
     def action_run(self, func: ActionRunType) -> Callable[[], ViewReturn]:
@@ -244,7 +247,6 @@ class ActionProviderBlueprint(Blueprint):
         # Add new and old-style AP API endpoints
         self.add_url_rule("/run", None, wrapper, methods=["POST"])
         self.add_url_rule("/actions", func.__name__, wrapper, methods=["POST"])
-        print(f'Registered action run plugin "{func.__name__}"')
         return wrapper
 
     @overload
@@ -272,7 +274,6 @@ class ActionProviderBlueprint(Blueprint):
         Decorates a function to be run as an Action Provider's status endpoint.
         """
         self._action_status: ActionStatusType = func
-        print(f'Registered action status plugin "{func.__name__}"')
 
     def _auto_action_status(self, action_id: str) -> ViewReturn:
         """
@@ -322,7 +323,6 @@ class ActionProviderBlueprint(Blueprint):
         Decorates a function to be run as an Action Provider's cancel endpoint.
         """
         self._action_cancel: ActionCancelType = func
-        print(f'Registered action cancel plugin "{func.__name__}"')
 
     def _auto_action_cancel(self, action_id: str) -> ViewReturn:
         """
@@ -392,12 +392,11 @@ class ActionProviderBlueprint(Blueprint):
             methods=["POST"],
         )
         self.add_url_rule(
-            "/actions/<string:action_id>/release",
+            "/actions/<string:action_id>",
             "action_release",
             wrapper,
-            methods=["POST"],
+            methods=["DELETE"],
         )
-        print(f'Registered action release plugin "{func.__name__}"')
         return wrapper
 
     def action_log(self, func: ActionLogType) -> Callable[[str], ViewReturn]:
@@ -421,7 +420,6 @@ class ActionProviderBlueprint(Blueprint):
         self.add_url_rule(
             "/actions/<string:action_id>/log", "action_log", wrapper, methods=["GET"]
         )
-        print(f'Registered action log plugin "{func.__name__}"')
         return wrapper
 
     def register_action_loader(self, storage_backend: Any):
@@ -440,7 +438,6 @@ class ActionProviderBlueprint(Blueprint):
         # TODO figure out how to get a type annotation working on this inner func
         def wrapper(func):
             self.action_loader_plugin = (func, storage_backend)
-            print(f"Registered action loader '{func.__name__}'")
 
         return wrapper
 
@@ -455,7 +452,6 @@ class ActionProviderBlueprint(Blueprint):
         func, backend = self.action_loader_plugin
         action = func(action_id, backend)
         if action:
-            print(f"Found action via plugin: {func.__name__}")
             return action
         raise NotFound
 
@@ -475,7 +471,6 @@ class ActionProviderBlueprint(Blueprint):
 
         def wrapper(func):
             self.action_saver_plugin: ActionSaverType = (func, storage_backend)
-            print(f"Registered action saver '{func.__name__}'")
 
         return wrapper
 
@@ -491,7 +486,6 @@ class ActionProviderBlueprint(Blueprint):
 
         func, backend = self.action_saver_plugin
         func(action, backend)
-        print(f"Saved action via plugin {func.__name__}")
 
     def _check_token(self) -> None:
         """

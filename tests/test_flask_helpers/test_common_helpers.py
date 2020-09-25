@@ -52,14 +52,18 @@ def test_parse_query_args(query_string, expected_statuses, expected_roles):
     Flask request's string.
     """
     app = Flask(__name__)
-    valid_statuses = set(e.name.lower() for e in ActionStatusValue)
+    valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
 
-    with app.test_request_context(query_string):
+    with app.test_request_context(query_string) as req:
         statuses = parse_query_args(
-            "status", default_value="active", valid_vals=valid_statuses
+            req.request,
+            arg_name="status",
+            default_value="active",
+            valid_vals=valid_statuses,
         )
         roles = parse_query_args(
-            "roles",
+            req.request,
+            arg_name="roles",
             default_value="creator_id",
             valid_vals={"creator_id", "monitor_by", "manage_by"},
         )

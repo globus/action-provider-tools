@@ -312,7 +312,7 @@ def add_action_routes_to_blueprint(
         )
 
     @blueprint.route("/<string:action_id>/release", methods=["POST"])
-    @blueprint.route("/actions/<string:action_id>/release", methods=["POST"])
+    @blueprint.route("/actions/<string:action_id>", methods=["DELETE"])
     def action_release(action_id: str) -> ViewReturn:
         auth_state = _check_token(request, checker)
         return _action_status_return_to_view_return(
@@ -333,13 +333,17 @@ def add_action_routes_to_blueprint(
         def action_enumeration():
             auth_state = _check_token(request, checker)
 
-            valid_statuses = set(e.name.lower() for e in ActionStatusValue)
+            valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
             statuses = parse_query_args(
-                "status", default_value="active", valid_vals=valid_statuses
+                request,
+                arg_name="status",
+                default_value="active",
+                valid_vals=valid_statuses,
             )
             statuses = query_args_to_enum(statuses, ActionStatusValue)
             roles = parse_query_args(
-                "roles",
+                request,
+                arg_name="roles",
                 default_value="creator_id",
                 valid_vals={"creator_id", "monitor_by", "manage_by"},
             )

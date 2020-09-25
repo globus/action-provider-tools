@@ -317,7 +317,7 @@ The ``status`` query can be any one or more of ``active``, ``inactive``,
 ``failed``, ``succeded``, which corresponds exactly to all possible Action
 states.  If multiple statuses are queried for, the set of Actions returned will
 each have a status that was in the query set. If unset, this parameter defaults
-to ``active``.
+to ``active``. This field is case insensitive.
 
 When both of these filters are used together, the resulting set of Actions will
 contain the result of applying a logical AND between the results of the two

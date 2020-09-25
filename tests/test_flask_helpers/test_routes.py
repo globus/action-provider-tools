@@ -94,4 +94,4 @@ def ap_release(client, url_prefix: str, action_id: str, *, api_version: str):
     if api_version == "1.0":
         return client.post(f"{url_prefix}/{action_id}/release")
     if api_version == "1.1":
-        return client.post(f"{url_prefix}/actions/{action_id}/release")
+        return client.delete(f"{url_prefix}/actions/{action_id}")
