@@ -6,3 +6,8 @@ flask_api_helpers_tokenchecker_patch = patch(
     "globus_action_provider_tools.flask.api_helpers.TokenChecker.check_token",
     return_value=mock_authstate(),
 )
+
+flask_blueprint_tokenchecker_patch = patch(
+    "globus_action_provider_tools.flask.apt_blueprint.TokenChecker.check_token",
+    return_value=mock_authstate(),
+)

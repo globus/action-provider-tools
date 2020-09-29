@@ -96,7 +96,12 @@ test-examples:
 		--cov=examples/whattimeisitrightnow \
 		--cov-report= \
 		--cov-fail-under=${MIN_TEST_COVERAGE} \
-		examples/whattimeisitrightnow	
+		examples/whattimeisitrightnow
+	poetry run pytest \
+		--cov=examples/apt_blueprint \
+		--cov-report= \
+		--cov-fail-under=${MIN_TEST_COVERAGE} \
+		examples/apt_blueprint
 
 docs:
 	poetry run make --directory=docs html

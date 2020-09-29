@@ -39,7 +39,7 @@ def mock_authstate():
     patch(
         "globus_action_provider_tools.authentication.AuthState.identities",
         new_callable=PropertyMock,
-        return_value=frozenset("MOCK_USER"),
+        return_value=frozenset(["MOCK_USER"]),
     ).start()
 
     return auth_state
