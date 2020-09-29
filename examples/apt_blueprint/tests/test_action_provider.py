@@ -50,7 +50,7 @@ def test_run_endpoint(client):
     }
     response = client.post("/apt/run", json=data)
 
-    assert response.status_code == 201
+    assert response.status_code == 202
     assert response.json["status"] == ActionStatusValue.ACTIVE.name
 
 

@@ -293,7 +293,7 @@ def add_action_routes_to_blueprint(
             raise BadRequest("Unable to process Action Request input document")
         _validate_input(input_body_validator, action_request.body)
         status = action_run_callback(action_request, auth_state)
-        return _action_status_return_to_view_return(status, 201)
+        return _action_status_return_to_view_return(status, 202)
 
     @blueprint.route("/<string:action_id>/status", methods=["GET"])
     @blueprint.route("/actions/<string:action_id>", methods=["GET"])

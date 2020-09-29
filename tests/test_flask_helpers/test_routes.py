@@ -36,7 +36,7 @@ def test_routes_conform_to_api(
         assert enumeration_resp.status_code == 200
 
     run_resp = ap_run(client, bp.url_prefix, api_version=api_version)
-    assert run_resp.status_code == 201
+    assert run_resp.status_code == 202
 
     action_id = run_resp.get_json()["action_id"]
     status_resp = ap_status(client, bp.url_prefix, action_id, api_version=api_version)
