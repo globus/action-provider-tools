@@ -381,7 +381,7 @@ class ActionProviderBlueprint(Blueprint):
                 action = self._load_action_by_id(action_id)
                 authorize_action_management_or_404(action, g.auth_state)
 
-            status = func(action_id, g.auth_state)  # type: ignore
+            status = func(action_id, g.auth_state)
             return self._action_status_return_to_view_return(status, 200)
 
         # Add new and old-style AP API endpoints

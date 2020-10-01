@@ -1,3 +1,5 @@
+from itertools import chain
+
 from werkzeug.exceptions import NotFound
 
 from .authentication import AuthState
@@ -13,7 +15,7 @@ def authorize_action_access_or_404(status: ActionStatus, auth_state: AuthState) 
     if status.monitor_by is None:
         allowed_set = set([status.creator_id])
     else:
-        allowed_set = set([status.creator_id] + status.monitor_by)
+        allowed_set = set(chain([status.creator_id], status.monitor_by))
 
     authorized = auth_state.check_authorization(
         allowed_set, allow_all_authenticated_users=True
@@ -33,7 +35,7 @@ def authorize_action_management_or_404(
     if status.manage_by is None:
         allowed_set = set([status.creator_id])
     else:
-        allowed_set = set([status.creator_id] + status.manage_by)
+        allowed_set = set(chain([status.creator_id], status.manage_by))
 
     authorized = auth_state.check_authorization(
         allowed_set, allow_all_authenticated_users=True

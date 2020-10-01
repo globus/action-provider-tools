@@ -3,7 +3,7 @@ from dataclasses import asdict, dataclass, field, is_dataclass
 from enum import Enum, auto
 from json import JSONEncoder
 from os import urandom
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import AbstractSet, Any, Dict, Iterable, List, NamedTuple, Optional, Union
 
 import arrow
 from base62 import encodebytes as base62
@@ -81,8 +81,8 @@ class ActionStatus:
     action_id: str = field(default_factory=shortish_id)
     start_time: str = field(default_factory=now_isoformat)
     label: Optional[str] = None
-    monitor_by: Optional[List[str]] = None
-    manage_by: Optional[List[str]] = None
+    monitor_by: Optional[Iterable[str]] = None
+    manage_by: Optional[Iterable[str]] = None
     completion_time: Optional[str] = None
     release_after: Optional[str] = None
     display_status: Optional[str] = None
@@ -98,4 +98,6 @@ class ActionProviderJsonEncoder(JSONEncoder):
             return asdict(obj)
         elif isinstance(obj, Enum):
             return obj.name
+        elif isinstance(obj, AbstractSet):
+            return list(obj)
         return super(ActionProviderJsonEncoder, self).default(obj)
