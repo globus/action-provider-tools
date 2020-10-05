@@ -15,7 +15,7 @@ def test_action_status_jsonable():
         status=ActionStatusValue.SUCCEEDED,
         creator_id=None,
         monitor_by=None,
-        manage_by=None,
+        manage_by=set(),
         start_time=str(datetime.datetime.now().isoformat()),
         completion_time=str(datetime.datetime.now().isoformat()),
         release_after="P30D",

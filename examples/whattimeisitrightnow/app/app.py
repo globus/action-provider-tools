@@ -164,8 +164,8 @@ def run_action(req) -> ActionStatus:
         status=ActionStatusValue.ACTIVE,
         creator_id=request.auth.effective_identity,  # type: ignore
         label=req.get("label", None),
-        monitor_by=req.get("monitor_by", list(request.auth.identities)),  # type: ignore
-        manage_by=req.get("manage_by", list(request.auth.identities)),  # type: ignore
+        monitor_by=req.get("monitor_by", request.auth.identities),  # type: ignore
+        manage_by=req.get("manage_by", request.auth.identities),  # type: ignore
         start_time=str(now),
         completion_time=None,
         release_after=req.get("release_after", "P30D"),
