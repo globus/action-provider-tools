@@ -31,14 +31,20 @@ from globus_action_provider_tools.testing.mocks import mock_authstate
 with mock.patch(
     "globus_action_provider_tools.authentication.TokenChecker.check_token",
     return_value=mock_authstate(),
-) as patched_check_token:
-    from examples.whattimeisitrightnow.app.app import app, schema
+):
+    from examples.whattimeisitrightnow.app.app import schema
 
 
 @pytest.fixture
 def client():
-    app.config["TESTING"] = True
-    yield app.test_client()
+    with mock.patch(
+        "globus_action_provider_tools.authentication.TokenChecker.check_token",
+        return_value=mock_authstate(),
+    ):
+        from examples.whattimeisitrightnow.app.app import app
+
+        app.config["TESTING"] = True
+        yield app.test_client()
 
 
 def test_introspection_endpoint(client):

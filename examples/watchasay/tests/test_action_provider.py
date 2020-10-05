@@ -21,20 +21,17 @@ import pytest
 
 from examples.watchasay.app.provider import create_app, load_schema
 from globus_action_provider_tools.data_types import ActionStatusValue
-from globus_action_provider_tools.testing.patches import (
-    flask_api_helpers_tokenchecker_patch,
-)
+from globus_action_provider_tools.testing.fixtures import flask_helpers_noauth
 
 
 @pytest.fixture(scope="module")
-def client():
-    # Create the app in a patched context so that the Provider can startup
-    # without valid credentials AND requests can be made without supplying a
-    # valid token
-    with flask_api_helpers_tokenchecker_patch:
-        app = create_app()
-        app.config["TESTING"] = True
-        yield app.test_client()
+def client(flask_helpers_noauth):
+    # Patch the app using the flask_helpers_noauth fixture so that the Provider
+    # can start up without valid credentials AND requests can be made without
+    # supplying a valid token
+    app = create_app()
+    app.config["TESTING"] = True
+    yield app.test_client()
 
 
 @pytest.fixture(scope="function")

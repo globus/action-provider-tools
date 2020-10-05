@@ -3,21 +3,19 @@ import uuid
 import pytest
 
 from examples.apt_blueprint.app import create_app
-from examples.apt_blueprint.blueprint import description
+from examples.apt_blueprint.blueprint import aptb, description
 from globus_action_provider_tools.data_types import ActionStatusValue
-from globus_action_provider_tools.testing.patches import (
-    flask_blueprint_tokenchecker_patch,
-)
+from globus_action_provider_tools.testing.fixtures import apt_blueprint_noauth
 
 
 @pytest.fixture(scope="module")
-def client():
-    # Create the app in a patched context so that the Provider can startup
-    # without valid credentials AND requests can be made without supplying a
-    # valid token
-    with flask_blueprint_tokenchecker_patch:
-        app = create_app()
-        yield app.test_client()
+def client(apt_blueprint_noauth):
+    # Patch the blueprint BEFORE attaching it to an app so that the Provider can
+    # start without valid credentials AND requests can be made without supplying
+    # a valid token
+    apt_blueprint_noauth(aptb)
+    app = create_app()
+    return app.test_client()
 
 
 @pytest.fixture(scope="function")
