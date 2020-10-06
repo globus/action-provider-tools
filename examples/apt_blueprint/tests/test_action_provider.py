@@ -15,7 +15,7 @@ def client(apt_blueprint_noauth):
     # a valid token
     apt_blueprint_noauth(aptb)
     app = create_app()
-    return app.test_client()
+    yield app.test_client()
 
 
 @pytest.fixture(scope="function")

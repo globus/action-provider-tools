@@ -36,15 +36,15 @@ with mock.patch(
 
 
 @pytest.fixture
-def client():
-    with mock.patch(
+def client(monkeypatch):
+    monkeypatch.setattr(
         "globus_action_provider_tools.authentication.TokenChecker.check_token",
-        return_value=mock_authstate(),
-    ):
-        from examples.whattimeisitrightnow.app.app import app
+        mock_authstate,
+    )
+    from examples.whattimeisitrightnow.app.app import app
 
-        app.config["TESTING"] = True
-        yield app.test_client()
+    app.config["TESTING"] = True
+    yield app.test_client()
 
 
 def test_introspection_endpoint(client):

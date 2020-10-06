@@ -1,14 +1,13 @@
 Testing
 =======
 
-An Action Provider is closely tightle with Globus Auth (see
+An Action Provider is closely integrated with Globus Auth (see
 :ref:`globus_auth_setup`). This integration makes it easy to validate incoming
 requests and ensures that the requestor is authorized to execute actions against
 an Action Provider. However, the integration can make it difficult to run tests
 against an Action Provider to validate that its endpoints behave correctly.
-During a CI/CD pipeline, it may be desirable to start your Action Provider
-without a valid Client ID or Secret just to make sure that the app behaves
-correctly.
+During a CI/CD pipeline, it may be a requirement to start your Action Provider
+without a valid Client ID or Secret.
 
 The toolkit provides various tools to enable testing and validation in the
 :code:`globus_action_provider_tools.testing` module.
@@ -59,7 +58,7 @@ against the Action Provider:
     def client(apt_blueprint_noauth):
         apt_blueprint_noauth(action_provider_blueprint)
         app = create_app()
-        return app.test_client()
+        yield app.test_client()
 
 Once composed like this, you can use the :code:`client` fixture in your tests to
 receive and use a Flask *test_client* to make unauthenticated requests against
@@ -148,28 +147,24 @@ information. Every request should have its token validated via the
 *TokenChecker*'s :code:`check_token` method, which in turns generates an
 *AuthState* object.
 
-During testing, it is desirable to not need to provide valid tokens with every
-request. Use the :code:`mock_authstate` mock to generate a stubbed out
-*AuthState* object that won't validate requestor properties against Globus Auth.
-This is most useful when used in a patch as the return value for the
-*TokenChecker*'s :code:`check_token` method:
+During testing, it is convenient to not provide valid tokens with every request.
+Use the :code:`mock_authstate` mock to generate a stubbed out *AuthState* object
+that won't validate requestor properties against Globus Auth. This is most
+useful when used in a patch as the return value for the *TokenChecker*'s
+:code:`check_token` method:
 
 .. code-block:: python
-
-    from unittest import mock     
 
     import pytest
     from globus_action_provider_tools.testing.mocks import mock_authstate
 
-    ...
-
     @pytest.fixture
-    def client():
-        with mock.patch(
+    def client(monkeypatch):
+        monkeypatch.setattr(
             "globus_action_provider_tools.authentication.TokenChecker.check_token",
-            return_value=mock_authstate(),
-        ):
-            yield app.test_client()
+            mock_authstate,
+        )
+        yield app.test_client()
 
 The example above creates a fixture which can be used to create a client that
 can make unauthenticated HTTP requests against an Action Provider. 

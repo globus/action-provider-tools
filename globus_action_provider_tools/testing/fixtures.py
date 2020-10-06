@@ -6,7 +6,7 @@ from globus_action_provider_tools.flask.apt_blueprint import ActionProviderBluep
 from globus_action_provider_tools.testing.mocks import mock_authstate, mock_tokenchecker
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def apt_blueprint_noauth():
     """
     A fixture designed to mock an ActionProviderBlueprint instance's Globus
@@ -28,7 +28,7 @@ def apt_blueprint_noauth():
     return _apt_blueprint_noauth
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def flask_helpers_noauth():
     """
     A fixture designed to mock the Globus Auth integration in an Flask app
