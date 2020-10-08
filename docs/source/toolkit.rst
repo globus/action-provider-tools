@@ -23,8 +23,12 @@ defined in 3. For those users building an Action Provider using Flask, this
 provides a simplified method of getting the REST API implemented and removing
 common requirements so the focus can be on the logic of the Action provided.
 
-5. 
-:doc:`Caching guide <toolkit/caching>` 
+5. :doc:`Caching guide <toolkit/caching>` for tweaking the performance of Action
+Providers with relation to Globus Auth.
+
+6. :doc:`Testing tools <toolkit/testing>` provides various resources for
+stubbing Authentication out of an Action Provider and providing a simple way of
+validating an Action Provider's behavior.
 
 .. toctree::
    :maxdepth: 1
@@ -35,3 +39,4 @@ common requirements so the focus can be on the logic of the Action provided.
    toolkit/data_types
    toolkit/flask_helpers
    toolkit/validation
+   toolkit/testing
