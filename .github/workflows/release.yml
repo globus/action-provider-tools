@@ -1,0 +1,29 @@
+name: PyPi Publish
+
+on:
+  release:
+    types: [created, edited]
+
+jobs:
+  publish:
+    name: Publish a release to PyPi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+
+      - name: Set target python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.6.x"
+
+      - name: Install poetry
+        run: python -m pip install poetry
+
+      - name: Build and publish
+        env:
+          POETRY_HTTP_BASIC_PYPI_USERNAME: __token__
+          POETRY_HTTP_BASIC_PYPI_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: poetry publish --build
