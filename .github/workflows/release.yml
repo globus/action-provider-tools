@@ -2,7 +2,8 @@ name: PyPi Publish
 
 on:
   release:
-    types: [created, edited]
+    types:
+      - created
 
 jobs:
   publish:
