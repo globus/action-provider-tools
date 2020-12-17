@@ -12,8 +12,9 @@ from globus_sdk.authorizers import (
 from globus_sdk.exc import GlobusAPIError, GlobusError
 from globus_sdk.response import GlobusHTTPResponse
 
+from globus_action_provider_tools.exceptions import ActionProviderError
+
 from .caching import DEFAULT_CACHE_BACKEND, DEFAULT_CACHE_TIMEOUT, dogpile_cache
-from .errors import ConfigurationError, TokenValidationError
 from .groups_client import GroupsClient
 
 log = logging.getLogger(__name__)
@@ -86,9 +87,8 @@ class AuthState(object):
             ), f"Token not intended for us: audience={aud}, expected={self.expected_audience}"
             assert "identity_set" in resp, "Missing identity_set"
         except AssertionError as err:
-            our_err = TokenValidationError(err)
-            self.errors.append(our_err)
-            log.info(our_err)
+            self.errors.append(err)
+            log.info(err)
             return None
         else:
             log.debug(resp)
@@ -219,7 +219,7 @@ class TokenChecker:
             self.check_token("NotAToken").introspect_token()
         except GlobusAPIError as err:
             if err.http_status == 401:
-                raise ConfigurationError("Check client_id and client_secret", err)
+                raise ActionProviderError("Check client_id and client_secret", err)
 
     def check_token(
         self, access_token: str, expected_scopes: Iterable[str] = None

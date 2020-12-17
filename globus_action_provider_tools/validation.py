@@ -43,9 +43,8 @@ response_validator = request_validator
 
 
 def validate_data(data: Dict[str, Any], validator: Draft7Validator) -> ValidationResult:
-    errors = validator.iter_errors(data)
     error_messages = []
-    for error in errors:
+    for error in validator.iter_errors(data):
         if error.path:
             # Elements of the error path may be integers or other non-string types,
             # but we need strings for use with join()

@@ -4,7 +4,6 @@ import os
 from typing import Dict, Optional, Set, Tuple
 
 from flask import Blueprint, Flask
-from werkzeug.exceptions import Conflict, NotFound
 
 from examples.watchasay.app import config
 from globus_action_provider_tools.authorization import (
@@ -18,6 +17,7 @@ from globus_action_provider_tools.data_types import (
     ActionStatusValue,
     AuthState,
 )
+from globus_action_provider_tools.exceptions import ActionConflict, ActionNotFound
 from globus_action_provider_tools.flask import (
     ActionStatusReturn,
     add_action_routes_to_blueprint,
@@ -33,7 +33,7 @@ _fake_action_db: Dict[str, ActionStatus] = {}
 def _retrieve_action_status(action_id: str) -> ActionStatus:
     status = _fake_action_db.get(action_id)
     if status is None:
-        raise NotFound(f"No Action with id {action_id}")
+        raise ActionNotFound(f"No Action with id {action_id}")
     return status
 
 
@@ -111,7 +111,7 @@ def action_run(request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
         # If a pre-existing ActionRequest with different paramters has been
         # found, throw an error as we can't modify an already running Action
         else:
-            raise Conflict(
+            raise ActionConflict(
                 f"Request with id {request_id} already present with different parameters "
             )
 
@@ -130,7 +130,7 @@ def action_run(request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
         start_time=str(datetime.datetime.now().isoformat()),
         completion_time=str(datetime.datetime.now().isoformat()),
         release_after=request.release_after or "P30D",
-        display_status=ActionStatusValue.SUCCEEDED.name,
+        display_status=ActionStatusValue.SUCCEEDED,
         details=result_details,
     )
 
@@ -195,7 +195,7 @@ def action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
 
     # Error if attempt to release an active Action
     if status.status not in (ActionStatusValue.SUCCEEDED, ActionStatusValue.FAILED):
-        raise Conflict("Action is not complete")
+        raise ActionConflict("Action is not complete")
 
     _fake_action_db.pop(action_id)
     # Both fake and badly inefficient

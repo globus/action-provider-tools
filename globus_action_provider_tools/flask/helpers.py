@@ -1,7 +1,16 @@
 from enum import Enum
 from typing import Iterable, Set
 
-from flask import Request
+from flask import Request, jsonify
+from werkzeug.exceptions import HTTPException
+
+from globus_action_provider_tools.authentication import AuthState, TokenChecker
+from globus_action_provider_tools.data_types import ActionStatus
+from globus_action_provider_tools.exceptions import (
+    ActionProviderError,
+    ActionProviderToolsException,
+)
+from globus_action_provider_tools.flask.types import ActionStatusReturn, ViewReturn
 
 
 def parse_query_args(
@@ -54,3 +63,45 @@ def query_args_to_enum(args: Iterable[str], enum_class: Enum):
         new_args.add(new_arg)
 
     return new_args
+
+
+def action_status_return_to_view_return(
+    status: ActionStatusReturn, default_status_code: int
+) -> ViewReturn:
+    """
+    Helper function to return a ActionStatusReturn object as a valid Flask
+    response.
+    """
+    if isinstance(status, ActionStatus):
+        status_code = default_status_code
+    elif isinstance(status, tuple):
+        status, status_code = status
+    return jsonify(status), status_code
+
+
+def check_token(request: Request, checker: TokenChecker) -> AuthState:
+    """
+    Parses a Flask request to extract its bearer token.
+    """
+    access_token = request.headers.get("Authorization", "").strip().lstrip("Bearer ")
+    auth_state = checker.check_token(access_token)
+    return auth_state
+
+
+def blueprint_error_handler(exc: Exception) -> ViewReturn:
+    # ActionProviderToolsException is the base class for HTTP-based exceptions,
+    # return those directly
+    if isinstance(exc, ActionProviderToolsException):
+        return exc  # type: ignore
+
+    # Handle unexpected Exceptions in a somewhat predictable way
+    return (
+        jsonify(
+            {
+                "error": ActionProviderError.__name__,
+                "description": f"Unexpected Error: {str(exc)}",
+                "status_code": 500,
+            }
+        ),
+        500,
+    )

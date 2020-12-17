@@ -1,6 +1,6 @@
 from itertools import chain
 
-from werkzeug.exceptions import NotFound
+from globus_action_provider_tools.exceptions import ActionNotFound
 
 from .authentication import AuthState
 from .data_types import ActionStatus
@@ -21,7 +21,7 @@ def authorize_action_access_or_404(status: ActionStatus, auth_state: AuthState) 
         allowed_set, allow_all_authenticated_users=True
     )
     if not authorized:
-        raise NotFound(f"No Action with id {status.action_id}")
+        raise ActionNotFound(f"No Action with id {status.action_id}")
 
 
 def authorize_action_management_or_404(
@@ -41,4 +41,4 @@ def authorize_action_management_or_404(
         allowed_set, allow_all_authenticated_users=True
     )
     if not authorized:
-        raise NotFound(f"No Action with id {status.action_id}")
+        raise ActionNotFound(f"No Action with id {status.action_id}")

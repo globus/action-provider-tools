@@ -169,7 +169,7 @@ def run_action(req) -> ActionStatus:
         start_time=str(now),
         completion_time=None,
         release_after=req.get("release_after", "P30D"),
-        display_status=ActionStatusValue.ACTIVE.name,
+        display_status=ActionStatusValue.ACTIVE,
         details=results,
     )
 
@@ -300,10 +300,10 @@ def _reconcile_action_status(action_status: ActionStatus) -> ActionStatus:
 
     if private["success"]:
         action_status.status = ActionStatusValue.SUCCEEDED
-        action_status.display_status = ActionStatusValue.SUCCEEDED.name
+        action_status.display_status = ActionStatusValue.SUCCEEDED
     else:
         action_status.status = ActionStatusValue.FAILED
-        action_status.display_status = ActionStatusValue.FAILED.name
+        action_status.display_status = ActionStatusValue.FAILED
 
     # Persist updates to the ActionStatus
     db.persist(action_status.action_id, action_status)

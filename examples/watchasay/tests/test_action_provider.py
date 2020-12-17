@@ -66,14 +66,14 @@ def test_run_endpoint(client):
     response = client.post("/skeleton/run", json=data)
 
     assert response.status_code == 202
-    assert response.json["status"] == ActionStatusValue.SUCCEEDED.name
+    assert response.json["status"] == ActionStatusValue.SUCCEEDED
 
 
 def test_status_endpoint(client, running_action_id):
     response = client.get(f"/skeleton/{running_action_id}/status")
 
     assert response.status_code == 200
-    assert response.json["status"] == ActionStatusValue.SUCCEEDED.name
+    assert response.json["status"] == ActionStatusValue.SUCCEEDED
 
 
 def test_cancel_endpoint(client, running_action_id):
@@ -81,7 +81,7 @@ def test_cancel_endpoint(client, running_action_id):
     response = client.post(f"/skeleton/{running_action_id}/cancel")
 
     assert response.status_code == 200
-    assert response.json["status"] == ActionStatusValue.SUCCEEDED.name
+    assert response.json["status"] == ActionStatusValue.SUCCEEDED
 
 
 def test_release_endpoint(client, running_action_id):
@@ -89,4 +89,4 @@ def test_release_endpoint(client, running_action_id):
     response = client.post(f"/skeleton/{running_action_id}/release")
 
     assert response.status_code == 200
-    assert response.json["status"] == ActionStatusValue.SUCCEEDED.name
+    assert response.json["status"] == ActionStatusValue.SUCCEEDED

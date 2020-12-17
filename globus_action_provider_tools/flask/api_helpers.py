@@ -7,7 +7,6 @@ from urllib.parse import urlsplit, urlunsplit
 import flask
 from flask import Request, Response, jsonify, request
 from jsonschema.validators import Draft7Validator
-from werkzeug.exceptions import BadRequest, HTTPException, NotFound, Unauthorized
 
 from globus_action_provider_tools.authentication import AuthState, TokenChecker
 from globus_action_provider_tools.data_types import (
@@ -17,7 +16,15 @@ from globus_action_provider_tools.data_types import (
     ActionStatus,
     ActionStatusValue,
 )
+from globus_action_provider_tools.exceptions import (
+    ActionNotFound,
+    BadActionRequest,
+    UnauthorizedRequest,
+)
 from globus_action_provider_tools.flask.helpers import (
+    action_status_return_to_view_return,
+    blueprint_error_handler,
+    check_token,
     parse_query_args,
     query_args_to_enum,
 )
@@ -25,6 +32,7 @@ from globus_action_provider_tools.validation import (
     ValidationRequest,
     ValidationResult,
     request_validator,
+    validate_data,
 )
 
 """
@@ -34,19 +42,16 @@ from globus_action_provider_tools.validation import (
     response_validator,
 )
 """
-
-ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
-ViewReturn = Union[Tuple[Response, int], Tuple[str, int]]
-
-ActionRunType = Callable[[ActionRequest, AuthState], ActionStatusReturn]
-ActionStatusType = Callable[[str, AuthState], ActionStatusReturn]
-ActionCancelType = ActionStatusType
-ActionReleaseType = ActionStatusType
-ActionLogType = Callable[
-    [str, AuthState], Dict[str, Any]
-]  # TODO: This is not right at this point
-ActionEnumerationType = Callable[[AuthState], Sequence[ActionStatus]]
-
+from globus_action_provider_tools.flask.types import (
+    ActionCancelType,
+    ActionEnumerationType,
+    ActionLogType,
+    ActionReleaseType,
+    ActionRunType,
+    ActionStatusReturn,
+    ActionStatusType,
+    ViewReturn,
+)
 
 _request_schema_types = {"run": "ActionRequest"}
 
@@ -95,59 +100,15 @@ def flask_validate_response(
         return ValidationResult(errors=[], error_msg=None)
 
 
-def _check_token(request: Request, checker: TokenChecker) -> AuthState:
-    access_token = request.headers.get("Authorization", "").strip().lstrip("Bearer ")
-    auth_state = checker.check_token(access_token)
-    return auth_state
-
-
-def _action_status_return_to_view_return(
-    status: ActionStatusReturn, default_status_code: int
-) -> ViewReturn:
-    if not isinstance(status, ActionStatus):
-        status_code = status[1]
-        status = status[0]
-    else:
-        status_code = default_status_code
-    return jsonify(asdict(status)), status_code
-
-
 def _validate_input(
     validator: Optional[Draft7Validator], input: Dict[str, Any]
 ) -> None:
     if validator is None:
         return
-    errors = validator.iter_errors(input)
-    error_messages = []
-    for error in errors:
-        if error.path:
-            # Elements of the error path may be integers or other non-string types,
-            # but we need strings for use with join()
-            error_path_for_message = ".".join([str(x) for x in error.path])
-            error_message = f"'{error_path_for_message}' invalid due to {error.message}"
-        else:
-            error_message = error.message
-        error_messages.append(error_message)
 
-    if error_messages:
-        message = "; ".join(error_messages)
-        raise BadRequest(message)
-
-
-def blueprint_error_handler(exc: HTTPException) -> ViewReturn:
-    try:
-        ret_status = exc.code if exc.code is not None else 500
-        return (
-            jsonify({"message": exc.description, "status_code": exc.code}),
-            ret_status,
-        )
-    except Exception:
-        # This handles the case where the exception type is not expected and doesn't have
-        # the description or code attributes
-        return (
-            jsonify({"message": f"Unexpected Error: {str(exc)}", "status_code": 500}),
-            500,
-        )
+    result = validate_data(input, validator)
+    if result.errors:
+        raise BadActionRequest(result.errors)
 
 
 def add_action_routes_to_blueprint(
@@ -255,24 +216,24 @@ def add_action_routes_to_blueprint(
 
     @blueprint.route("/", methods=["GET"], strict_slashes=False)
     def action_introspect() -> ViewReturn:
-        auth_state = _check_token(request, checker)
+        auth_state = check_token(request, checker)
         if not auth_state.check_authorization(
             provider_description.visible_to,
             allow_public=True,
             allow_all_authenticated_users=True,
         ):
-            raise NotFound()
+            raise ActionNotFound
         return jsonify(asdict(provider_description)), 200
 
     @blueprint.route("/actions", methods=["POST"])
     @blueprint.route("/run", methods=["POST"])
     def action_run() -> ViewReturn:
-        auth_state = _check_token(request, checker)
+        auth_state = check_token(request, checker)
         if not auth_state.check_authorization(
             provider_description.runnable_by, allow_all_authenticated_users=True
         ):
             log.info(f"Unauthorized call to action run, errors: {auth_state.errors}")
-            raise Unauthorized()
+            raise UnauthorizedRequest
         if blueprint.url_prefix:
             request.path = request.path.lstrip(blueprint.url_prefix)
             if request.url_rule is not None:
@@ -283,39 +244,39 @@ def add_action_routes_to_blueprint(
         result = flask_validate_request(request)
 
         if result.error_msg is not None:
-            raise BadRequest(result.error_msg)
+            raise BadActionRequest(result.error_msg)
 
         request_json = request.get_json(force=True)
         try:
             action_request = ActionRequest(**request_json)
         except TypeError as te:
             # TODO: This is weak validation, but I'll leave for now
-            raise BadRequest("Unable to process Action Request input document")
+            raise BadActionRequest("Unable to process Action Request input document")
         _validate_input(input_body_validator, action_request.body)
         status = action_run_callback(action_request, auth_state)
-        return _action_status_return_to_view_return(status, 202)
+        return action_status_return_to_view_return(status, 202)
 
     @blueprint.route("/<string:action_id>/status", methods=["GET"])
     @blueprint.route("/actions/<string:action_id>", methods=["GET"])
     def action_status(action_id: str) -> ViewReturn:
-        auth_state = _check_token(request, checker)
-        return _action_status_return_to_view_return(
+        auth_state = check_token(request, checker)
+        return action_status_return_to_view_return(
             action_status_callback(action_id, auth_state), 200
         )
 
     @blueprint.route("/<string:action_id>/cancel", methods=["POST"])
     @blueprint.route("/actions/<string:action_id>/cancel", methods=["POST"])
     def action_cancel(action_id: str) -> ViewReturn:
-        auth_state = _check_token(request, checker)
-        return _action_status_return_to_view_return(
+        auth_state = check_token(request, checker)
+        return action_status_return_to_view_return(
             action_cancel_callback(action_id, auth_state), 200
         )
 
     @blueprint.route("/<string:action_id>/release", methods=["POST"])
     @blueprint.route("/actions/<string:action_id>", methods=["DELETE"])
     def action_release(action_id: str) -> ViewReturn:
-        auth_state = _check_token(request, checker)
-        return _action_status_return_to_view_return(
+        auth_state = check_token(request, checker)
+        return action_status_return_to_view_return(
             action_release_callback(action_id, auth_state), 200
         )
 
@@ -324,14 +285,14 @@ def add_action_routes_to_blueprint(
         @blueprint.route("/actions/<string:action_id>/log", methods=["GET"])
         @blueprint.route("/<string:action_id>/log", methods=["GET"])
         def action_log(action_id: str) -> ViewReturn:
-            auth_state = _check_token(request, checker)
+            auth_state = check_token(request, checker)
             return jsonify({"log": "message"}), 200
 
     if action_enumeration_callback is not None:
 
         @blueprint.route("/actions", methods=["GET"])
         def action_enumeration():
-            auth_state = _check_token(request, checker)
+            auth_state = check_token(request, checker)
 
             valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
             statuses = parse_query_args(

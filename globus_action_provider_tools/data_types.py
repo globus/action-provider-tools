@@ -3,7 +3,18 @@ from dataclasses import asdict, dataclass, field, is_dataclass
 from enum import Enum, auto
 from json import JSONEncoder
 from os import urandom
-from typing import AbstractSet, Any, Dict, Iterable, List, NamedTuple, Optional, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Type,
+    Union,
+)
 
 import arrow
 from base62 import encodebytes as base62
@@ -22,17 +33,35 @@ def shortish_id() -> str:
     return base62(urandom(9))
 
 
-class ProviderType(Enum):
-    Action = auto()
-    Event = auto()
+class AutomateBaseEnum(str, Enum):
+    """
+    A pythonic Enum class implementation that removes the need to access a
+    "value" attribute to get an Enum's representation.
+    http://www.cosmicpython.com/blog/2020-10-27-i-hate-enums.html
+    """
+
+    def __str__(self) -> str:
+        return str.__str__(self)
 
 
-class EventType(Enum):
-    STARTED = auto()
-    STATUS_UPDATE = auto()
-    LOG_UPDATE = auto()
-    COMPLETED = auto()
-    FAILED = auto()
+class ProviderType(AutomateBaseEnum):
+    Action = "ACTION"
+    Event = "EVENT"
+
+
+class EventType(AutomateBaseEnum):
+    STARTED = "STARTED"
+    STATUS_UPDATE = "STATUS_UPDATE"
+    LOG_UPDATE = "LOG_UPDATE"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class ActionStatusValue(AutomateBaseEnum):
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
 
 
 @dataclass
@@ -65,13 +94,6 @@ class ActionRequest:
     allowed_clients: Optional[List[str]] = None
     deadline: Optional[str] = None
     release_after: Optional[str] = None
-
-
-class ActionStatusValue(Enum):
-    SUCCEEDED = auto()
-    FAILED = auto()
-    ACTIVE = auto()
-    INACTIVE = auto()
 
 
 @dataclass

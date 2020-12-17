@@ -49,21 +49,21 @@ def test_run_endpoint(client):
     response = client.post("/apt/run", json=data)
 
     assert response.status_code == 202
-    assert response.json["status"] == ActionStatusValue.ACTIVE.name
+    assert response.json["status"] == ActionStatusValue.ACTIVE
 
 
 def test_status_endpoint(client, running_action_id):
     response = client.get(f"/apt/{running_action_id}/status")
 
     assert response.status_code == 200
-    assert response.json["status"] == ActionStatusValue.ACTIVE.name
+    assert response.json["status"] == ActionStatusValue.ACTIVE
 
 
 def test_cancel_endpoint(client, running_action_id):
     response = client.post(f"/apt/{running_action_id}/cancel")
 
     assert response.status_code == 200
-    assert response.json["status"] == ActionStatusValue.FAILED.name
+    assert response.json["status"] == ActionStatusValue.FAILED
 
 
 def test_release_endpoint(client, running_action_id):
@@ -72,4 +72,4 @@ def test_release_endpoint(client, running_action_id):
     response = client.post(f"/apt/{running_action_id}/release")
 
     assert response.status_code == 200
-    assert response.json["status"] == ActionStatusValue.FAILED.name
+    assert response.json["status"] == ActionStatusValue.FAILED
