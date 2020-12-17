@@ -5,8 +5,6 @@ the only difference being in the helper that is used to create the app.
 """
 
 
-from unittest.mock import patch
-
 import pytest
 from flask import Blueprint, Flask
 

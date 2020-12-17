@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 from typing import Dict, List, Set
 
 from flask import request
-from werkzeug.exceptions import Conflict, NotFound
 
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
@@ -22,6 +21,7 @@ from globus_action_provider_tools.data_types import (
     ActionStatusValue,
     AuthState,
 )
+from globus_action_provider_tools.exceptions import ActionConflict, ActionNotFound
 from globus_action_provider_tools.flask.apt_blueprint import (
     ActionLogReturn,
     ActionStatusReturn,
@@ -93,7 +93,7 @@ def test_action_run(
         start_time=str(datetime.now(tz=timezone.utc)),
         completion_time=None,
         release_after=action_request.release_after or "P30D",
-        display_status=ActionStatusValue.ACTIVE.name,
+        display_status=ActionStatusValue.ACTIVE,
         details={},
     )
     simple_backend[action_status.action_id] = action_status
@@ -103,7 +103,7 @@ def test_action_run(
 def test_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
-        raise NotFound(f"No action with {action_id}")
+        raise ActionNotFound(f"No action with {action_id}")
     authorize_action_access_or_404(action_status, auth)
     return action_status
 
@@ -111,11 +111,11 @@ def test_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
 def test_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
-        raise NotFound(f"No action with {action_id}")
+        raise ActionNotFound(f"No action with {action_id}")
 
     authorize_action_management_or_404(action_status, auth)
     if action_status.is_complete():
-        raise Conflict("Cannot cancel complete action")
+        raise ActionConflict("Cannot cancel complete action")
 
     action_status.status = ActionStatusValue.FAILED
     action_status.display_status = f"Cancelled by {auth.effective_identity}"
@@ -127,11 +127,11 @@ def test_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
 def test_action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
-        raise NotFound(f"No action with {action_id}")
+        raise ActionNotFound(f"No action with {action_id}")
 
     authorize_action_management_or_404(action_status, auth)
     if not action_status.is_complete():
-        raise Conflict("Cannot release incomplete Action")
+        raise ActionConflict("Cannot release incomplete Action")
 
     action_status.display_status = f"Released by {auth.effective_identity}"
     simple_backend.pop(action_id)

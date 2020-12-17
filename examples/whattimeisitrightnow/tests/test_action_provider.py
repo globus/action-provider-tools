@@ -60,7 +60,7 @@ def test_run_endpoint(client):
     response = client.post("/run", data=json.dumps(data))
 
     assert response.status_code == 202
-    assert json.loads(response.data)["status"] == ActionStatusValue.ACTIVE.name
+    assert json.loads(response.data)["status"] == ActionStatusValue.ACTIVE
 
 
 def test_status_endpoint(client):
@@ -71,7 +71,7 @@ def test_status_endpoint(client):
     response = client.get(f"/{action_id}/status")
 
     assert response.status_code == 200
-    assert json.loads(response.data)["status"] == ActionStatusValue.ACTIVE.name
+    assert json.loads(response.data)["status"] == ActionStatusValue.ACTIVE
 
 
 def test_cancel_endpoint(client):
@@ -82,7 +82,7 @@ def test_cancel_endpoint(client):
     response = client.post(f"/{action_id}/cancel")
 
     assert response.status_code == 200
-    assert json.loads(response.data)["status"] == ActionStatusValue.FAILED.name
+    assert json.loads(response.data)["status"] == ActionStatusValue.FAILED
 
     # Try re-cancelling the same action, expecting an error to occur
     response = client.post(f"/{action_id}/cancel")
@@ -104,4 +104,4 @@ def test_release_endpoint(client):
     response = client.post(f"/{action_id}/release")
 
     assert response.status_code == 200
-    assert json.loads(response.data)["status"] == ActionStatusValue.FAILED.name
+    assert json.loads(response.data)["status"] == ActionStatusValue.FAILED

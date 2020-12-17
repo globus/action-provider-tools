@@ -30,30 +30,34 @@ from globus_action_provider_tools.data_types import (
     ActionStatusValue,
     AuthState,
 )
-from globus_action_provider_tools.flask import (
-    blueprint_error_handler,
-    flask_validate_request,
+from globus_action_provider_tools.exceptions import (
+    ActionNotFound,
+    ActionProviderError,
+    BadActionRequest,
+    UnauthorizedRequest,
 )
+from globus_action_provider_tools.flask import flask_validate_request
 from globus_action_provider_tools.flask.helpers import (
+    action_status_return_to_view_return,
+    blueprint_error_handler,
+    check_token,
     parse_query_args,
     query_args_to_enum,
 )
-
-ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
-ActionStatusType = Callable[[Union[str, ActionStatus], AuthState], ActionStatusReturn]
-
-ActionLogReturn = Dict[str, Any]
-ActionLogType = Callable[[str, AuthState], ActionLogReturn]
-
-ActionRunType = Callable[[ActionRequest, AuthState], ActionStatusReturn]
-ActionCancelType = ActionStatusType
-ActionReleaseType = ActionStatusType
-ActionEnumerationType = Callable[[AuthState, Dict[str, Set]], Sequence[ActionStatus]]
-
-ViewReturn = Union[Tuple[Response, int], Tuple[str, int]]
-
-ActionLoaderType = Tuple[Callable[[str, Any], ActionStatus], Any]
-ActionSaverType = Tuple[Callable[[ActionStatus, Any], None], Any]
+from globus_action_provider_tools.flask.types import (
+    ActionCancelType,
+    ActionEnumerationType,
+    ActionLoaderType,
+    ActionLogReturn,
+    ActionLogType,
+    ActionReleaseType,
+    ActionRunType,
+    ActionSaverType,
+    ActionStatusReturn,
+    ActionStatusType,
+    ViewReturn,
+)
+from globus_action_provider_tools.validation import validate_data
 
 
 class ActionProviderBlueprint(Blueprint):
@@ -166,7 +170,7 @@ class ActionProviderBlueprint(Blueprint):
             current_app.logger.info(
                 f'User "{g.auth_state.effective_identity}" is unauthorized to introspect Action Provider'
             )
-            raise NotFound
+            raise UnauthorizedRequest
 
         return jsonify(self.provider_description), 200
 
@@ -186,7 +190,7 @@ class ActionProviderBlueprint(Blueprint):
                 current_app.logger.info(
                     f'User "{g.auth_state.effective_identity}" is unauthorized to enumerate Actions'
                 )
-                raise NotFound
+                raise UnauthorizedRequest
 
             valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
             statuses = parse_query_args(
@@ -228,7 +232,7 @@ class ActionProviderBlueprint(Blueprint):
                 current_app.logger.info(
                     f'User "{g.auth_state.effective_identity}" is unauthorized to run Action'
                 )
-                raise Unauthorized()
+                raise UnauthorizedRequest
 
             # Ensure incoming request conforms to ActionRequest schema
             result = flask_validate_request(request)
@@ -242,7 +246,7 @@ class ActionProviderBlueprint(Blueprint):
             self._validate_input(action_request.body)
             status = func(action_request, g.auth_state)
             self._save_action(status)
-            return self._action_status_return_to_view_return(status, 202)
+            return action_status_return_to_view_return(status, 202)
 
         # Add new and old-style AP API endpoints
         self.add_url_rule("/run", None, wrapper, methods=["POST"])
@@ -297,8 +301,11 @@ class ActionProviderBlueprint(Blueprint):
             try:
                 result = self._action_status(action_id, g.auth_state)
             except AttributeError:
-                raise NotImplemented("No status endpoint is available")
-        return self._action_status_return_to_view_return(result, 200)
+                current_app.logger.warning(
+                    "ActionProvider has no action status endpoint"
+                )
+                raise ActionProviderError
+        return action_status_return_to_view_return(result, 200)
 
     @overload
     def action_cancel(self, func: Callable[[str, AuthState], ActionStatusReturn]):
@@ -347,8 +354,11 @@ class ActionProviderBlueprint(Blueprint):
             try:
                 result = self._action_cancel(action_id, g.auth_state)
             except AttributeError:
-                raise NotImplemented("No cancel endpoint is available")
-        return self._action_status_return_to_view_return(result, 200)
+                current_app.logger.warning(
+                    "ActionProvider has no action cancel endpoint"
+                )
+                raise ActionProviderError
+        return action_status_return_to_view_return(result, 200)
 
     @overload
     def action_release(self, func: Callable[[str, AuthState], ActionStatusReturn]):
@@ -382,7 +392,7 @@ class ActionProviderBlueprint(Blueprint):
                 authorize_action_management_or_404(action, g.auth_state)
 
             status = func(action_id, g.auth_state)
-            return self._action_status_return_to_view_return(status, 200)
+            return action_status_return_to_view_return(status, 200)
 
         # Add new and old-style AP API endpoints
         self.add_url_rule(
@@ -447,13 +457,13 @@ class ActionProviderBlueprint(Blueprint):
         assume the ActionStatus is non-recoverable.
         """
         if self.action_loader_plugin is None:
-            raise NotFound
+            raise ActionNotFound
 
         func, backend = self.action_loader_plugin
         action = func(action_id, backend)
         if action:
             return action
-        raise NotFound
+        raise ActionNotFound
 
     def register_action_saver(self, storage_backend):
         """
@@ -492,11 +502,7 @@ class ActionProviderBlueprint(Blueprint):
         Parses a token from a request to generate an auth_state object which is
         then made available as the second argument to decorated functions.
         """
-        access_token = (
-            request.headers.get("Authorization", "").strip().lstrip("Bearer ")
-        )
-        auth_state = self.checker.check_token(access_token)
-        g.auth_state = auth_state
+        g.auth_state = check_token(request, self.checker)
 
     def _load_input_body_validator(self) -> Union[Draft7Validator, None]:
         """
@@ -526,33 +532,6 @@ class ActionProviderBlueprint(Blueprint):
         if self.input_body_validator is None:
             return
 
-        errors = self.input_body_validator.iter_errors(input)
-        error_messages = []
-        for error in errors:
-            if error.path:
-                # Elements of the error path may be integers or other non-string types,
-                # but we need strings for use with join()
-                error_path_for_message = ".".join([str(x) for x in error.path])
-                error_message = (
-                    f"'{error_path_for_message}' invalid due to {error.message}"
-                )
-            else:
-                error_message = error.message
-            error_messages.append(error_message)
-
-        if error_messages:
-            message = "; ".join(error_messages)
-            raise BadRequest(message)
-
-    def _action_status_return_to_view_return(
-        self, status: ActionStatusReturn, default_status_code: int
-    ) -> ViewReturn:
-        """
-        Helper function to return a ActionStatusReturn object as a valid Flask
-        response.
-        """
-        if isinstance(status, ActionStatus):
-            status_code = default_status_code
-        elif isinstance(status, tuple):
-            status, status_code = status
-        return jsonify(status), status_code
+        result = validate_data(input, self.input_body_validator)
+        if result.errors:
+            raise BadActionRequest(result.errors)

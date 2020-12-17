@@ -21,8 +21,10 @@ def mock_authstate(*args, **kwargs):
     auth_state.bearer_token = "MOCK_BEARER_TOKEN"
 
     # Set property mocks
-    auth_state.effective_identity = "MOCK_USER"
-    auth_state.identities = frozenset(["MOCK_USER"])
+    auth_state.effective_identity = (
+        "urn:globus:auth:identity:00000000-0000-0000-0000-000000000000"
+    )
+    auth_state.identities = frozenset([auth_state.effective_identity])
 
     # Mock other functions that get called
     auth_state.check_authorization.return_value = True
