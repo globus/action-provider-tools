@@ -105,7 +105,11 @@ class ActionProviderBlueprint(Blueprint):
         self.record_once(self._create_token_checker)
 
         self.add_url_rule(
-            "", "action_introspect", self._action_introspect, methods=["GET"]
+            "/",
+            "action_introspect",
+            self._action_introspect,
+            methods=["GET"],
+            strict_slashes=False,
         )
 
         # If using an action-loader, it's possible that the status and cancel
