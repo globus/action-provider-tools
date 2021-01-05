@@ -7,14 +7,8 @@ Action Provider API. These tests validate that the supported AP API versions
 are in fact implemented.
 """
 
-from typing import Dict
-from unittest.mock import Mock
-
 import pytest
 from flask import Flask
-
-from globus_action_provider_tools.data_types import ActionProviderDescription
-from globus_action_provider_tools.flask.apt_blueprint import ActionProviderBlueprint
 
 
 @pytest.mark.parametrize("app_fixture", ["aptb_app", "add_routes_app"])
@@ -30,6 +24,9 @@ def test_routes_conform_to_api(
 
     introspection_resp = ap_introspection(client, bp.url_prefix)
     assert introspection_resp.status_code == 200
+
+    trailing_slash_introspection_resp = ap_introspection(client, bp.url_prefix + "/")
+    assert trailing_slash_introspection_resp.status_code == 200
 
     if api_version == "1.1":
         enumeration_resp = ap_enumeration(client, bp.url_prefix)
