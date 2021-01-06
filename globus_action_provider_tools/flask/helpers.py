@@ -1,16 +1,28 @@
+import inspect
+import json
 from enum import Enum
-from typing import Iterable, Set
+from functools import partial
+from typing import Any, Callable, Dict, Iterable, Set, Type
 
 from flask import Request, jsonify
-from werkzeug.exceptions import HTTPException
+from jsonschema.validators import Draft7Validator
+from pydantic import BaseModel, ValidationError
 
 from globus_action_provider_tools.authentication import AuthState, TokenChecker
-from globus_action_provider_tools.data_types import ActionStatus
+from globus_action_provider_tools.data_types import (
+    ActionProviderDescription,
+    ActionRequest,
+    ActionStatus,
+)
 from globus_action_provider_tools.exceptions import (
     ActionProviderError,
     ActionProviderToolsException,
+    BadActionRequest,
 )
 from globus_action_provider_tools.flask.types import ActionStatusReturn, ViewReturn
+from globus_action_provider_tools.validation import validate_data
+
+ActionInputValidatorType = Callable[[Dict[str, Any]], None]
 
 
 def parse_query_args(
@@ -105,3 +117,80 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
         ),
         500,
     )
+
+
+def validate_input(
+    request_json: Dict[str, Any], input_body_validator: ActionInputValidatorType
+) -> ActionRequest:
+    """
+    Ensures the incoming request conforms to the ActionRequest schema and
+    the user-defined ActionProvider input schema.
+    """
+    try:
+        action_request = ActionRequest(**request_json)
+    except ValidationError as ve:
+        raise BadActionRequest(ve.errors())
+
+    input_body_validator(action_request.body)
+    return action_request
+
+
+def get_input_body_validator(
+    provider_description: ActionProviderDescription,
+) -> ActionInputValidatorType:
+    """
+    Inspects the value of the provider_description's input_schema to
+    determine if it's a str, dict, or pydantic Model to figure out which
+    validation function to use.
+
+    If the input_schema is a str or dict, raw json_schema validation will
+    be used. An jsonschema DraftValidator is created and applied to
+    json_schema_input_validation creating a new partial which can be called by
+    simply supplying the input to validate.
+
+    If the input_schema is a pydantic BaseModel subclass, we apply the
+    input_schema to pydantic_input_validation creating a new partial which can
+    be called by simply supplying the input to validate.
+    """
+    input_schema = provider_description.input_schema
+
+    if isinstance(input_schema, str):
+        input_schema = json.loads(input_schema)
+    elif isinstance(input_schema, dict):
+        pass
+    elif inspect.isclass(input_schema) and issubclass(input_schema, BaseModel):
+        return partial(pydantic_input_validation, validator=input_schema)
+    else:
+        raise ActionProviderError(
+            "Unable to determine input schema from ActionProviderDescription"
+        )
+
+    return partial(
+        json_schema_input_validation, validator=Draft7Validator(input_schema)
+    )
+
+
+def json_schema_input_validation(
+    action_input: Dict[str, Any], validator: Draft7Validator
+) -> None:
+    """
+    Use a created JSON Validator to verify the input body of an incoming
+    request conforms to the defined JSON schema. In the event that the
+    validation reports any errors, a BadActionRequest exception gets raised.
+    """
+    result = validate_data(action_input, validator)
+    if result.errors:
+        raise BadActionRequest(result.errors)
+
+
+def pydantic_input_validation(
+    action_input: Dict[str, Any], validator: Type[BaseModel]
+) -> None:
+    """
+    Validate input using the pydantic model itself. Raises a BadActionRequest
+    exception if the input is incorrect.
+    """
+    try:
+        validator(**action_input)
+    except ValidationError as ve:
+        raise BadActionRequest(ve.errors())

@@ -2,6 +2,7 @@ import datetime
 import json
 
 import pytest
+from pydantic import BaseModel
 
 from globus_action_provider_tools.data_types import (
     ActionProviderJsonEncoder,
@@ -28,5 +29,23 @@ def test_action_status_jsonable():
         # This will fail if ActionProviderJsonEncoder cannot json dump an
         # ActionStatus
         json.dumps(action_status, cls=ActionProviderJsonEncoder)
+    except TypeError as e:
+        pytest.fail(f"Unexpected JSON encoding error: {e}")
+
+
+def test_pydantic_models_jsonable():
+    class PydanticModel(BaseModel):
+        ...
+
+    try:
+        json.dumps(PydanticModel, cls=ActionProviderJsonEncoder)
+        json.dumps(PydanticModel(), cls=ActionProviderJsonEncoder)
+    except TypeError as e:
+        pytest.fail(f"Unexpected JSON encoding error: {e}")
+
+
+def test_enums_jsonable():
+    try:
+        json.dumps(ActionStatusValue.SUCCEEDED)
     except TypeError as e:
         pytest.fail(f"Unexpected JSON encoding error: {e}")

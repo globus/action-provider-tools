@@ -37,6 +37,7 @@ pyyaml = "^5.3.1"
 arrow = "^0.15.5"
 pybase62 = "^0.4.0"
 dataclasses = {version = "^0.7", python = "~3.6"}
+pydantic = "^1.7.3"
 
 [tool.poetry.dev-dependencies]
 python-language-server = "^0"

@@ -1,21 +1,8 @@
 import functools
-import json
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import Any, Callable, Iterable, Optional, overload
 
-from flask import Blueprint, Response, blueprints, current_app, g, jsonify, request
-from jsonschema.validators import Draft7Validator
-from werkzeug.exceptions import BadRequest, NotFound, NotImplemented, Unauthorized
+from flask import Blueprint, blueprints, current_app, g, jsonify, request
+from pydantic import ValidationError
 
 from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.authorization import (
@@ -36,13 +23,14 @@ from globus_action_provider_tools.exceptions import (
     BadActionRequest,
     UnauthorizedRequest,
 )
-from globus_action_provider_tools.flask import flask_validate_request
 from globus_action_provider_tools.flask.helpers import (
     action_status_return_to_view_return,
     blueprint_error_handler,
     check_token,
+    get_input_body_validator,
     parse_query_args,
     query_args_to_enum,
+    validate_input,
 )
 from globus_action_provider_tools.flask.types import (
     ActionCancelType,
@@ -57,7 +45,6 @@ from globus_action_provider_tools.flask.types import (
     ActionStatusType,
     ViewReturn,
 )
-from globus_action_provider_tools.validation import validate_data
 
 
 class ActionProviderBlueprint(Blueprint):
@@ -95,7 +82,7 @@ class ActionProviderBlueprint(Blueprint):
         self.action_saver_plugin: Optional[ActionSaverType] = None
 
         self.provider_description = provider_description
-        self.input_body_validator = self._load_input_body_validator()
+        self.input_body_validator = get_input_body_validator(provider_description)
         self.globus_auth_client_name = globus_auth_client_name
         self.additional_scopes = additional_scopes
 
@@ -238,17 +225,20 @@ class ActionProviderBlueprint(Blueprint):
                 )
                 raise UnauthorizedRequest
 
-            # Ensure incoming request conforms to ActionRequest schema
-            result = flask_validate_request(request)
-            if result.error_msg:
-                raise BadRequest(result.error_msg)
+            action_request = validate_input(
+                request.get_json(force=True), self.input_body_validator
+            )
+            # It's possible the user will attempt to make a malformed ActionStatus -
+            # pydantic won't like that. So log and handle the error with a 500
+            try:
+                status = func(action_request, g.auth_state)
+            except ValidationError as ve:
+                current_app.logger.error(
+                    f"ActionProvider attempted to create a non-conformant ActionStatus"
+                    f" in {func.__name__}: {ve.errors()}"
+                )
+                raise ActionProviderError
 
-            request_json = request.get_json(force=True)
-            action_request = ActionRequest(**request_json)
-
-            # Ensure incoming Action body conforms to Action Provider schema
-            self._validate_input(action_request.body)
-            status = func(action_request, g.auth_state)
             self._save_action(status)
             return action_status_return_to_view_return(status, 202)
 
@@ -303,10 +293,16 @@ class ActionProviderBlueprint(Blueprint):
                 result = action
         else:
             try:
+                # It's possible the user will attempt to make a malformed ActionStatus -
+                # pydantic won't like that. So handle the error with a 500
                 result = self._action_status(action_id, g.auth_state)
             except AttributeError:
-                current_app.logger.warning(
-                    "ActionProvider has no action status endpoint"
+                current_app.logger.error("ActionProvider has no action status endpoint")
+                raise ActionProviderError
+            except ValidationError as ve:
+                current_app.logger.error(
+                    f"ActionProvider attempted to create a non-conformant ActionStatus"
+                    f" in {self._action_status.__name__}: {ve.errors()}"
                 )
                 raise ActionProviderError
         return action_status_return_to_view_return(result, 200)
@@ -358,8 +354,12 @@ class ActionProviderBlueprint(Blueprint):
             try:
                 result = self._action_cancel(action_id, g.auth_state)
             except AttributeError:
-                current_app.logger.warning(
-                    "ActionProvider has no action cancel endpoint"
+                current_app.logger.error("ActionProvider has no action cancel endpoint")
+                raise ActionProviderError
+            except ValidationError as ve:
+                current_app.logger.error(
+                    f"ActionProvider attempted to create a non-conformant ActionStatus"
+                    f" in {self._action_cancel.__name__}: {ve.errors()}"
                 )
                 raise ActionProviderError
         return action_status_return_to_view_return(result, 200)
@@ -395,7 +395,15 @@ class ActionProviderBlueprint(Blueprint):
                 action = self._load_action_by_id(action_id)
                 authorize_action_management_or_404(action, g.auth_state)
 
-            status = func(action_id, g.auth_state)
+            try:
+                status = func(action_id, g.auth_state)
+            except ValidationError as ve:
+                current_app.logger.error(
+                    f"ActionProvider attempted to create a non-conformant ActionStatus"
+                    f" in {func.__name__}: {ve.errors()}"
+                )
+                raise ActionProviderError
+
             return action_status_return_to_view_return(status, 200)
 
         # Add new and old-style AP API endpoints
@@ -507,35 +515,3 @@ class ActionProviderBlueprint(Blueprint):
         then made available as the second argument to decorated functions.
         """
         g.auth_state = check_token(request, self.checker)
-
-    def _load_input_body_validator(self) -> Union[Draft7Validator, None]:
-        """
-        Creates a JSON Validator object to be used to verify that the body of a
-        RUN request conforms to the Action Provider's defined schema. In the
-        event that no schema was provided when defining the Blueprint, no
-        validator is created and no validation occurs.
-        """
-        if isinstance(self.provider_description.input_schema, str):
-            input_schema = json.loads(self.provider_description.input_schema)
-        else:
-            input_schema = self.provider_description.input_schema
-
-        if input_schema is not None:
-            input_body_validator = Draft7Validator(input_schema)
-        else:
-            input_body_validator = None
-
-        return input_body_validator
-
-    def _validate_input(self, input: Dict[str, Any]) -> None:
-        """
-        Use a created JSON Validator to verify the input body of an incoming
-        request conforms to the defined JSON schema. In the event that the
-        validation reports any errors, a BadRequest exception gets raised.
-        """
-        if self.input_body_validator is None:
-            return
-
-        result = validate_data(input, self.input_body_validator)
-        if result.errors:
-            raise BadActionRequest(result.errors)

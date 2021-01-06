@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Set
 
 from flask import request
+from pydantic import BaseModel, Field
 
 from examples.apt_blueprint.backend import simple_backend
 from globus_action_provider_tools.authorization import (
@@ -24,20 +25,22 @@ from globus_action_provider_tools.flask.apt_blueprint import (
 
 from .backend import simple_backend
 
+
+class ActionProviderInput(BaseModel):
+    utc_offset: int = Field(
+        ..., title="UTC Offset", description="An input value to this ActionProvider"
+    )
+
+    class Config:
+        schema_extra = {"example": {"utc_offset": 10}}
+
+
 description = ActionProviderDescription(
     globus_auth_scope="https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/action_all",
     title="What Time Is It Right Now?",
     admin_contact="support@whattimeisrightnow.example",
     synchronous=True,
-    input_schema={
-        "$id": "whattimeisitnow.provider.input.schema.json",
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "whattimeisitnow Provider Input Schema",
-        "type": "object",
-        "properties": {"utc_offset": {"type": "string"}},
-        "required": ["utc_offset"],
-        "additionalProperties": False,
-    },
+    input_schema=ActionProviderInput,
     api_version="1.0",
     subtitle="Another exciting promotional tie-in for whattimeisitrightnow.com",
     description="",

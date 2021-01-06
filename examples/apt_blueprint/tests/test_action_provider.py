@@ -29,10 +29,10 @@ def running_action_id(client):
 
 
 def test_introspection_endpoint(client):
-    response = client.get("/apt")
+    response = client.get("/apt/")
 
     assert response.status_code == 200
-    assert response.json["input_schema"] == description.input_schema
+    assert response.json["input_schema"] == description.input_schema.schema()
 
 
 def test_enumeration_endpoint(client):
