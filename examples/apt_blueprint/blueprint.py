@@ -17,11 +17,8 @@ from globus_action_provider_tools.data_types import (
     AuthState,
 )
 from globus_action_provider_tools.exceptions import ActionConflict, ActionNotFound
-from globus_action_provider_tools.flask.apt_blueprint import (
-    ActionLogReturn,
-    ActionProviderBlueprint,
-    ActionStatusReturn,
-)
+from globus_action_provider_tools.flask import ActionProviderBlueprint
+from globus_action_provider_tools.flask.types import ActionLogReturn, ActionStatusReturn
 
 from .backend import simple_backend
 
