@@ -81,7 +81,7 @@ constraints:
         class Config:
             schema_extra = {"example": {"echo_string": "hi there"}}
 
-With the model created, pass the **class name** to the ActionProvider
+With the model created, pass the **class itself** to the ActionProvider
 description and load that into the ActionProvider:  
 
 .. code-block:: python

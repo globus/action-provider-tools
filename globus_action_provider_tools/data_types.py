@@ -1,6 +1,5 @@
 import datetime
 import inspect
-from dataclasses import asdict, dataclass, field, is_dataclass
 from enum import Enum, auto
 from json import JSONEncoder
 from os import urandom
@@ -18,6 +17,7 @@ from typing import (
 )
 
 import arrow
+import isodate
 from base62 import encodebytes as base62
 from pydantic import BaseModel, Field
 
@@ -66,22 +66,21 @@ class ActionStatusValue(AutomateBaseEnum):
     INACTIVE = "INACTIVE"
 
 
-@dataclass
-class ActionProviderDescription:
+class ActionProviderDescription(BaseModel):
     globus_auth_scope: str
     title: str
     admin_contact: str
     synchronous: bool
     input_schema: Union[str, Dict[str, Any], Type[BaseModel]]
-    types: List[ProviderType] = field(default_factory=lambda: [ProviderType.Action])
+    types: List[ProviderType] = Field(default_factory=lambda: [ProviderType.Action])
     api_version: str = "1.0"
     subtitle: Optional[str] = None
     description: Optional[str] = None
     keywords: Optional[List[str]] = None
-    visible_to: List[str] = field(default_factory=lambda: ["public"])
+    visible_to: List[str] = Field(default_factory=lambda: ["public"])
     maximum_deadline: str = "P30D"  # Default value of 30 days
     log_supported: Optional[bool] = False
-    runnable_by: List[str] = field(default_factory=lambda: ["all_authenticated_users"])
+    runnable_by: List[str] = Field(default_factory=lambda: ["all_authenticated_users"])
     administered_by: Optional[List[str]] = None
     event_types: Optional[List[EventType]] = None
 
@@ -105,18 +104,17 @@ class ActionRequest(BaseModel):
         None,
         description="A timestamp indicating by which time the action must complete. The request may be rejected if the Action Provider does not expect to be able to complete the action before the deadline or if it represents a time greater than the maximum_deadline specified in the Provider Description.",
     )
-    release_after: Optional[str] = Field(
+    release_after: Optional[datetime.timedelta] = Field(
         None,
         description="An ISO8601 time duration value indicating how long retention of the status of the action be retained after it reaches a completed state. Action Providers may limit the maximum value. It is recommended that Providers provide a default release_after value of approximately 30 days.",
-        regex="^P(?!$)(\d+(?:\.\d+)?Y)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?W)?(\d+(?:\.\d+)?D)?(T(?=\d)(\d+(?:\.\d+)?H)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?S)?)?$",
     )
     monitor_by: Set[str] = Field(
-        default_factory=list,
+        default_factory=set,
         description="A list of principal URNs containing identities which are allowed to monitor the progress of the action using the status and log operations. When not provided, defaults to the user that initiated the action.",
         regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
     )
     manage_by: Set[str] = Field(
-        default_factory=list,
+        default_factory=set,
         description="A list of principal URNs containing identities which are allowed to manage the progress of the action using the cancel and release operations. When not provided, defaults to the user that initiated the action.",
         regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
     )
@@ -145,12 +143,12 @@ class ActionStatus(BaseModel):
         max_length=64,
     )
     monitor_by: Set[str] = Field(
-        default_factory=list,
+        default_factory=set,
         description="A list of principal URNs containing identities which are allowed to monitor the progress of the action using the /status and /log operations. When not provided, defaults to the user that initiated the action.",
         regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
     )
     manage_by: Set[str] = Field(
-        default_factory=list,
+        default_factory=set,
         description="A list of principal URNs containing identities which are allowed to manage the progress of the action using the cancel and release operations. When not provided, defaults to the user that initiated the action.",
         regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
     )
@@ -158,10 +156,9 @@ class ActionStatus(BaseModel):
         None,
         description="The time in ISO8601 format when the Action reached a terminal (SUCCEEDED or FAILED) status",
     )
-    release_after: Optional[str] = Field(
+    release_after: Optional[datetime.timedelta] = Field(
         None,
         description="An ISO8601 time duration value indicating how long retention of the status of the action be retained after it reaches a completed state.",
-        regex="^P(?!$)(\d+(?:\.\d+)?Y)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?W)?(\d+(?:\.\d+)?D)?(T(?=\d)(\d+(?:\.\d+)?H)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?S)?)?$",
     )
     display_status: Optional[str] = Field(
         None,
@@ -180,9 +177,7 @@ class ActionStatus(BaseModel):
 
 class ActionProviderJsonEncoder(JSONEncoder):
     def default(self, obj):
-        if is_dataclass(obj):
-            return asdict(obj)
-        elif isinstance(obj, AbstractSet):
+        if isinstance(obj, AbstractSet):
             return list(obj)
         elif isinstance(obj, BaseModel):
             return obj.dict()
@@ -190,4 +185,6 @@ class ActionProviderJsonEncoder(JSONEncoder):
             return obj.schema()
         elif isinstance(obj, datetime.datetime):
             return str(obj)
+        elif isinstance(obj, datetime.timedelta):
+            return isodate.duration_isoformat(obj)
         return super(ActionProviderJsonEncoder, self).default(obj)

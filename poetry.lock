@@ -187,7 +187,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "dataclasses"
-version = "0.7"
+version = "0.8"
 description = "A backport of the dataclasses module for Python 3.6"
 category = "main"
 optional = false
@@ -323,7 +323,7 @@ python-versions = "*"
 name = "isodate"
 version = "0.6.0"
 description = "An ISO 8601 date/time/duration parser and formatter"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -1054,7 +1054,7 @@ testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "a90d1bafd698ad499df1e393df9c454048fc231260b5375fd17746353ef92bd1"
+content-hash = "e57200ed71ab00116cc20199f670c011d7418fa34697f8b8c5e2e53d05b0099e"
 
 [metadata.files]
 alabaster = [
@@ -1214,8 +1214,8 @@ css-html-js-minify = [
     {file = "css_html_js_minify-2.5.5-py3.6.egg", hash = "sha256:4704e04a0cd6dd56d61bbfa3bfffc630da6b2284be33519be0b456672e2a2438"},
 ]
 dataclasses = [
-    {file = "dataclasses-0.7-py3-none-any.whl", hash = "sha256:3459118f7ede7c8bea0fe795bff7c6c2ce287d01dd226202f7c9ebc0610a7836"},
-    {file = "dataclasses-0.7.tar.gz", hash = "sha256:494a6dcae3b8bcf80848eea2ef64c0cc5cd307ffc263e17cdf42f3e5420808e6"},
+    {file = "dataclasses-0.8-py3-none-any.whl", hash = "sha256:0201d89fa866f68c8ebd9d08ee6ff50c0b255f8ec63a71c16fda7af82bb887bf"},
+    {file = "dataclasses-0.8.tar.gz", hash = "sha256:8479067f342acf957dc82ec415d355ab5edb7e7646b90dc6e2fd1d96ad084c97"},
 ]
 decorator = [
     {file = "decorator-4.4.2-py2.py3-none-any.whl", hash = "sha256:41fa54c2a0cc4ba648be4fd43cff00aedf5b9465c9bf18d64325bc225f08f760"},

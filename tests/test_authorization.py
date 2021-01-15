@@ -30,7 +30,7 @@ def test_monitor_by_can_access(auth_state):
     status = ActionStatus(
         status=ActionStatusValue.SUCCEEDED,
         creator_id=auth_state.effective_identity,
-        monitor_by=[auth_state.effective_identity],
+        monitor_by={auth_state.effective_identity},
         start_time=str(datetime.datetime.now().isoformat()),
         completion_time=str(datetime.datetime.now().isoformat()),
         release_after="P30D",
@@ -74,7 +74,7 @@ def test_manage_by_can_access(auth_state):
     status = ActionStatus(
         status=ActionStatusValue.SUCCEEDED,
         creator_id=random_creator_id(),
-        manage_by=[auth_state.effective_identity],
+        manage_by={auth_state.effective_identity},
         start_time=str(datetime.datetime.now().isoformat()),
         completion_time=str(datetime.datetime.now().isoformat()),
         release_after="P30D",
