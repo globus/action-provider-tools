@@ -37,23 +37,8 @@ INCOMPLETE_STATES = (ActionStatusValue.ACTIVE, ActionStatusValue.INACTIVE)
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "schema.json")) as f:
     schema = json.load(f)
 
-# http://flask.pocoo.org/snippets/119/
-class CustomJSONEncoder(ActionProviderJsonEncoder):
-    def default(self, obj):
-        try:
-            if isinstance(obj, datetime):
-                return obj.isoformat()
-            elif isinstance(obj, timedelta):
-                return duration_isoformat(obj)
-            iterable = iter(obj)
-        except TypeError:
-            pass
-        else:
-            return list(iterable)
-        return super().default(obj)
 
-
-app.json_encoder = CustomJSONEncoder
+app.json_encoder = ActionProviderJsonEncoder
 
 
 @app.errorhandler(err.ApiError)

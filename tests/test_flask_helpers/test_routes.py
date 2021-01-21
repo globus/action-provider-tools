@@ -10,17 +10,29 @@ are in fact implemented.
 import pytest
 from flask import Flask
 
+from globus_action_provider_tools.data_types import ActionProviderDescription
+from globus_action_provider_tools.flask.apt_blueprint import ActionProviderBlueprint
+
+from .app_utils import (
+    ActionProviderPydanticInputSchema,
+    action_provider_json_input_schema,
+)
+
 
 @pytest.mark.parametrize("app_fixture", ["aptb_app", "add_routes_app"])
 @pytest.mark.parametrize("api_version", ["1.0", "1.1"])
+@pytest.mark.parametrize("use_pydantic_schema", [True, False])
 def test_routes_conform_to_api(
-    request,
-    app_fixture: str,
-    api_version: str,
+    request, app_fixture: str, api_version: str, use_pydantic_schema: bool
 ):
     app: Flask = request.getfixturevalue(app_fixture)
     client = app.test_client()
     _, bp = list(app.blueprints.items())[0]
+
+    if use_pydantic_schema:
+        bp.input_schema = ActionProviderPydanticInputSchema
+    else:
+        bp.input_schema = action_provider_json_input_schema
 
     introspection_resp = ap_introspection(client, bp.url_prefix)
     assert introspection_resp.status_code == 200
@@ -50,7 +62,7 @@ def test_routes_conform_to_api(
 
 
 def ap_introspection(client, url_prefix: str):
-    return client.get(url_prefix)
+    return client.get(url_prefix, follow_redirects=True)
 
 
 def ap_enumeration(client, url_prefix: str):

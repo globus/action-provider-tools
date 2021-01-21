@@ -31,6 +31,14 @@ Action Provider routes.
 
 :doc:`Flask API Helpers Example<examples/watchasay>`
 
+ActionProvider Input Schema Definition
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This example demonstrates the supported methods of defining an ActionProvider's
+input schema. An input schema serves as a standardized definition for the
+input to an ActionProvider and provides input validation.
+
+:doc:`Input Schema Definitions<examples/input_schemas>`
 
 Framework Agnostic Tools
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -54,3 +62,4 @@ ActionRequests and more.
    examples/whattimeisitrightnow
    examples/watchasay
    examples/apt_blueprint
+   examples/input_schemas

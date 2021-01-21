@@ -5,14 +5,14 @@ This toolkit provides the following components:
 1. :doc:`Authentication helpers<toolkit/authentication>` that make it easier to
 validate Globus Auth tokens and determine if a given request should be authorized. 
 
-2. An `OpenAPI v3 specification <http://spec.openapis.org/oas/v3.0.2>`_ and
-:doc:`validation helpers<toolkit/validation>` that can be used to validate
+2. Pydantic_ and `OpenAPI v3 specification`_ based :doc:`validation
+helpers<toolkit/validation>` that can be used to validate
 incoming requests and verify the responses your Action Provider generates. This
 document also defines the interface which must be supported by your REST API to
 have it function as an Action Provider.
 
-3. :doc:`Simple bindings<toolkit/data_types>` for the document types "Action
-Request" and "Action Status" to Python Dataclass representations and a helper
+3. :doc:`Simple bindings<toolkit/data_types>` for the document types ``Action
+Request`` and ``Action Status`` to Python object representations and a helper
 JsonEncoder for serializing and deserializing these structures to/from JSON.
 
 4. :doc:`Flask helper methods <toolkit/flask_helpers>` for binding the REST API
@@ -40,3 +40,8 @@ validating an Action Provider's behavior.
    toolkit/flask_helpers
    toolkit/validation
    toolkit/testing
+
+
+.. _Pydantic: https://pydantic-docs.helpmanual.io/
+
+.. _OpenAPI v3 specification: http://spec.openapis.org/oas/v3.0.2

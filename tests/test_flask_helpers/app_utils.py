@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Set
 
 from flask import request
+from pydantic import BaseModel, Field
 
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
@@ -29,20 +30,34 @@ from globus_action_provider_tools.flask.apt_blueprint import (
 
 simple_backend: Dict[str, ActionStatus] = {}
 
+action_provider_json_input_schema = {
+    "$id": "whattimeisitnow.provider.input.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Test Provider Input Schema",
+    "type": "object",
+    "properties": {"echo_string": {"type": "string"}},
+    "required": ["echo_string"],
+    "additionalProperties": False,
+}
+
+
+class ActionProviderPydanticInputSchema(BaseModel):
+    echo_string: str = Field(
+        ...,
+        title="Echo String",
+        description="An input value to this ActionProvider to echo back in its response",
+    )
+
+    class Config:
+        schema_extra = {"example": {"echo_string": "hi there"}}
+
+
 ap_description = ActionProviderDescription(
     globus_auth_scope="https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/action_all",
     title="Test ActionProviderDescription",
     admin_contact="test@globus.org",
     synchronous=True,
-    input_schema={
-        "$id": "whattimeisitnow.provider.input.schema.json",
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Test Provider Input Schema",
-        "type": "object",
-        "properties": {"echo_string": {"type": "string"}},
-        "required": ["echo_string"],
-        "additionalProperties": False,
-    },
+    input_schema=action_provider_json_input_schema,
     api_version="1.0",
     subtitle="Test ActionProviderDescription",
     description="Only for Testing",
@@ -88,8 +103,8 @@ def test_action_run(
         status=ActionStatusValue.ACTIVE,
         creator_id=str(auth.effective_identity),
         label=action_request.label or None,
-        monitor_by=action_request.monitor_by or list(auth.identities),
-        manage_by=action_request.manage_by or list(auth.identities),
+        monitor_by=action_request.monitor_by or auth.identities,
+        manage_by=action_request.manage_by or auth.identities,
         start_time=str(datetime.now(tz=timezone.utc)),
         completion_time=None,
         release_after=action_request.release_after or "P30D",

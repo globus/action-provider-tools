@@ -1,14 +1,11 @@
-import json
 import logging
-from dataclasses import asdict
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
-from urllib.parse import urlsplit, urlunsplit
+from typing import List, Optional
 
 import flask
-from flask import Request, Response, jsonify, request
-from jsonschema.validators import Draft7Validator
+from flask import jsonify, request
+from pydantic import ValidationError
 
-from globus_action_provider_tools.authentication import AuthState, TokenChecker
+from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionProviderJsonEncoder,
@@ -18,6 +15,7 @@ from globus_action_provider_tools.data_types import (
 )
 from globus_action_provider_tools.exceptions import (
     ActionNotFound,
+    ActionProviderError,
     BadActionRequest,
     UnauthorizedRequest,
 )
@@ -25,23 +23,11 @@ from globus_action_provider_tools.flask.helpers import (
     action_status_return_to_view_return,
     blueprint_error_handler,
     check_token,
+    get_input_body_validator,
     parse_query_args,
     query_args_to_enum,
+    validate_input,
 )
-from globus_action_provider_tools.validation import (
-    ValidationRequest,
-    ValidationResult,
-    request_validator,
-    validate_data,
-)
-
-"""
-Removing this for now as it seems that validation breaks more things than it fixes
-from globus_action_provider_tools.validation import (
-    request_validator,
-    response_validator,
-)
-"""
 from globus_action_provider_tools.flask.types import (
     ActionCancelType,
     ActionEnumerationType,
@@ -51,6 +37,11 @@ from globus_action_provider_tools.flask.types import (
     ActionStatusReturn,
     ActionStatusType,
     ViewReturn,
+)
+from globus_action_provider_tools.validation import (
+    ValidationRequest,
+    ValidationResult,
+    request_validator,
 )
 
 _request_schema_types = {"run": "ActionRequest"}
@@ -98,17 +89,6 @@ def flask_validate_response(
         return request_validator(validation_request)
     else:
         return ValidationResult(errors=[], error_msg=None)
-
-
-def _validate_input(
-    validator: Optional[Draft7Validator], input: Dict[str, Any]
-) -> None:
-    if validator is None:
-        return
-
-    result = validate_data(input, validator)
-    if result.errors:
-        raise BadActionRequest(result.errors)
 
 
 def add_action_routes_to_blueprint(
@@ -202,16 +182,7 @@ def add_action_routes_to_blueprint(
     )
 
     blueprint.json_encoder = ActionProviderJsonEncoder
-
-    if isinstance(provider_description.input_schema, str):
-        input_schema = json.loads(provider_description.input_schema)
-    else:
-        input_schema = provider_description.input_schema
-    if input_schema is not None:
-        input_body_validator = Draft7Validator(input_schema)
-    else:
-        input_body_validator = None
-
+    input_body_validator = get_input_body_validator(provider_description)
     blueprint.register_error_handler(Exception, blueprint_error_handler)
 
     @blueprint.route("/", methods=["GET"], strict_slashes=False)
@@ -223,7 +194,7 @@ def add_action_routes_to_blueprint(
             allow_all_authenticated_users=True,
         ):
             raise ActionNotFound
-        return jsonify(asdict(provider_description)), 200
+        return jsonify(provider_description), 200
 
     @blueprint.route("/actions", methods=["POST"])
     @blueprint.route("/run", methods=["POST"])
@@ -241,44 +212,64 @@ def add_action_routes_to_blueprint(
                     blueprint.url_prefix
                 )
 
-        result = flask_validate_request(request)
+        action_request = validate_input(
+            request.get_json(force=True), input_body_validator
+        )
 
-        if result.error_msg is not None:
-            raise BadActionRequest(result.error_msg)
-
-        request_json = request.get_json(force=True)
+        # It's possible the user will attempt to make a malformed ActionStatus -
+        # pydantic won't like that. So log and handle the error with a 500
         try:
-            action_request = ActionRequest(**request_json)
-        except TypeError as te:
-            # TODO: This is weak validation, but I'll leave for now
-            raise BadActionRequest("Unable to process Action Request input document")
-        _validate_input(input_body_validator, action_request.body)
-        status = action_run_callback(action_request, auth_state)
+            status = action_run_callback(action_request, auth_state)
+        except ValidationError as ve:
+            log.error(
+                f"ActionProvider attempted to create a non-conformant ActionStatus"
+                f" in {action_run_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
+
         return action_status_return_to_view_return(status, 202)
 
     @blueprint.route("/<string:action_id>/status", methods=["GET"])
     @blueprint.route("/actions/<string:action_id>", methods=["GET"])
     def action_status(action_id: str) -> ViewReturn:
         auth_state = check_token(request, checker)
-        return action_status_return_to_view_return(
-            action_status_callback(action_id, auth_state), 200
-        )
+        try:
+            status = action_status_callback(action_id, auth_state)
+        except ValidationError as ve:
+            log.error(
+                f"ActionProvider attempted to create a non-conformant ActionStatus"
+                f" in {action_status_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
+        return action_status_return_to_view_return(status, 200)
 
     @blueprint.route("/<string:action_id>/cancel", methods=["POST"])
     @blueprint.route("/actions/<string:action_id>/cancel", methods=["POST"])
     def action_cancel(action_id: str) -> ViewReturn:
         auth_state = check_token(request, checker)
-        return action_status_return_to_view_return(
-            action_cancel_callback(action_id, auth_state), 200
-        )
+        try:
+            status = action_cancel_callback(action_id, auth_state)
+        except ValidationError as ve:
+            log.error(
+                f"ActionProvider attempted to create a non-conformant ActionStatus"
+                f" in {action_cancel_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
+        return action_status_return_to_view_return(status, 200)
 
     @blueprint.route("/<string:action_id>/release", methods=["POST"])
     @blueprint.route("/actions/<string:action_id>", methods=["DELETE"])
     def action_release(action_id: str) -> ViewReturn:
         auth_state = check_token(request, checker)
-        return action_status_return_to_view_return(
-            action_release_callback(action_id, auth_state), 200
-        )
+        try:
+            status = action_release_callback(action_id, auth_state)
+        except ValidationError as ve:
+            log.error(
+                f"ActionProvider attempted to create a non-conformant ActionStatus"
+                f" in {action_release_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
+        return action_status_return_to_view_return(status, 200)
 
     if action_log_callback is not None:
 
