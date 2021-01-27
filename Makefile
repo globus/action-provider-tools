@@ -75,7 +75,8 @@ lint:
 	poetry run mypy --ignore-missing-imports \
 		examples/watchasay
 	poetry run mypy --ignore-missing-imports \
-		examples/whattimeisitrightnow \
+		examples/whattimeisitrightnow
+	poetry run mypy --ignore-missing-imports \
 		examples/apt_blueprint
 
 test: test-toolkit test-examples
