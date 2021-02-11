@@ -1,8 +1,10 @@
 openapi: 3.0.0
 info:
   title: Globus Actions API
-  description: ""
-  version: 2018-12-05.1
+  description: |
+    This is the Globus Actions API description. Implementation of this API
+    renders a service compatible for use in the Globus Automate service.
+  version: 2020-02-05.1
   contact:
     name: Globus Support
     url: "https://support.globus.org/hc/en-us/requests/new"
@@ -18,42 +20,58 @@ info:
 paths:
   /:
     get:
-      summary: "Introspect the Action Provider for invocation, authorization and administrative and other information"
+      description: |
+        Introspect the Action Provider for invocation, authorization,
+        administrative and other information. Depending on the Action Provider
+        configuration, this endpoint may allow unauthenticated access.
       tags:
         - /
       security:
         - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
       responses:
-        "200":
-          description: Successful response containing details about this action provider.
+        200:
+          description: |
+            Details about this Action Provider.
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/ProviderDescription"
+                $ref: "#/components/schemas/ProviderDescription"
                 example:
-                  types: ["Action"]
+                  admin_contact: support@globus.org
+                  administered_by: []
                   api_version: "1.0"
-                  globus_auth_scope: "https://auth.globus.org/scopes/helloworld.actions.automate.globus.org/run_status_release"
-                  title: "Hello World"
-                  subtitle: "An Action responding Hello to the input name string"
-                  admin_contact: "support@globus.org"
-                  visible_to:
-                    - "public"
+                  description: null
+                  event_types: null
+                  globus_auth_scope: https://auth.globus.org/scopes/actions.globus.org/hello_world
+                  input_schema:
+                    additionalProperties: false
+                    properties:
+                      echo_string:
+                        type: string
+                  keywords: []
+                  log_supported: false
+                  maximum_deadline: P30D
                   runnable_by:
-                    - "all_authenticated_users"
+                    - all_authenticated_users
+                  subtitle: An Action responding Hello to an input value
                   synchronous: false
-        "404":
-          description: "No provider description is present or visible on the requested URL. Visibility may be limited by the visible_to property of the Provider Description"
-        "401":
-          description: "Authorization header missing or invalid."
-        "403":
-          description: "Insufficient permissions for this resource."
+                  title: Hello World
+                  types: ["Action"]
+                  visible_to:
+                    - public
+        401:
+          description: Authorization header missing or invalid.
+        403:
+          description: Insufficient permissions for this resource.
+        404:
+          description: |
+            No provider description is present or visible on the requested URL. 
+            Visibility may be limited by the visible_to property of the 
+            Provider Description.
+
   /run:
     post:
-      summary: Start an action executing (running)
+      description: Trigger an Action execution.
       tags:
         - /run
       security:
@@ -63,124 +81,154 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                data:
-                  $ref: "#/components/schemas/ActionRequest"
+              $ref: "#/components/schemas/ActionRequest"
               example:
                 request_id: abc123
-                label: "Saying hello to John Doe"
+                label: Saying hello to John Doe
                 body:
-                  hello_name: "John Doe"
+                  echo_string: Hello John Doe
       responses:
-        "202":
+        200:
+          description: |
+            OK: A previous request with the same request_id and body has
+            previously been received and processed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionStatus"
+        202:
           description: Action Started
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ActionStatus"
-        "200":
-          description: "OK: A previous request with the same request_id and body has previously been received and processed"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ActionStatus"
-        "400":
-          description: "Invalid request including request body not compliant with the input schema of the provider"
-        "401":
-          description: "Authorization header missing or invalid."
-        "403":
-          description: "Not authorized. The requesting user is not in the runnable_by list of the provider"
+        400:
+          description: |
+            Invalid request including request body not compliant with the input
+            schema of the provider.
+        401:
+          description: Authorization header missing or invalid.
+        403:
+          description: |
+            Not authorized. The requesting user is not in the Action Provider's
+            runnable_by list.
 
   /{action_id}/status:
     parameters:
       - name: action_id
         required: true
         in: path
-        description: ID of an action to check the status.
+        description: The ID for the Action for which to check the status.
         schema:
           type: string
     get:
-      summary: Get the status of a previously run action
+      description: Get the status for a previously executed Action.
       tags:
         - /status
       security:
         - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
       responses:
-        "200":
+        200:
           description: Status of the Action
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ActionStatus"
-        "404":
-          description: "No action with the provided action_id is known. It may never have been executed, or it may have been previously released via the /release operation or after the release timeout occurred"
-        "401":
-          description: "Authorization header missing or invalid."
-        "403":
-          description: "Not authorized. The requesting user is not in the monitor_by list of the provider"
+        401:
+          description: Authorization header missing or invalid.
+        403:
+          description: |
+            Not authorized. The requestor is not in the action's monitor_by
+            list.
+        404:
+          description: |
+            No action with the provided action_id is known. It may never have
+            been executed, or it may have been previously released via the
+            /release operation or after the release timeout occurred.
 
   /{action_id}/cancel:
     parameters:
       - name: action_id
         required: true
         in: path
-        description: ID of an action to cancel.
+        description: The ID for the Action that will be cancelled.
         schema:
           type: string
     post:
-      summary: "Cancel a running Action"
+      description: Cancel a running Action.
       tags:
         - /cancel
       security:
         - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
       responses:
-        "200":
-          description: "Cancellation successful. Final status returned in the body."
+        200:
+          description: |
+            The cancellation request was successfully submitted. The final
+            status is returned in the body.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ActionStatus"
-        "400":
-          description: "Invalid request. The provider does not support cancellation for this action."
-        "404":
-          description: "No action with the provided action_id is known. It may never have been executed, or it may have been previously released via the /release operation or after the release timeout occurred"
-        "409":
-          description: "The Action is in a state, including completed or already processing a previous cancellation request, that does not support a cancel operation."
-        "401":
-          description: "Authorization header missing or invalid."
-        "403":
-          description: "Not authorized. The requesting user is not in the manage_by list of the provider"
+        400:
+          description: |
+            Invalid request. The Action Provider does not support cancellation
+            for this action.
+        401:
+          description: Authorization header missing or invalid.
+        403:
+          description: |
+            Not authorized. The requesting user is not in the action's manage_by
+            list.
+        404:
+          description: |
+            No action with the provided action_id is known. It may never have
+            been executed, or it may have been previously released via the
+            /release operation or after the release timeout occurred.
+        409:
+          description: |
+            The Action is in a state, including completed or already processing
+            a previous cancellation request, that does not support a cancel
+            operation.
 
   /{action_id}/release:
     parameters:
       - name: action_id
         required: true
         in: path
-        description: ID of an action to release.
+        description: |
+          The ID for the Action that will be removed from the Action Provider's
+          execution history.
         schema:
           type: string
     post:
-      summary: "Release the provider from storing the state of a completed Action"
+      description: |
+        Remove the action's state from the Action Provider's execution store.
       tags:
         - /release
       security:
         - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
       responses:
-        "200":
-          description: "Release successful. Final status returned in the body."
+        200:
+          description: Release successful. Final status returned in the body.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ActionStatus"
-        "404":
-          description: "No action with the provided action_id is known. It may never have been executed, or it may have been previously released via the /release operation or after the release timeout occurred"
-        "409":
-          description: "The Action is in a state, such as still actively executing, that does not support a release operation."
-        "401":
-          description: "Authorization header missing or invalid."
-        "403":
-          description: "Not authorized. The requesting user is not in the manage_by list of the provider"
+        401:
+          description: Authorization header missing or invalid.
+        403:
+          description: |
+            Not authorized. The requesting user is not in the action's manage_by
+            list.
+        404:
+          description: |
+            No action with the provided action_id is known. It may never have
+            been executed, or it may have been previously released via the
+            /release operation or after the release timeout occurred.
+        409:
+          description: |
+            The Action is in a state, such as still actively executing, that
+            does not support a release operation.
 
 security:
   - bearer_token: []
@@ -205,7 +253,14 @@ components:
     ProviderDescription:
       type: object
       required:
-        [types, api_version, title, synchronous, log_supported, runnable_by]
+        - types
+        - api_version
+        - title
+        - synchronous
+        - log_supported
+        - runnable_by
+        - globus_auth_scope
+        - admin_contact
       properties:
         types:
           type: array
@@ -214,7 +269,9 @@ components:
             enum:
               - Action
               - Event
-            description: "The type of provider being described. In the initial release, only Action providers are supported"
+            description: |
+              The type of provider being described. In the initial release, only
+              Action Providers are supported.
         api_version:
           type: string
           enum:
@@ -222,63 +279,97 @@ components:
         globus_auth_scope:
           type: string
           format: uri
-          description: "The scope of any bearer token to be used on authenticated accesses to the provider."
+          description: |
+            The scope of any bearer token to be used on authenticated accesses
+            to the provider.
         title:
           type: string
-          description: "A non-unique, human-friendly name used for displaying the provider to end users."
+          description: |
+            A non-unique, human-friendly name used for displaying the provider
+            to end users.
           minLength: 1
           maxLength: 128
         subtitle:
           type: string
-          description: "A concise summary of the provider’s purpose."
+          description: A concise summary of the provider’s purpose.
           minLength: 1
           maxLength: 128
         description:
           type: string
-          description: "A detailed description of the provider for end user display."
+          description: A detailed description of the provider for end user display.
           minLength: 1
           maxLength: 4096
         keywords:
-          description: "A set of terms used to categorize the provider which may be used in query and discovery operations. Maximum total length of all keywords is 1024 characters."
+          description: |
+            A set of terms used to categorize the provider which may be used in
+            query and discovery operations. Maximum total length of all
+            keywords is 1024 characters.
           type: array
           items:
             type: string
         visible_to:
           type: array
-          description: 'A set of Principal URN values, or the value "public" indicating the identity of users who can view the provider description via introspection or when indexed in any provider catalog service'
+          description: |
+            A set of Principal URN values, or the value "public" indicating the
+            identity of users who can view the provider description via
+            introspection or when indexed in any provider catalog service.
           items:
             $ref: "#/components/schemas/PrincipalURN_or_public"
           uniqueItems: true
         runnable_by:
           type: array
-          description: 'A set of Principal URN values, or the value "public" indicating the identity of users who can use the /run operation to initiate an action with the provider'
+          description: |
+            A set of Principal URN values, or the value
+            "all_authenticated_users" indicating the identity of users who can
+            use the /run operation to initiate an action on the provider.
           items:
             $ref: "#/components/schemas/PrincipalURN_or_all_authenticated_users"
           uniqueItems: true
         administered_by:
           type: array
-          description: "The set of Principal URN values of users who may perform administrative operations, including updating the description itself, on the provider"
+          description: |
+            The set of Principal URN values of users who may perform
+            administrative operations, including updating the description
+            itself, on the provider.
           items:
             $ref: "#/components/schemas/PrincipalURN"
           uniqueItems: true
         admin_contact:
           type: string
-          description: "A method of contacting an administrator of the provider, typically an e-mail address, in case of concerns with the operation of the provider"
+          description: |
+            A method of contacting an administrator of the provider, typically
+            an e-mail address, in case of concerns with the operation of the
+            provider.
         synchronous:
           type: boolean
-          description: "True if *all* /run operations on the provider return a completed (SUCCEEDED or FAILED) status in the result of the run operation. False if at least some invocations may return an in progress (ACTIVE or INACTIVE) status value requiring use of the /status operation to determine further state of the action."
+          description: |
+            True if *all* /run operations on the provider return a completed
+            (SUCCEEDED or FAILED) status in the result of the run operation.
+            False if at least some invocations may return an in progress (ACTIVE
+            or INACTIVE) status value requiring use of the /status operation to
+            determine further state of the action.
         log_supported:
           type: boolean
-          description: "True if the provider supports the /log operation providing detailed information on the intermediate states of a request."
+          description: |
+            True if the provider supports the /log operation providing detailed
+            information on the intermediate states of a request.
         maximum_deadline:
           type: string
-          description: "An ISO 8601 time duration value. On providers which support asynchronous operations, the maximum allowed value for deadline of an action."
+          description: |
+            An ISO 8601 time duration value. On providers which support
+            asynchronous operations, the maximum allowed value for deadline of
+            an action.
         input_schema:
           type: object
-          description: "A JSON Schema compliant definition of the format of the `body` field of the action request document when requesting a /run operation."
+          description: |
+            A JSON Schema compliant definition of the format of the `body` field
+            of the action request document when requesting a /run operation.
         event_types:
           type: array
-          description: "For Action Providers which also support Event operations, as indicated by values in the types field, the set of Action status operations which may be subscribed to as events"
+          description: |
+            For Action Providers which also support Event operations, as
+            indicated by values in the types field, the set of Action status
+            operations which may be subscribed to as events.
           items:
             type: string
             enum:
@@ -290,31 +381,50 @@ components:
 
     ActionRequest:
       type: object
-      required: [request_id, body]
+      required:
+        - request_id
+        - body
       additionalProperties: false
       properties:
         request_id:
           type: string
-          description: "A unique identifier representing the *request* to start an action. Multiple uses of the same request_id must have the same content or they will be rejected. Only one instance of the operation will be executed, so requests with the same request_id may be repeated to attempt to guarantee execution of an action"
+          description: |
+            A unique identifier representing the *request* to start an action.
+            Multiple uses of the same request_id must have the same content or
+            they will be rejected. Only one instance of the operation will be
+            executed, so requests with the same request_id may be repeated to
+            attempt to guarantee execution of an action.
         body:
           type: object
-          description: "The action-provider specific content describing the action to run. Format for the body may be provided in the input_schema field of the Action Provider Description"
+          description: |
+            The action-provider specific content describing the action to run.
+            Format for the body may be provided in the input_schema field of
+            the Action Provider Description.
         label:
           type: string
-          description: "A short human presentable description of the Action requested"
+          description: |
+            A short human presentable description of the Action requested.
           minLength: 1
           maxLength: 64
         monitor_by:
           type: array
           items:
             $ref: "#/components/schemas/PrincipalURN"
-          description: "A list of principal URNs containing identities which are allowed to monitor the progress of the action using the /status and /log operations. When not provided, defaults to the user that initiated the action."
+          description: |
+            A list of principal URNs containing identities which are allowed to
+            monitor the progress of the action using the /status and /log
+            operations. When not provided, defaults to the user that initiated
+            the action.
           uniqueItems: true
         manage_by:
           type: array
           items:
             $ref: "#/components/schemas/PrincipalURN"
-          description: "A list of principal URN containing identities which are allowed to manage the progress of the action using the /cancel and /release operations. When not provided, defaults to the user that initiated the action."
+          description: |
+            A list of principal URN containing identities which are allowed to
+            manage the progress of the action using the /cancel and /release
+            operations. When not provided, defaults to the user that initiated
+            the action.
           uniqueItems: true
         allowed_clients:
           type: array
@@ -323,22 +433,38 @@ components:
         deadline:
           type: string
           format: date-time
-          description: "A timestamp indicating by which time the action must complete. The request may be rejected if the Action Provider does not expect to be able to complete the action before the deadline or if it represents a time greater than the maximum_deadline specified in the Provider Description."
+          description: |
+            A timestamp indicating by which time the action must complete. The
+            request may be rejected if the Action Provider does not expect to
+            be able to complete the action before the deadline or if it
+            represents a time greater than the maximum_deadline specified in the
+            Provider Description.
         release_after:
           $ref: "#/components/schemas/ISO8601_duration"
-          description: "An ISO8601 time duration value indicating how long retention of the status of the action be retained after it reaches a completed state. Action Providers may limit the maximum value. It is recommended that Providers provide a default release_after value of approximately 30 days."
+          description: |
+            An ISO8601 time duration value indicating how long retention of the
+            status of the action  be retained after it reaches a completed
+            state. Action Providers may limit the maximum value. It is
+            recommended that Providers provide a default release_after value of
+            approximately 30 days.
 
     ActionStatus:
       type: object
-      required: [action_id, status, details, creator_id]
-      description: "The status of an Action which has already been initiated with the /run operation."
+      required:
+        - action_id
+        - status
+        - details
+        - creator_id
+      description: |
+        The status for an Action which has already been initiated with the /run
+        operation.
       properties:
         action_id:
           type: string
-          description: "The id of the Action itself."
+          description: The id of the Action itself.
         status:
           type: string
-          description: "The current state of the Action"
+          description: The current state of the Action.
           enum:
             - SUCCEEDED
             - FAILED
@@ -348,40 +474,70 @@ components:
           $ref: "#/components/schemas/PrincipalURN"
         label:
           type: string
-          description: "A short human presentable description of the Action"
+          description: A short human presentable description of the Action.
           minLength: 1
           maxLength: 64
         monitor_by:
           type: array
           items:
             $ref: "#/components/schemas/PrincipalURN"
-          description: "A list of principal URNs containing identities which are allowed to monitor the progress of the action using the /status and /log operations. When not provided, defaults to the user that initiated the action."
+          description: |
+            A list of principal URNs containing identities which are allowed to
+            monitor the progress of the action using the /status and /log
+            operations. When not provided, defaults to the user that initiated
+            the action.
           uniqueItems: true
         manage_by:
           type: array
           items:
             $ref: "#/components/schemas/PrincipalURN"
-          description: "A list of principal URN containing identities which are allowed to manage the progress of the action using the /cancel and /release operations. When not provided, defaults to the user that initiated the action."
+          description: |
+            A list of principal URN containing identities which are allowed to
+            manage the progress of the action using the /cancel and /release
+            operations. When not provided, defaults to the user that initiated
+            the action.
           uniqueItems: true
         start_time:
           type: string
           format: date-time
-          description: "The time in ISO8601 format when the Action started executing (not necessarily the exact same time when the action /run operation was invoked)."
+          description: |
+            The time in ISO8601 format when the Action started executing (not
+            necessarily the exact same time when the action /run operation was
+            invoked).
         completion_time:
           type: string
           format: date-time
-          description: "The time in ISO8601 format when the Action reached a terminal (SUCCEEDED or FAILED) status"
+          description: |
+            The time in ISO8601 format when the Action reached a terminal
+            (SUCCEEDED or FAILED) status.
         release_after:
           $ref: "#/components/schemas/ISO8601_duration"
-          description: "An ISO8601 time duration value indicating how long retention of the status of the action be retained after it reaches a completed state."
+          description: |
+            An ISO8601 time duration value indicating how long retention of the
+            status of the action be retained after it reaches a completed
+            state.
         display_status:
           type: string
-          description: "A short, human consumable string describing the current status of this action. This can be used to provide more detailed, presentable summary of the Action status. For example, a batch system may use “Queued” or “Running” as display_status when the Action has status “ACTIVE”. Similarly, a reason the action is blocked, such as requiring additional authentication may be used when the status is “INACTIVE.”"
+          description: |
+            A short, human consumable string describing the current status of
+            this action. This can be used to provide more detailed, presentable
+            summary of the Action status. For example, a batch system may use
+            “Queued” or “Running” as display_status when the Action has status
+            “ACTIVE”. Similarly, a reason the action is blocked, such as
+            requiring additional authentication may be used when the status is
+            “INACTIVE.”
           minLength: 1
           maxLength: 64
         details:
           type: object
-          description: "A provider-specific object representing the full state of the Action. When the Action is in a SUCCEEDED state, this may be considered the result or return value from the Action. When the Action is in a FAILED state, this represents the cause or reason for failure. While running, the details MAY provide information about the Action in progress such as a measure of its progress to completion."
+          description: |
+            A provider-specific object representing the full state of the
+            Action. When the Action is in a SUCCEEDED state, this may be
+            considered the result or return value from the Action. When the
+            Action is in a FAILED state, this represents the cause or reason for
+            failure. While running, the details MAY provide information about
+            the Action in progress such as a measure of its progress to
+            completion.
       example:
         action_id: "6529"
         status: ACTIVE
@@ -400,22 +556,36 @@ components:
     PrincipalURN:
       type: string
       pattern: "^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$"
-      description: "A URN representation of an Identity in Globus either of a user from Globus Auth or a group from Globus Groups."
+      description: |
+        A URN representation of an Identity in Globus either of a user from
+        Globus Auth or a group from Globus Groups.
+      example: urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
 
     PrincipalURN_or_public:
       type: string
       pattern: "^(urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}))|public$"
-      description: 'A URN representation of an Identity in Globus either of a user from Globus Auth or a group from Globus Groups or the special value "public"'
+      description: |
+        A URN representation of an Identity in Globus either of a user from
+        Globus Auth or a group from Globus Groups or the special value
+        "public".
+      example: urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
 
     PrincipalURN_or_all_authenticated_users:
       type: string
       pattern: "^(urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}))|all_authenticated_users$"
-      description: 'A URN representation of an Identity in Globus either of a user from Globus Auth or a group from Globus Groups or the special value "all_authenticated_users" indicating any user who presents valid credentials (bearer token)'
+      description: |
+        A URN representation of an Identity in Globus either of a user from
+        Globus Auth or a group from Globus Groups or the special value
+        "all_authenticated_users" indicating any user who presents valid
+        credentials (bearer token).
+      example: all_authenticated_users
 
     ISO8601_duration:
       type: string
       pattern: '^P(?!$)(\d+(?:\.\d+)?Y)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?W)?(\d+(?:\.\d+)?D)?(T(?=\d)(\d+(?:\.\d+)?H)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?S)?)?$'
-      description: ISO8601 duration format. Regex sourced from https://stackoverflow.com/a/32045167/845210
+      description: |
+        ISO8601 duration format. Regex sourced from
+        https://stackoverflow.com/a/32045167/845210.
 
     # TO DO: This is not complete in terms of specifying individual users in the list
     AllowedClients:
