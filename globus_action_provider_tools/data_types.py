@@ -1,27 +1,16 @@
 import datetime
 import inspect
-from enum import Enum, auto
+from enum import Enum
 from json import JSONEncoder
 from os import urandom
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Type,
-    Union,
-)
+from typing import AbstractSet, Any, Dict, List, Optional, Set, Type, Union
 
 import arrow
 import isodate
 from base62 import encodebytes as base62
 from pydantic import BaseModel, Field
 
-from .authentication import AuthState
+from globus_action_provider_tools.authentication import AuthState
 
 
 def now_isoformat():
@@ -85,14 +74,30 @@ class ActionProviderDescription(BaseModel):
     event_types: Optional[List[EventType]] = None
 
 
+_uuid_regex = (
+    "([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})"
+)
+_principal_urn_regex = f"^urn:globus:(auth:identity|groups:id):{_uuid_regex}$"
+
+
 class ActionRequest(BaseModel):
     request_id: str = Field(
         ...,
-        description="A unique identifier representing the request to start an action. Multiple uses of the same request_id must have the same content or they will be rejected. Only one instance of the operation will be executed, so requests with the same request_id may be repeated to attempt to guarantee execution of an action",
+        description=(
+            "A unique identifier representing the request to start an action. "
+            "Multiple uses of the same request_id must have the same content or they "
+            "will be rejected. Only one instance of the operation will be "
+            "executed, so requests with the same request_id may be repeated "
+            "to attempt to guarantee execution of an action"
+        ),
     )
     body: Dict[str, Any] = Field(
         ...,
-        description="The Action Provider-specific content describing the action to run. The format for the body is provided in the input_schema field of the Action Provider Description",
+        description=(
+            "The Action Provider-specific content describing the action "
+            "to run. The format for the body is provided in the "
+            "input_schema field of the Action Provider Description"
+        ),
     )
     label: Optional[str] = Field(
         None,
@@ -102,25 +107,98 @@ class ActionRequest(BaseModel):
     )
     deadline: Optional[datetime.datetime] = Field(
         None,
-        description="A timestamp indicating by which time the action must complete. The request may be rejected if the Action Provider does not expect to be able to complete the action before the deadline or if it represents a time greater than the maximum_deadline specified in the Provider Description.",
+        description=(
+            "A timestamp indicating by which time the action must complete. "
+            "The request may be rejected if the Action Provider does not expect "
+            "to be able to complete the action before the deadline or if it "
+            "represents a time greater than the maximum_deadline specified in the "
+            "Provider Description."
+        ),
     )
     release_after: Optional[datetime.timedelta] = Field(
         None,
-        description="An ISO8601 time duration value indicating how long retention of the status of the action be retained after it reaches a completed state. Action Providers may limit the maximum value. It is recommended that Providers provide a default release_after value of approximately 30 days.",
+        description=(
+            "An ISO8601 time duration value indicating how long retention of the "
+            "status of the action be retained after it reaches a completed state. "
+            "Action Providers may limit the maximum value. It is recommended "
+            "that Providers provide a default release_after value of approximately "
+            "30 days."
+        ),
     )
     monitor_by: Set[str] = Field(
         default_factory=set,
-        description="A list of principal URNs containing identities which are allowed to monitor the progress of the action using the status and log operations. When not provided, defaults to the user that initiated the action.",
-        regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
+        description=(
+            "A list of principal URNs containing identities which are allowed "
+            "to monitor the progress of the action using the status and log "
+            "operations. When not provided, defaults to the user that initiated "
+            "the action."
+        ),
+        regex=_principal_urn_regex,
     )
     manage_by: Set[str] = Field(
         default_factory=set,
-        description="A list of principal URNs containing identities which are allowed to manage the progress of the action using the cancel and release operations. When not provided, defaults to the user that initiated the action.",
-        regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
+        description=(
+            "A list of principal URNs containing identities which are allowed to "
+            "manage the progress of the action using the cancel and release "
+            "operations. When not provided, defaults to the user that initiated "
+            "the action."
+        ),
+        regex=_principal_urn_regex,
     )
     allowed_clients: List[str] = Field(
         default_factory=list, regex="^(public|globus|creator|.$)$"
     )
+
+
+# We provide some helper types for open dict fields like details. But, even when the
+# helper type is in place, it can be helpful to have the dict-like behavior to fall back
+# on. This MixIn provides support for some dict-like operations, but not all. Beware.
+class SubscriptableObject:
+    def __getitem__(self, key):
+        return vars(self).get(key)
+
+    def __len__(self):
+        return len(vars(self))
+
+    def __iter__(self):
+        return vars(self).keys()
+
+    def pop(self, key, *args):
+        if len(args) > 0:
+            return vars(self).pop(key, args[0])
+        else:
+            return vars(self).pop(key)
+
+
+class ExtensibleCodeDescription(BaseModel, SubscriptableObject):
+    class Config:
+        extra = "allow"
+
+    code: str = Field(..., description=(""))
+    description: str = Field(..., description=(""))
+
+
+class ActionFailedDetails(ExtensibleCodeDescription):
+    pass
+
+
+class PaginationWrapper(BaseModel):
+    limit: int
+    has_next_page: bool
+    marker: Optional[str]
+
+
+class ActionLogEntry(ExtensibleCodeDescription):
+    details: Optional[Dict[str, Any]] = Field(None, description=(""))
+
+
+class ActionLogReturn(PaginationWrapper):
+    entries: List[ActionLogEntry]
+
+
+class ActionInactiveDetails(ExtensibleCodeDescription):
+    required_scope: Optional[str] = Field(None, description=(""))
+    resolution_url: Optional[str] = Field(None, description=(""))
 
 
 class ActionStatus(BaseModel):
@@ -129,8 +207,11 @@ class ActionStatus(BaseModel):
     )
     creator_id: str = Field(
         ...,
-        description="A URN representation of an Identity in Globus either of a user from Globus Auth or a group from Globus Groups.",
-        regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
+        description=(
+            "A URN representation of an Identity in Globus either of a "
+            "user from Globus Auth or a group from Globus Groups."
+        ),
+        regex=_principal_urn_regex,
     )
     action_id: str = Field(
         default_factory=shortish_id, description="The id of the Action itself"
@@ -144,31 +225,62 @@ class ActionStatus(BaseModel):
     )
     monitor_by: Set[str] = Field(
         default_factory=set,
-        description="A list of principal URNs containing identities which are allowed to monitor the progress of the action using the /status and /log operations. When not provided, defaults to the user that initiated the action.",
-        regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
+        description=(
+            "A list of principal URNs containing identities which are allowed to "
+            "monitor the progress of the action using the /status and /log operations. "
+            "When not provided, defaults to the user that initiated the action."
+        ),
+        regex=_principal_urn_regex,
     )
     manage_by: Set[str] = Field(
         default_factory=set,
-        description="A list of principal URNs containing identities which are allowed to manage the progress of the action using the cancel and release operations. When not provided, defaults to the user that initiated the action.",
-        regex="^urn:globus:(auth:identity|groups:id):([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$",
+        description=(
+            "A list of principal URNs containing identities which are allowed "
+            "to manage the progress of the action using the cancel and release "
+            "operations. When not provided, defaults to the user that initiated "
+            "the action."
+        ),
+        regex=_principal_urn_regex,
     )
     completion_time: Optional[datetime.datetime] = Field(
         None,
-        description="The time in ISO8601 format when the Action reached a terminal (SUCCEEDED or FAILED) status",
+        description=(
+            "The time in ISO8601 format when the Action reached a terminal "
+            "(SUCCEEDED or FAILED) status"
+        ),
     )
     release_after: Optional[datetime.timedelta] = Field(
         None,
-        description="An ISO8601 time duration value indicating how long retention of the status of the action be retained after it reaches a completed state.",
+        description=(
+            "An ISO8601 time duration value indicating how long retention of "
+            "the status of the action be retained after it reaches a completed state."
+        ),
     )
     display_status: Optional[str] = Field(
         None,
-        description="A short, human consumable string describing the current status of this action. This can be used to provide more detailed, presentable summary of the Action status. For example, a batch system may use 'Queued' or 'Running' as display_status when the Action has status 'ACTIVE'. Similarly, a reason the action is blocked, such as requiring additional authentication may be used when the status is 'INACTIVE'.",
+        description=(
+            "A short, human consumable string describing the current status of "
+            "this action. This can be used to provide more detailed, presentable "
+            "summary of the Action status. For example, a batch system may "
+            "use 'Queued' or 'Running' as display_status when the Action has "
+            "status 'ACTIVE'. Similarly, a reason the action is blocked, such "
+            "as requiring additional authentication may be used when the status "
+            "is 'INACTIVE'"
+        ),
         min_length=1,
         max_length=64,
     )
-    details: Dict[str, Any] = Field(
+    details: Union[ActionInactiveDetails, ActionFailedDetails, Dict[str, Any]] = Field(
         ...,
-        description="A provider-specific object representing the full state of the Action. When the Action is in a SUCCEEDED state, this may be considered the result or return value from the Action. When the Action is in a FAILED state, this represents the cause or reason for failure. While running, the details MAY provide information about the Action in progress such as a measure of its progress to completion.",
+        description=(
+            "A provider-specific object representing the full state of the "
+            "Action. When the Action is in a SUCCEEDED state, this may be "
+            "considered the result or return value from the Action. When "
+            "the Action is in a FAILED state, this represents the cause or reason "
+            "for failure. While running, the details MAY provide information "
+            "about the Action in progress such as a measure of its progress "
+            "to completion."
+        ),
     )
 
     def is_complete(self):

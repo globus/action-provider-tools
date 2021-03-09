@@ -40,8 +40,7 @@ class ActionProviderToolsException(HTTPException):
     def get_body(self, *args):
         return json.dumps(
             {
-                "error": self.name,
-                "status_code": self.code,
+                "code": self.name,
                 "description": self.get_description(),
             }
         )
