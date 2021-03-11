@@ -54,7 +54,6 @@ ActionRequests and more.
 
 :doc:`Python Helpers Example<examples/whattimeisitrightnow>`
 
-
 .. toctree::
    :maxdepth: 1
    :hidden:

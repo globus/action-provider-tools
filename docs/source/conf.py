@@ -16,11 +16,11 @@ import sys
 
 # sys.path.insert(0, os.path.abspath("../"))
 # import globus_action_provider_tools
-import sphinx_material
 
 # -- Project information -----------------------------------------------------
 
-project = "Action Provider Tools"
+project = "Globus Action Provider Tools"
+html_title = "Globus Action Provider Tools"
 copyright = "2020, University of Chicago"
 author = "Uriel Mandujano"
 
@@ -33,7 +33,7 @@ author = "Uriel Mandujano"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc"]
+extensions = ["sphinx.ext.autodoc", "sphinxcontrib.redoc"]
 autodoc_typehints = "description"
 add_module_names = False
 
@@ -53,33 +53,10 @@ master_doc = "index"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_material"
-html_logo = "_static/images/globus_110x110.png"
-
-# Material theme options (see theme.conf for more information)
-html_theme_options = {
-    # Set the name of the project to appear in the navigation.
-    "nav_title": "Globus Action Provider Tools",
-    # Set the color and the accent color
-    "color_primary": "blue",
-    "color_accent": "light-blue",
-    # Set the repo location to get a badge with stats
-    "repo_url": "https://github.com/globus/action-provider-tools",
-    "repo_name": "Action Provider Tools",
-    # Visible levels of the global TOC; -1 means unlimited
-    "globaltoc_depth": 2,
-    # If False, expand all TOC entries
-    "globaltoc_collapse": True,
-    # If True, show hidden TOC entries
-    "globaltoc_includehidden": False,
-    "repo_type": "github",
-    "master_doc": True,
-}
-pygments_style = "stata"
-
-html_sidebars = {
-    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
-}
+html_theme = "furo"
+html_logo = "_static/images/globus-300x300-UC-blue.png"
+html_theme_options = {}
+pygments_dark_style = "monokai"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -89,5 +66,14 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/termynal.css",
 ]
-
 html_js_files = ["js/termynal.js"]
+
+redoc_uri = "https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"
+redoc = [
+    {
+        "name": "Action Provider Interface",
+        "page": "api",
+        "spec": "actions_spec.openapi.yaml",
+        "embed": True,
+    },
+]

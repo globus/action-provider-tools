@@ -1,12 +1,32 @@
-<div class="use-termynal" data-ty-lineDelay="0" data-termynal>
-    <span data-ty=input>globus-automate action run --action-url \</span>
-    <span data-ty=input data-ty-prompt="">&nbsp;https://actions.globus.org/hello_world --body '{}' | jq .details</span>
-    <span data-ty><span style="color: green; font-weight: bold; display: block;">
-            &nbsp;&nbsp;{ <br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"Hello": "World"<br />&nbsp;&nbsp;}</span>
-    </span>
+<div class="use-termynal" data-termynal>
+    <span data-ty=input>globus-automate action run --action-url</span>
+    <span data-ty=input data-ty-prompt="">&nbsp;https://actions.globus.org/hello_world --body '{}'</span>
 </div>
-<script>
-    containers = document.querySelectorAll(".use-termynal");
-    containers.forEach(container => new Termynal(container))
+<details>
+    <summary>Example Output</summary>
+    <pre id="json-data" style="color: green"></pre>
+</details>
+
+<script>var data_for_display =
+    {
+        "action_id": "y74LVyt3HotT",
+        "completion_time": "2021-03-10 23:54:51.277305+00:00",
+        "creator_id": "urn:globus:auth:identity:06a24bef-940e-418a-97bc-48229c64cc99",
+        "details": {
+            "Hello": "World"
+        },
+        "display_status": "SUCCEEDED",
+        "label": null,
+        "manage_by": [
+            "urn:globus:auth:identity:06a24bef-940e-418a-97bc-48229c64cc99",
+            "urn:globus:auth:identity:6f8c1345-33c6-4235-86c6-90fbadbf4d35"
+        ],
+        "monitor_by": [
+            "urn:globus:auth:identity:06a24bef-940e-418a-97bc-48229c64cc99",
+            "urn:globus:auth:identity:6f8c1345-33c6-4235-86c6-90fbadbf4d35"
+        ],
+        "release_after": null,
+        "start_time": "2021-03-10 23:54:51.277305+00:00",
+        "status": "SUCCEEDED"
+    }
 </script>

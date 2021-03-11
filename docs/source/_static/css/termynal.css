@@ -99,3 +99,16 @@
         opacity: 0;
     }
 }
+
+/* Set style for details toolbar */
+details {
+    font: 16px "Open Sans", Calibri, sans-serif;
+    width: 620px;
+  }
+  
+  details > summary {
+    padding: 2px 6px;
+    width: 15em;
+    border-bottom-style: dashed;
+    cursor: pointer;
+  }

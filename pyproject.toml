@@ -38,6 +38,7 @@ arrow = "^0.15.5"
 pybase62 = "^0.4.0"
 pydantic = "^1.7.3"
 isodate = "^0.6.0"
+Flask = "^1.1.2"
 
 [tool.poetry.dev-dependencies]
 python-language-server = "^0"
@@ -47,9 +48,6 @@ pyls-mypy = "^0"
 importmagic = "^0"
 epc = "^0"
 pytest = "^5"
-werkzeug = "^1"
-flask = "^1"
-isodate = "^0.6.0"
 pytest-xdist = "^1.32.0"
 pytest-cov = "^2.8.1"
 docutils = "^0.16"
@@ -57,6 +55,8 @@ rstcheck = "^3.3.1"
 pygments = "^2.6.1"
 sphinx = "^3.2.1"
 sphinx_material = "^0.0.30"
+furo = "^2021.2.28-beta.28"
+sphinxcontrib-redoc = "^1.6.0"
 
 [tool.isort]
 multi_line_output = 3

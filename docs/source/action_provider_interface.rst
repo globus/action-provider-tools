@@ -24,6 +24,12 @@ Life-cycle described below specifically supports these execution modes as well
 as handling failures and Actions which may be, temporarily, unable to make
 progress.
 
+.. raw:: html
+   
+    <a href="./api.html">Click to see the Globus Action Provider OpenAPI 
+    specification</a>
+ 
+
 Action Life-cycle
 ^^^^^^^^^^^^^^^^^
 
