@@ -5,7 +5,16 @@ We provide an overview of the *Action Provider Interface* as a guide for use
 when implementing an *Action Provider*. 
 
 .. raw:: html
+   
+    <a href="./api.html">Click to interactively explore the Globus Action Provider OpenAPI 
+    specification</a>
+
+|
+
+.. raw:: html
     :file: cli/example_action_run.html
+
+|
 
 The Action Provider Interface is a RESTful model for starting, monitoring,
 canceling and removing state associated with the invocation of an Action.
@@ -23,12 +32,6 @@ invocation request as is the case in typical RESTful models. The Action
 Life-cycle described below specifically supports these execution modes as well
 as handling failures and Actions which may be, temporarily, unable to make
 progress.
-
-.. raw:: html
-   
-    <a href="./api.html">Click to see the Globus Action Provider OpenAPI 
-    specification</a>
- 
 
 Action Life-cycle
 ^^^^^^^^^^^^^^^^^
