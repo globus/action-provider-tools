@@ -13,7 +13,7 @@ from globus_action_provider_tools.data_types import (
     ActionStatus,
     ActionStatusValue,
 )
-from globus_action_provider_tools.exceptions import (
+from globus_action_provider_tools.flask.exceptions import (
     ActionNotFound,
     ActionProviderError,
     BadActionRequest,

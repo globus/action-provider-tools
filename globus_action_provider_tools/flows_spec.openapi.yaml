@@ -1,0 +1,1374 @@
+openapi: 3.0.0
+info:
+  title: Globus Flows API
+  description: |
+    This is the Globus Flows API description.
+  version: 2020-02-05.1
+  contact:
+    name: Globus Support
+    url: "https://support.globus.org/hc/en-us/requests/new"
+    email: "support@globus.org"
+  termsOfService: "https://www.globus.org/legal/terms"
+
+paths:
+  /:
+    post:
+      description: |
+        Deploy a Flow definition and optionally, its schema.
+      tags:
+        - /
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{flows_scope_name}"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - definition
+              properties:
+                definition:
+                  $ref: "#/components/schemas/FlowDefinition"
+                  description: The Flow to deploy.
+                title:
+                  type: string
+                  description: |
+                    A non-unique, human-friendly name used for displaying the provider
+                    to end users.
+                  minLength: 1
+                  maxLength: 128
+                subtitle:
+                  type: string
+                  description: A concise summary of the provider’s purpose.
+                  minLength: 1
+                  maxLength: 128
+                description:
+                  type: string
+                  description: A detailed description of the provider for end user display.
+                  minLength: 1
+                  maxLength: 4096
+                keywords:
+                  description: |
+                    A set of terms used to categorize the provider which may be used in
+                    query and discovery operations. Maximum total length of all
+                    keywords is 1024 characters.
+                  type: array
+                  items:
+                    type: string
+                visible_to:
+                  type: array
+                  description: |
+                    A set of Principal URN values, or the value "public" indicating the
+                    identity of users who can view the provider description via
+                    introspection or when indexed in any provider catalog service.
+                  items:
+                    $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN_or_public
+                  uniqueItems: true
+                  example:
+                    - public
+                    - urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
+                    - urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
+                runnable_by:
+                  type: array
+                  description: |
+                    A set of Principal URN values, or the value
+                    "all_authenticated_users" indicating the identity of users who can
+                    use the /run operation to initiate an action on the provider.
+                  items:
+                    $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN_or_all_authenticated_users
+                  uniqueItems: true
+                  example:
+                    - all_authenticated_users
+                    - urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
+                    - urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
+                administered_by:
+                  type: array
+                  description: |
+                    The set of Principal URN values of users who may perform
+                    administrative operations, including updating the description
+                    itself, on the provider.
+                  items:
+                    $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN
+                  uniqueItems: true
+                  example:
+                    - urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
+                    - urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
+                input_schema:
+                  type: object
+                  description: |
+                    A published JSON Schema which input to the Flow must conform
+                    to.
+      responses:
+        201:
+          description: |
+            The Flow definition was successfully deployed onto the Flow's
+            service.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowResponse"
+        400:
+          description: |
+            The requestor attempted to deploy a malformed Flow.
+        403:
+          description: |
+            The requestor is not authorized to deploy a Flow.
+
+  /flows:
+    post:
+      description: |
+        Deploy a Flow definition and optionally, its schema.
+      tags:
+        - /flows
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{flows_scope_name}"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - definition
+              properties:
+                definition:
+                  $ref: "#/components/schemas/FlowDefinition"
+                  description: The Flow to deploy.
+                title:
+                  type: string
+                  description: |
+                    A non-unique, human-friendly name used for displaying the provider
+                    to end users.
+                  minLength: 1
+                  maxLength: 128
+                subtitle:
+                  type: string
+                  description: A concise summary of the provider’s purpose.
+                  minLength: 1
+                  maxLength: 128
+                description:
+                  type: string
+                  description: A detailed description of the provider for end user display.
+                  minLength: 1
+                  maxLength: 4096
+                keywords:
+                  description: |
+                    A set of terms used to categorize the provider which may be used in
+                    query and discovery operations. Maximum total length of all
+                    keywords is 1024 characters.
+                  type: array
+                  items:
+                    type: string
+                visible_to:
+                  type: array
+                  description: |
+                    A set of Principal URN values, or the value "public" indicating the
+                    identity of users who can view the provider description via
+                    introspection or when indexed in any provider catalog service.
+                  items:
+                    $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN_or_public
+                  uniqueItems: true
+                  example:
+                    - public
+                    - urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
+                    - urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
+                runnable_by:
+                  type: array
+                  description: |
+                    A set of Principal URN values, or the value
+                    "all_authenticated_users" indicating the identity of users who can
+                    use the /run operation to initiate an action on the provider.
+                  items:
+                    $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN_or_all_authenticated_users
+                  uniqueItems: true
+                  example:
+                    - all_authenticated_users
+                    - urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
+                    - urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
+                administered_by:
+                  type: array
+                  description: |
+                    The set of Principal URN values of users who may perform
+                    administrative operations, including updating the description
+                    itself, on the provider.
+                  items:
+                    $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN
+                  uniqueItems: true
+                  example:
+                    - urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
+                    - urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
+                input_schema:
+                  type: object
+                  description: |
+                    A published JSON Schema which input to the Flow must conform
+                    to.
+      responses:
+        201:
+          description: |
+            The Flow definition was successfully deployed onto the Flow's
+            service.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowResponse"
+        400:
+          description: |
+            The requestor attempted to deploy a malformed Flow.
+        403:
+          description: |
+            The requestor is not authorized to deploy a Flow.
+
+    get:
+      description: |
+        Query the Flows service for a listing of Flows available to a user
+        according to the permissions (role) they have on the Flow.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      parameters:
+        - name: roles
+          in: query
+          description: |
+            Return Flow's for which the user has the supplied role. The role the
+            user has on the Flow dictates the operations they can perform.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - created_by
+                - visible_to
+                - runnable_by
+                - administered_by
+            default: created_by
+          example: roles=created_by,visible_to
+      tags:
+        - /flows
+      responses:
+        200:
+          description: |
+            The requestor has succesfully authenticated and queried the Flow's
+            service for the Flows available for them.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FlowDefinition"
+                  limit:
+                    type: integer
+                    description: The number of Flows returned.
+                  marker:
+                    type: string
+                    description: |
+                      An opaque pagination token for iterating through returned
+                      Flows.
+                  has_next_page:
+                    type: boolean
+        400:
+          description: |
+            There was an issue parsing the query parameters.
+        403:
+          description: |
+            The requestor presented a token with insufficient scopes.
+
+  /{flow_id}:
+    parameters:
+      - name: flow_id
+        required: true
+        in: path
+        description: The ID for the Flow whose definition is being looked up.
+        schema:
+          type: string
+    get:
+      description: Get previously deployed Flow's definition.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}
+      responses:
+        200:
+          description: |
+            The requestor has succesfully authenticated and queried the Flow's
+            service for a specific Flow definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowResponse"
+        403:
+          description: |
+            The requestor attempted to retrieve a Flow definition for which they
+            did not have access.
+        404:
+          description: |
+            The requestor attempted to retrieve a non-existant Flow, or the
+            requestor did not have permissions to view a Flow.
+    put:
+      description: Update a previously deployed Flow's definition.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}
+      responses:
+        200:
+          description: |
+            The requestor has succesfully authenticated and updated the target
+            Flow definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowResponse"
+        400:
+          description: |
+            The Flow definition update failed due to an attempt to perform a
+            malformed update.
+        403:
+          description: |
+            The requestor attempted to modify a Flow definition for which they
+            did not have access.
+        404:
+          description: |
+            The requestor attempted to retrieve a non-existant Flow, or the
+            requestor did not have permissions to update a Flow.
+    delete:
+      description: Remove a Flow from the Flow service.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}
+      responses:
+        200:
+          description: |
+            The requestor has successfully remove the Flow from the Flows
+            service.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowResponse"
+        403:
+          description: |
+            The requestor attempted to modify a Flow definition for which they
+            did not have access.
+        404:
+          description: |
+            The requestor attempted to remove a non-existant Flow, or the
+            requestor did not have permissions to remove the Flow.
+
+  /flows/{flow_id}:
+    $ref: "#/paths/~1{flow_id}"
+
+  /flows/{flow_id}/run:
+    $ref: "#/paths/~1{flow_id}~1run"
+
+  /mine:
+    get:
+      deprecated: true
+      description: |
+        Query the Flows service for a listing of Flows available to a user
+        according to the permissions (role) they have on the Flow.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      parameters:
+        - name: roles
+          in: query
+          description: |
+            Return Flow's for which the user has the supplied role. The role the
+            user has on the Flow dictates the operations they can perform.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - created_by
+                - visible_to
+                - runnable_by
+                - administered_by
+            default: created_by
+          example: roles=created_by,visible_to
+      tags:
+        - /flows
+      responses:
+        200:
+          description: |
+            The requestor has succesfully authenticated and queried the Flow's
+            service for the Flows available for them.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FlowDefinition"
+                  limit:
+                    type: integer
+                    description: The number of Flows returned.
+                  marker:
+                    type: string
+                    description: |
+                      An opaque pagination token for iterating through returned
+                      Flows.
+                  has_next_page:
+                    type: boolean
+        400:
+          description: |
+            There was an issue parsing the query parameters.
+        403:
+          description: |
+            The requestor presented a token with insufficient scopes.
+
+  /{flow_id}/run:
+    parameters:
+      - name: flow_id
+        required: true
+        in: path
+        description: The ID for the Flow to run.
+        schema:
+          type: string
+    post:
+      description: Run an instance of a particular Flow.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}/run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: object
+                  description: |
+                    A Flow specific input body. If the Flow defines an input
+                    schema, this input will be validated against it. If the Flow
+                    does not define an input schema, the Flow will be run with
+                    whatever the contents of this field is.
+      responses:
+        201:
+          description: The Flow invocation was successfully triggered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowAction"
+        400:
+          description: |
+            The Flow invocation input failed validation against the Flow's input
+            schema.
+        403:
+          description: |
+            The requestor presented a token with insufficient scopes.
+        404:
+          description: |
+            The requestor did not have access to run the provided Flow, or the
+            Flow does not exist.
+
+  /{flow_id}/{action_id}/status:
+    parameters:
+      - name: flow_id
+        required: true
+        in: path
+        description: The ID for the Flow which launched the Action.
+        schema:
+          type: string
+      - name: action_id
+        required: true
+        in: path
+        description: The ID for the Action whose status is being retrieved.
+        schema:
+          type: string
+    get:
+      description: Retrieve the status for a particular invocation of a Flow.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}/{action_id}/status
+      responses:
+        200:
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowAction"
+        404:
+          description: |
+            The requested Action or Flow was not found. Or, the
+            requestor did not have access to view the Action.
+
+  /flows/{flow_id}/{action_id}/status:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1status"
+
+  /{flow_id}/actions/{action_id}/status:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1status"
+
+  /flows/{flow_id}/actions/{action_id}/status:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1status"
+
+  /{flow_id}/{action_id}/release:
+    parameters:
+      - name: flow_id
+        required: true
+        in: path
+        description: The ID for the Flow which launched the Action.
+        schema:
+          type: string
+      - name: action_id
+        required: true
+        in: path
+        description: The ID for the Action whose data is being released.
+        schema:
+          type: string
+    post:
+      description: Remove the state for a particular invocation of a Flow.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}/{action_id}/release
+      responses:
+        200:
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowAction"
+        404:
+          description: |
+            The requested Action or Flow was not found. Or, the
+            requestor did not have access to view the Action.
+        409:
+          description: |
+            The requestor attempted to remove the state for an Action which had
+            not yet reached a completed status.
+
+  /flows/{flow_id}/{action_id}/release:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1release"
+
+  /{flow_id}/actions/{action_id}/release:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1release"
+
+  /flows/{flow_id}/actions/{action_id}/release:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1release"
+
+  /{flow_id}/{action_id}/cancel:
+    parameters:
+      - name: flow_id
+        required: true
+        in: path
+        description: The ID for the Flow which launched the Action.
+        schema:
+          type: string
+      - name: action_id
+        required: true
+        in: path
+        description: The ID for the Action to cancel.
+        schema:
+          type: string
+    post:
+      description: Cancel the exeuction for a particular invocation of a Flow.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}/{action_id}/cancel
+      responses:
+        202:
+          description: The request was successfully received.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowAction"
+        404:
+          description: |
+            The requested Action or Flow was not found. Or, the
+            requestor did not have access to view the Action.
+        502:
+          description: |
+            The service encountered an Upstream error when attempting to cancel
+            the Action.
+
+  /flows/{flow_id}/{action_id}/cancel:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1cancel"
+
+  /{flow_id}/actions/{action_id}/cancel:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1cancel"
+
+  /flows/{flow_id}/actions/{action_id}/cancel:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1cancel"
+
+  /{flow_id}/{action_id}/log:
+    parameters:
+      - name: flow_id
+        required: true
+        in: path
+        description: The ID for the Flow which launched the Action.
+        schema:
+          type: string
+      - name: action_id
+        required: true
+        in: path
+        description: The ID for the Action whose log is getting pulled.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: An integer limit on the number of log records returned.
+        required: false
+        schema:
+          type: integer
+          default: 10
+      - name: reverse_order
+        in: query
+        description: |
+          A flag to indicate if log records should be returned in reverse order.
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: pagination_token
+        in: query
+        description: |
+          A token used to iterate through pages of returned log records.
+        required: false
+        schema:
+          type: string
+    get:
+      description: |
+        Retrieve detailed exeuction information for a particular invocation of a
+        Flow.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}/{action_id}/log
+      responses:
+        200:
+          description: The request was successfully received.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - limit
+                  - has_next_page
+                  - entries
+                properties:
+                  limit:
+                    type: integer
+                    description: The number of log states returned.
+                  marker:
+                    type: string
+                    description: |
+                      An opaque pagination token for iterating through returned
+                      records. If there are no more entries, this field will not
+                      exist.
+                  has_next_page:
+                    type: boolean
+                  entries:
+                    type: array
+                    items:
+                      type: object
+        400:
+          description: |
+            There was an issue parsing the query parameters.
+        404:
+          description: |
+            The requested Action or Flow was not found. Or, the
+            requestor did not have access to view the Action.
+
+  /flows/{flow_id}/{action_id}/log:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1log"
+
+  /{flow_id}/actions/{action_id}/log:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1log"
+
+  /flows/{flow_id}/actions/{action_id}/log:
+    $ref: "#/paths/~1{flow_id}~1{action_id}~1log"
+
+  /{flow_id}/actions:
+    parameters:
+      - name: flow_id
+        required: true
+        in: path
+        description: The ID for the Flow which launched the Action.
+        schema:
+          type: string
+    get:
+      description: |
+        Retrieve a listing of Actions launched from a particular Flow.
+      security:
+        - bearer_token: ["https://auth.globus.org/scopes/{provider_scope_name}"]
+      tags:
+        - /{flow_id}/actions
+      parameters:
+        - name: pagination_token
+          in: query
+          description: A token used to iterate through pages of returned Actions.
+          required: false
+          schema:
+            type: string
+        - name: roles
+          in: query
+          description: |
+            Return Actions for which the user has the supplied role. The role the
+            user has on the Action dictates the operations they can perform.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - created_by
+                - manage_by
+                - monitor_by
+            default: created_by
+          example: roles=created_by,manage_by
+        - name: status
+          in: query
+          description: |
+            Return Actions which are in the supplied state. The state of the
+            Action dictates the operations which can performed on them.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - SUCCEEDED
+                - FAILED
+                - ACTIVE
+                - INACTIVE
+          example: status=FAILED,INACTIVE
+      responses:
+        200:
+          description: The request was successfully received.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - actions
+                  - has_next_page
+                properties:
+                  marker:
+                    type: string
+                    description: |
+                      An opaque pagination token for iterating through returned
+                      Actions. If there are no more entries, this field will not
+                      exist.
+                  has_next_page:
+                    type: boolean
+                  actions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FlowAction"
+        403:
+          description: |
+            The requestor presented a token with insufficient scopes.
+        404:
+          description: |
+            The Flow does not exist or the requestor did not have access to
+            enumerate the Flow's Actions.
+
+components:
+  schemas:
+    FlowDefinition:
+      type: object
+      additionalProperties: false
+      required:
+        - StartAt
+        - States
+      properties:
+        Comment:
+          type: string
+        StartAt:
+          type: string
+        States:
+          additionalProperties:
+            anyOf:
+              - $ref: "#/components/schemas/Pass"
+              - $ref: "#/components/schemas/Action"
+              - $ref: "#/components/schemas/Wait"
+              - $ref: "#/components/schemas/Choice"
+              - $ref: "#/components/schemas/ExpressionEval"
+            discriminator:
+              propertyName: Type
+
+    FlowAction:
+      type: object
+      additionalProperties: false
+      required:
+        - action_id
+        - flow_id
+        - flow_last_updated
+        - start_time
+        - completion_time
+        - label
+        - status
+        - details
+        - created_by
+      properties:
+        action_id:
+          type: string
+          description: |
+            The ID for a particular Flow invocation. Analogous to an action_id.
+        flow_id:
+          type: string
+          description: |
+            The Flow to which this instance belongs.
+        flow_last_updated:
+          type: string
+          format: date-time
+          description: The time the last update to this Flow occurred.
+        start_time:
+          type: string
+          format: date-time
+          description: The time the particular Flow invocation began.
+        completion_time:
+          type: string
+          format: date-time
+          description: The time this particular Flow invocation completed.
+        label:
+          type: string
+          description: A short human presentable description of the invocation.
+        status:
+          type: string
+        details:
+          type: object
+        created_by:
+          $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN
+
+    JsonPathPattern:
+      type: string
+      pattern: "^\\$\\..*"
+
+    JsonPathReferencePattern:
+      type: string
+      pattern: "^\\$\\..*"
+
+    NextOrEnd:
+      oneOf:
+        - required:
+            - Next
+        - required:
+            - End
+      properties:
+        Next:
+          type: string
+        End:
+          type: boolean
+
+    Parameters:
+      properties:
+        Parameters:
+          type: object
+          patternProperties:
+            ".*\\.\\$":
+          $ref: "#/components/schemas/JsonPathPattern"
+
+    InputPath:
+      properties:
+        InputPath:
+          "$ref": "#/components/schemas/JsonPathReferencePattern"
+
+    ResultPath:
+      properties:
+        ResultPath:
+          "$ref": "#/components/schemas/JsonPathReferencePattern"
+
+    ParametersOrInputPathNotRequired:
+      allOf:
+        - "$ref": "#/components/schemas/Parameters"
+        - "$ref": "#/components/schemas/InputPath"
+
+    ParametersOrInputPath:
+      oneOf:
+        - required:
+            - Parameters
+        - required:
+            - InputPath
+      allOf:
+        - "$ref": "#/components/schemas/Parameters"
+        - "$ref": "#/components/schemas/InputPath"
+
+    Pass:
+      allOf:
+        - additionalProperties: false
+          properties:
+            Type:
+              type: string
+            Comment: {}
+            Next: {}
+            End: {}
+            InputPath: {}
+            Parameters: {}
+            ResultPath: {}
+        - "$ref": "#/components/schemas/NextOrEnd"
+        - "$ref": "#/components/schemas/ParametersOrInputPathNotRequired"
+        - "$ref": "#/components/schemas/ResultPath"
+
+    Catch:
+      properties:
+        Catch:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            allOf:
+              - additionalProperties: false
+                required:
+                  - ErrorEquals
+                  - Next
+                properties:
+                  ErrorEquals:
+                    type: array
+                    items:
+                      type: string
+                    minItems: 1
+                    uniqueItems: true
+                  Next:
+                    type: string
+                  ResultPath: {}
+              - "$ref": "#/components/schemas/ResultPath"
+
+    Action:
+      allOf:
+        - additionalProperties: false
+          required:
+            - Type
+            - ActionUrl
+          properties:
+            ActionUrl:
+              type: string
+              format: uri
+            ActionScope:
+              type: string
+              format: uri
+            RunAs:
+              type: string
+            ExceptionOnActionFailure:
+              type: boolean
+              default: false
+            WaitTime:
+              type: integer
+            Type:
+              type: string
+            Comment: {}
+            Next: {}
+            End: {}
+            InputPath: {}
+            Parameters: {}
+            ResultPath: {}
+            Catch: {}
+        - "$ref": "#/components/schemas/NextOrEnd"
+        - "$ref": "#/components/schemas/ParametersOrInputPath"
+        - "$ref": "#/components/schemas/ResultPath"
+        - "$ref": "#/components/schemas/Catch"
+
+    ExpressionEval:
+      allOf:
+        - additionalProperties: false
+          required:
+            - Next
+            - Parameters
+            - ResultPath
+          properties:
+            Type:
+              type: string
+            Comment: {}
+            Parameters: {}
+            ResultPath: {}
+            Next:
+              type: string
+        - "$ref": "#/components/schemas/Parameters"
+        - "$ref": "#/components/schemas/ResultPath"
+
+    Wait:
+      additionalProperties: false
+      oneOf:
+        - required:
+            - Seconds
+        - required:
+            - SecondsPath
+        - required:
+            - Timestamp
+        - required:
+            - TimestampPath
+      properties:
+        Type:
+          type: string
+        Comment: {}
+        Next:
+          type: string
+        Seconds:
+          type: integer
+          maximum: 31536000
+        SecondsPath:
+          "$ref": "#/components/schemas/JsonPathPattern"
+        Timestamp:
+          type: string
+          format: date-time
+        TimestampPath:
+          "$ref": "#/components/schemas/JsonPathPattern"
+
+    ChoiceRule:
+      oneOf:
+        - required:
+            - And
+        - required:
+            - Or
+        - required:
+            - Not
+        - required:
+            - Variable
+            - StringEquals
+        - required:
+            - Variable
+            - StringEqualsPath
+        - required:
+            - Variable
+            - StringLessThan
+        - required:
+            - Variable
+            - StringLessThanPath
+        - required:
+            - Variable
+            - StringGreaterThan
+        - required:
+            - Variable
+            - StringGreaterThanPath
+        - required:
+            - Variable
+            - StringLessThanEquals
+        - required:
+            - Variable
+            - StringLessThanEqualsPath
+        - required:
+            - Variable
+            - StringGreaterThanEquals
+        - required:
+            - Variable
+            - StringGreaterThanEqualsPath
+        - required:
+            - Variable
+            - StringMatches
+        - required:
+            - Variable
+            - NumericEquals
+        - required:
+            - Variable
+            - NumericEqualsPath
+        - required:
+            - Variable
+            - NumericLessThan
+        - required:
+            - Variable
+            - NumericLessThanPath
+        - required:
+            - Variable
+            - NumericGreaterThan
+        - required:
+            - Variable
+            - NumericGreaterThanPath
+        - required:
+            - Variable
+            - NumericLessThanEquals
+        - required:
+            - Variable
+            - NumericLessThanEqualsPath
+        - required:
+            - Variable
+            - NumericGreaterThanEquals
+        - required:
+            - Variable
+            - NumericGreaterThanEqualsPath
+        - required:
+            - Variable
+            - BooleanEquals
+        - required:
+            - Variable
+            - BooleanEqualsPath
+        - required:
+            - Variable
+            - TimestampEquals
+        - required:
+            - Variable
+            - TimestampEqualsPath
+        - required:
+            - Variable
+            - TimestampLessThan
+        - required:
+            - Variable
+            - TimestampLessThanPath
+        - required:
+            - Variable
+            - TimestampGreaterThan
+        - required:
+            - Variable
+            - TimestampGreaterThanPath
+        - required:
+            - Variable
+            - TimestampLessThanEquals
+        - required:
+            - Variable
+            - TimestampLessThanEqualsPath
+        - required:
+            - Variable
+            - TimestampGreaterThanEquals
+        - required:
+            - Variable
+            - TimestampGreaterThanEqualsPath
+        - required:
+            - Variable
+            - IsNull
+        - required:
+            - Variable
+            - IsPresent
+        - required:
+            - Variable
+            - IsNumeric
+        - required:
+            - Variable
+            - IsString
+        - required:
+            - Variable
+            - IsBoolean
+        - required:
+            - Variable
+            - IsTimestamp
+      properties:
+        And:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ChoiceRule"
+        Or:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ChoiceRule"
+        Not:
+          "$ref": "#/components/schemas/ChoiceRule"
+        Variable:
+          type: string
+        StringEquals:
+          type: string
+        StringEqualsPath:
+          type: string
+        StringLessThan:
+          type: string
+        StringLessThanPath:
+          type: string
+        StringGreaterThan:
+          type: string
+        StringGreaterThanPath:
+          type: string
+        StringLessThanEquals:
+          type: string
+        StringLessThanEqualsPath:
+          type: string
+        StringGreaterThanEquals:
+          type: string
+        StringGreaterThanEqualsPath:
+          type: string
+        StringMatches:
+          type: string
+        NumericEquals:
+          type: number
+        NumericEqualsPath:
+          type: string
+        NumericLessThan:
+          type: number
+        NumericLessThanPath:
+          type: string
+        NumericGreaterThan:
+          type: number
+        NumericGreaterThanPath:
+          type: string
+        NumericLessThanEquals:
+          type: number
+        NumericLessThanEqualsPath:
+          type: string
+        NumericGreaterThanEquals:
+          type: number
+        NumericGreaterThanEqualsPath:
+          type: string
+        BooleanEquals:
+          type: boolean
+        BooleanEqualsPath:
+          type: string
+        TimestampEquals:
+          type: string
+          format: date-time
+        TimestampEqualsPath:
+          type: string
+        TimestampLessThan:
+          type: string
+          format: date-time
+        TimestampLessThanPath:
+          type: string
+        TimestampGreaterThan:
+          type: string
+          format: date-time
+        TimestampGreaterThanPath:
+          type: string
+        TimestampLessThanEquals:
+          type: string
+          format: date-time
+        TimestampLessThanEqualsPath:
+          type: string
+        TimestampGreaterThanEquals:
+          type: string
+          format: date-time
+        TimestampGreaterThanEqualsPath:
+          type: string
+        IsNull:
+          type: boolean
+        IsPresent:
+          type: boolean
+        IsNumeric:
+          type: boolean
+        IsString:
+          type: boolean
+        IsBoolean:
+          type: boolean
+        IsTimestamp:
+          type: boolean
+
+    Choice:
+      additionalProperties: false
+      required:
+        - Choices
+      properties:
+        Type:
+          type: string
+        Comment:
+          type: string
+        Default:
+          type: string
+        Choices:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            allOf:
+              - properties:
+                  Next:
+                    type: string
+              - $ref: "#/components/schemas/ChoiceRule"
+
+    FlowResponse:
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the Flow.
+        definition:
+          $ref: "#/components/schemas/FlowDefinition"
+          description: The Flow to deploy.
+        input_schema:
+          type: object
+          description: |
+            A JSON Schema compliant definition of the format of the `body` field
+            when requesting a Flow be run.
+        globus_auth_scope:
+          type: string
+          format: uri
+          description: |
+            The scope of any bearer token to be used on authenticated accesses
+            to the Flow.
+        globus_auth_scopes_by_RunAs:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: |
+            A list of scopes according to RunAs values as defined in the Flow.
+        visible_to:
+          type: array
+          description: |
+            A set of Principal URN values, or the value "public" indicating the
+            identity of users who can view the Flow definition.
+          items:
+            $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN_or_public
+          uniqueItems: true
+          example:
+            - public
+            - urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
+            - urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
+        runnable_by:
+          type: array
+          description: |
+            A set of Principal URN values, or the value
+            "all_authenticated_users" indicating the identity of users who can
+            initiate a run of the Flow.
+          items:
+            $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN_or_all_authenticated_users
+          uniqueItems: true
+          example:
+            - all_authenticated_users
+            - urn:globus:auth:identity:46bd0f56-e24f-11e5-a510-131bef46955c
+            - urn:globus:groups:id:fdb38a24-03c1-11e3-86f7-12313809f035
+        administered_by:
+          type: array
+          description: |
+            The set of Principal URN values of users who may perform
+            administrative operations, including updating the description
+            itself.
+          items:
+            $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN
+          uniqueItems: true
+        created_by:
+          type: string
+          $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN
+          description: The author of the Flow.
+        synchronous:
+          type: boolean
+        log_supported:
+          type: boolean
+          description: |
+            True if the Flow supports the /log operation providing detailed
+            information on the intermediate states of a Flow invocation.
+        types:
+          type: array
+          items:
+            type: string
+            enum:
+              - Action
+              - Event
+            description: |
+              The type of Flow being described. In the initial release, only
+              Actions are supported.
+        api_version:
+          type: string
+          enum:
+            - "1.0"
+        title:
+          type: string
+          description: |
+            A non-unique, human-friendly name used for displaying the Flow
+            to end users.
+        subtitle:
+          type: string
+          description: A concise summary of the Flow's purpose.
+        description:
+          type: string
+          description: A detailed description of the Flow for end user display.
+        keywords:
+          description: |
+            A set of terms used to categorize the Flow which may be used in
+            query and discovery operations.
+          type: array
+          items:
+            type: string
+        principal_urn:
+          type: string
+          $ref: actions_spec.openapi.yaml#/components/schemas/PrincipalURN
+          description: The Flow's identity in Globus Auth.
+        globus_auth_username:
+          type: string
+          description: The Flow's Globus Auth username.

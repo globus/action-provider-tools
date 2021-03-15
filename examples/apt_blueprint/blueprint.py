@@ -16,9 +16,12 @@ from globus_action_provider_tools.data_types import (
     ActionStatusValue,
     AuthState,
 )
-from globus_action_provider_tools.exceptions import ActionConflict, ActionNotFound
-from globus_action_provider_tools.flask import ActionProviderBlueprint
-from globus_action_provider_tools.flask.types import ActionLogReturn, ActionStatusReturn
+from globus_action_provider_tools.flask import (
+    ActionLogReturn,
+    ActionProviderBlueprint,
+    ActionStatusReturn,
+)
+from globus_action_provider_tools.flask.exceptions import ActionConflict, ActionNotFound
 
 from .backend import simple_backend
 

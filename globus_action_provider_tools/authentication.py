@@ -12,10 +12,11 @@ from globus_sdk.authorizers import (
 from globus_sdk.exc import GlobusAPIError, GlobusError
 from globus_sdk.response import GlobusHTTPResponse
 
-from globus_action_provider_tools.exceptions import ActionProviderError
-
 from .caching import DEFAULT_CACHE_BACKEND, DEFAULT_CACHE_TIMEOUT, dogpile_cache
 from .groups_client import GroupsClient
+
+# from globus_action_provider_tools.exceptions import ActionProviderError
+
 
 log = logging.getLogger(__name__)
 
@@ -219,7 +220,8 @@ class TokenChecker:
             self.check_token("NotAToken").introspect_token()
         except GlobusAPIError as err:
             if err.http_status == 401:
-                raise ActionProviderError("Check client_id and client_secret", err)
+                raise
+                # raise ActionProviderError("Check client_id and client_secret", err)
 
     def check_token(
         self, access_token: str, expected_scopes: Iterable[str] = None

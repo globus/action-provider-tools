@@ -17,7 +17,7 @@ from globus_action_provider_tools.data_types import (
     ActionStatusValue,
     AuthState,
 )
-from globus_action_provider_tools.exceptions import (
+from globus_action_provider_tools.flask.exceptions import (
     ActionNotFound,
     ActionProviderError,
     BadActionRequest,
