@@ -263,7 +263,7 @@ class ActionProviderBlueprint(Blueprint):
         """
         ...
 
-    def action_resume(self, func) -> None:
+    def action_resume(self, func) -> Callable[[str], ViewReturn]:
         """
         Decorates a function to be run as an Action Provider's resume endpoint.
         """

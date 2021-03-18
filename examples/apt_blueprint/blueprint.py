@@ -189,13 +189,15 @@ def my_action_log(action_id: str, auth: AuthState) -> ActionLogReturn:
     """
     pagination = request.args.get("pagination")
     filters = request.args.get("filters")
-    return {
-        "time": "TODAY",
-        "code": 200,
-        "description": f"This is an example of a detailed log entry for {action_id}",
-        "details": {
-            "action_id": "Transfer",
-            "filters": filters,
-            "pagination": pagination,
+    return ActionLogReturn(
+        code=200,
+        description=f"This is an example of a detailed log entry for {action_id}",
+        **{
+            "time": "TODAY",
+            "details": {
+                "action_id": "Transfer",
+                "filters": filters,
+                "pagination": pagination,
+            },
         },
-    }
+    )
