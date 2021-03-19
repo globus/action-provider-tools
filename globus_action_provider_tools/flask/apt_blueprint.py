@@ -247,7 +247,7 @@ class ActionProviderBlueprint(Blueprint):
     def action_resume(self, func: Callable[[str, AuthState], ActionStatusReturn]):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_status can accept a str or ActionStatus as the first arg type
+        for action_resume can accept a str or ActionStatus as the first arg type
         NOTE: typing_extensions.Protocol would be better if not for it's poor
         error messages
         """
@@ -259,7 +259,7 @@ class ActionProviderBlueprint(Blueprint):
     ):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_status can accept a str or ActionStatus as the first arg type
+        for action_resume can accept a str or ActionStatus as the first arg type
         """
         ...
 
