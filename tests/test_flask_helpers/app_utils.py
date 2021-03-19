@@ -16,6 +16,7 @@ from globus_action_provider_tools.authorization import (
     authorize_action_management_or_404,
 )
 from globus_action_provider_tools.data_types import (
+    ActionLogEntry,
     ActionLogReturn,
     ActionProviderDescription,
     ActionRequest,
@@ -157,12 +158,17 @@ def test_action_log(action_id: str, auth: AuthState) -> ActionLogReturn:
     return ActionLogReturn(
         code=200,
         description=f"This is an example of a detailed log entry for {action_id}",
-        **{
-            "time": "TODAY",
-            "details": {
-                "action_id": "Transfer",
-                "filters": filters,
-                "pagination": pagination,
-            },
-        },
+        limit=1,
+        has_next_page=False,
+        entries=[
+            ActionLogEntry(
+                code="GenericLogEntry",
+                description="Description of log entry",
+                details={
+                    "action_id": "Transfer",
+                    "filters": filters,
+                    "pagination": pagination,
+                },
+            )
+        ],
     )

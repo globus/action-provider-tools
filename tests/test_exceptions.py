@@ -31,7 +31,6 @@ def test_exceptions(exc):
     data = exc_info.value.get_response().get_data()
     data = json.loads(data)
 
-    assert "error" in data
-    assert data["error"] == exc.__name__
-    assert "status_code" in data
+    assert "code" in data
+    assert data["code"] == exc.__name__
     assert "description" in data
