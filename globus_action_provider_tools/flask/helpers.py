@@ -110,9 +110,8 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
     return (
         jsonify(
             {
-                "error": ActionProviderError.__name__,
+                "code": ActionProviderError.__name__,
                 "description": f"Unexpected Error: {str(exc)}",
-                "status_code": 500,
             }
         ),
         500,

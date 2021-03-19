@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, Sequence, Set, Tuple, Union
 from flask import Response
 
 from globus_action_provider_tools.data_types import (
+    ActionLogReturn,
     ActionRequest,
     ActionStatus,
     AuthState,
@@ -11,7 +12,6 @@ from globus_action_provider_tools.data_types import (
 ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
 ActionStatusType = Callable[[Union[str, ActionStatus], AuthState], ActionStatusReturn]
 
-ActionLogReturn = Dict[str, Any]
 ActionLogType = Callable[[str, AuthState], ActionLogReturn]
 
 ActionRunType = Callable[[ActionRequest, AuthState], ActionStatusReturn]

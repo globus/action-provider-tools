@@ -9,14 +9,11 @@ from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionProviderJsonEncoder,
-    ActionRequest,
-    ActionStatus,
     ActionStatusValue,
 )
 from globus_action_provider_tools.exceptions import (
     ActionNotFound,
     ActionProviderError,
-    BadActionRequest,
     UnauthorizedRequest,
 )
 from globus_action_provider_tools.flask.helpers import (
@@ -34,7 +31,6 @@ from globus_action_provider_tools.flask.types import (
     ActionLogType,
     ActionReleaseType,
     ActionRunType,
-    ActionStatusReturn,
     ActionStatusType,
     ViewReturn,
 )
@@ -43,6 +39,8 @@ from globus_action_provider_tools.validation import (
     ValidationResult,
     request_validator,
 )
+
+from .types import ActionStatusReturn
 
 _request_schema_types = {"run": "ActionRequest"}
 

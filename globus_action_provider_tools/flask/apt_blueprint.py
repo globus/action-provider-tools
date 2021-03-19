@@ -12,7 +12,6 @@ from globus_action_provider_tools.authorization import (
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionProviderJsonEncoder,
-    ActionRequest,
     ActionStatus,
     ActionStatusValue,
     AuthState,
@@ -20,7 +19,6 @@ from globus_action_provider_tools.data_types import (
 from globus_action_provider_tools.exceptions import (
     ActionNotFound,
     ActionProviderError,
-    BadActionRequest,
     UnauthorizedRequest,
 )
 from globus_action_provider_tools.flask.helpers import (
@@ -36,9 +34,7 @@ from globus_action_provider_tools.flask.types import (
     ActionCancelType,
     ActionEnumerationType,
     ActionLoaderType,
-    ActionLogReturn,
     ActionLogType,
-    ActionReleaseType,
     ActionRunType,
     ActionSaverType,
     ActionStatusReturn,
@@ -245,6 +241,52 @@ class ActionProviderBlueprint(Blueprint):
         # Add new and old-style AP API endpoints
         self.add_url_rule("/run", None, wrapper, methods=["POST"])
         self.add_url_rule("/actions", func.__name__, wrapper, methods=["POST"])
+        return wrapper
+
+    @overload
+    def action_resume(self, func: Callable[[str, AuthState], ActionStatusReturn]):
+        """
+        Using these stubs w/ @overload tells mypy that the actual implementation
+        for action_resume can accept a str or ActionStatus as the first arg type
+        NOTE: typing_extensions.Protocol would be better if not for it's poor
+        error messages
+        """
+        ...
+
+    @overload
+    def action_resume(
+        self, func: Callable[[ActionStatus, AuthState], ActionStatusReturn]
+    ):
+        """
+        Using these stubs w/ @overload tells mypy that the actual implementation
+        for action_resume can accept a str or ActionStatus as the first arg type
+        """
+        ...
+
+    def action_resume(self, func) -> Callable[[str], ViewReturn]:
+        """
+        Decorates a function to be run as an Action Provider's resume endpoint.
+        """
+
+        @functools.wraps(func)
+        def wrapper(action_id: str) -> ViewReturn:
+            # Attempt to use a user-defined function to lookup the Action based
+            # on its action_id. If an action is found, authorize access to it
+            if self.action_loader_plugin:
+                action = self._load_action_by_id(action_id)
+                authorize_action_access_or_404(action, g.auth_state)
+
+            status = func(action_id, g.auth_state)
+            return jsonify(status), 200
+
+        # Add new and old-style AP API endpoints
+        self.add_url_rule("/<string:action_id>/resume", None, wrapper, methods=["POST"])
+        self.add_url_rule(
+            "/actions/<string:action_id>/resume",
+            "action_resume",
+            wrapper,
+            methods=["POST"],
+        )
         return wrapper
 
     @overload

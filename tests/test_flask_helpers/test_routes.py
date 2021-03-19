@@ -10,9 +10,6 @@ are in fact implemented.
 import pytest
 from flask import Flask
 
-from globus_action_provider_tools.data_types import ActionProviderDescription
-from globus_action_provider_tools.flask.apt_blueprint import ActionProviderBlueprint
-
 from .app_utils import (
     ActionProviderPydanticInputSchema,
     action_provider_json_input_schema,
@@ -35,30 +32,32 @@ def test_routes_conform_to_api(
         bp.input_schema = action_provider_json_input_schema
 
     introspection_resp = ap_introspection(client, bp.url_prefix)
-    assert introspection_resp.status_code == 200
+    assert introspection_resp.status_code == 200, introspection_resp.json
 
     trailing_slash_introspection_resp = ap_introspection(client, bp.url_prefix + "/")
-    assert trailing_slash_introspection_resp.status_code == 200
+    assert (
+        trailing_slash_introspection_resp.status_code == 200
+    ), trailing_slash_introspection_resp.json
 
     if api_version == "1.1":
         enumeration_resp = ap_enumeration(client, bp.url_prefix)
-        assert enumeration_resp.status_code == 200
+        assert enumeration_resp.status_code == 200, enumeration_resp.json
 
     run_resp = ap_run(client, bp.url_prefix, api_version=api_version)
-    assert run_resp.status_code == 202
+    assert run_resp.status_code == 202, run_resp.json
 
     action_id = run_resp.get_json()["action_id"]
     status_resp = ap_status(client, bp.url_prefix, action_id, api_version=api_version)
-    assert status_resp.status_code == 200
+    assert status_resp.status_code == 200, status_resp.json
 
     log_resp = ap_log(client, bp.url_prefix, action_id, api_version=api_version)
-    assert log_resp.status_code == 200
+    assert log_resp.status_code == 200, log_resp.json
 
     cancel_resp = ap_cancel(client, bp.url_prefix, action_id, api_version=api_version)
-    assert cancel_resp.status_code == 200
+    assert cancel_resp.status_code == 200, cancel_resp.json
 
     release_resp = ap_release(client, bp.url_prefix, action_id, api_version=api_version)
-    assert release_resp.status_code == 200
+    assert release_resp.status_code == 200, release_resp.json
 
 
 def ap_introspection(client, url_prefix: str):

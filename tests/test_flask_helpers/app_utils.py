@@ -16,6 +16,8 @@ from globus_action_provider_tools.authorization import (
     authorize_action_management_or_404,
 )
 from globus_action_provider_tools.data_types import (
+    ActionLogEntry,
+    ActionLogReturn,
     ActionProviderDescription,
     ActionRequest,
     ActionStatus,
@@ -23,10 +25,7 @@ from globus_action_provider_tools.data_types import (
     AuthState,
 )
 from globus_action_provider_tools.exceptions import ActionConflict, ActionNotFound
-from globus_action_provider_tools.flask.apt_blueprint import (
-    ActionLogReturn,
-    ActionStatusReturn,
-)
+from globus_action_provider_tools.flask.apt_blueprint import ActionStatusReturn
 
 simple_backend: Dict[str, ActionStatus] = {}
 
@@ -156,13 +155,20 @@ def test_action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
 def test_action_log(action_id: str, auth: AuthState) -> ActionLogReturn:
     pagination = request.args.get("pagination")
     filters = request.args.get("filters")
-    return {
-        "time": "TODAY",
-        "code": 200,
-        "description": f"This is an example of a detailed log entry for {action_id}",
-        "details": {
-            "action_id": "Transfer",
-            "filters": filters,
-            "pagination": pagination,
-        },
-    }
+    return ActionLogReturn(
+        code=200,
+        description=f"This is an example of a detailed log entry for {action_id}",
+        limit=1,
+        has_next_page=False,
+        entries=[
+            ActionLogEntry(
+                code="GenericLogEntry",
+                description="Description of log entry",
+                details={
+                    "action_id": "Transfer",
+                    "filters": filters,
+                    "pagination": pagination,
+                },
+            )
+        ],
+    )

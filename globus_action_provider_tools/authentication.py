@@ -145,6 +145,7 @@ class AuthState(object):
             dep_tkn_resp = self.get_dependent_tokens().by_scopes[scope]
         except KeyError:
             return None
+
         if "refresh_token" in dep_tkn_resp:
             return RefreshTokenAuthorizer(
                 dep_tkn_resp["refresh_token"],
