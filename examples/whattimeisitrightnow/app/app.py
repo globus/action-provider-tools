@@ -173,6 +173,7 @@ def _filter_private_fields(action_status: ActionStatus) -> ActionStatus:
     data before returning an ActionStatus to the requestor
     """
     if action_status.details is not None:
+        assert isinstance(action_status.details, dict)
         action_status.details.pop("private", None)
     return action_status
 
@@ -274,11 +275,13 @@ def _reconcile_action_status(action_status: ActionStatus) -> ActionStatus:
 
     # If it is not yet time for the action to complete, return
     now = datetime.now(tz=timezone.utc)
+    assert isinstance(action_status.details, dict)
     if action_status.details["estimated_completion_time"] > now:
         return action_status
 
     # If the action was scheduled to complete by now, update the ActionStatus
     # object with completion data
+    assert isinstance(action_status.details, dict)
     private = action_status.details.pop("private", {})
     action_status.completion_time = action_status.details["estimated_completion_time"]
     action_status.details = private["details"]
