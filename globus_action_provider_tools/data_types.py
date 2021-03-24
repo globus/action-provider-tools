@@ -270,7 +270,7 @@ class ActionStatus(BaseModel):
         min_length=1,
         max_length=64,
     )
-    details: Union[ActionInactiveDetails, ActionFailedDetails, Dict[str, Any]] = Field(
+    details: Union[ExtensibleCodeDescription, Dict[str, Any], str] = Field(
         ...,
         description=(
             "A provider-specific object representing the full state of the "
