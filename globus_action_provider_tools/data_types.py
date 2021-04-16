@@ -14,7 +14,7 @@ from globus_action_provider_tools.authentication import AuthState
 
 
 def now_isoformat():
-    return str(arrow.get().datetime)
+    return str(arrow.utcnow())
 
 
 def shortish_id() -> str:
@@ -296,7 +296,7 @@ class ActionProviderJsonEncoder(JSONEncoder):
         elif inspect.isclass(obj) and issubclass(obj, BaseModel):
             return obj.schema()
         elif isinstance(obj, datetime.datetime):
-            return str(obj)
+            return obj.isoformat()
         elif isinstance(obj, datetime.timedelta):
             return isodate.duration_isoformat(obj)
         return super(ActionProviderJsonEncoder, self).default(obj)
