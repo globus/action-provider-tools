@@ -4,7 +4,7 @@ from enum import Enum
 from functools import partial
 from typing import Any, Callable, Dict, Iterable, Set, Type
 
-from flask import Request, jsonify
+from flask import Request, current_app, jsonify
 from jsonschema.validators import Draft7Validator
 from pydantic import BaseModel, ValidationError
 
@@ -106,16 +106,13 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
     if isinstance(exc, ActionProviderToolsException):
         return exc  # type: ignore
 
+    current_app.logger.exception(str(exc))
     # Handle unexpected Exceptions in a somewhat predictable way
-    return (
-        jsonify(
-            {
-                "code": ActionProviderError.__name__,
-                "description": f"Unexpected Error: {str(exc)}",
-            }
-        ),
-        500,
-    )
+    resp = {
+        "code": ActionProviderError.__name__,
+        "description": f"Internal Server Error",
+    }
+    return jsonify(resp), 500
 
 
 def validate_input(
@@ -130,7 +127,11 @@ def validate_input(
     except ValidationError as ve:
         raise BadActionRequest(ve.errors())
 
-    input_body_validator(action_request.body)
+    try:
+        input_body_validator(action_request.body)
+    except BadActionRequest as err:
+        raise
+
     return action_request
 
 

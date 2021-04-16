@@ -1,8 +1,9 @@
 import functools
-from typing import Any, Callable, Iterable, Optional, overload
+import typing as t
 
 from flask import Blueprint, blueprints, current_app, g, jsonify, request
 from pydantic import ValidationError
+from werkzeug.exceptions import BadRequest as WerkzeugBadRequest
 
 from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.authorization import (
@@ -19,6 +20,7 @@ from globus_action_provider_tools.data_types import (
 from globus_action_provider_tools.exceptions import (
     ActionNotFound,
     ActionProviderError,
+    BadActionRequest,
     UnauthorizedRequest,
 )
 from globus_action_provider_tools.flask.helpers import (
@@ -48,8 +50,8 @@ class ActionProviderBlueprint(Blueprint):
         self,
         provider_description: ActionProviderDescription,
         *args,
-        globus_auth_client_name: Optional[str] = None,
-        additional_scopes: Iterable[str] = (),
+        globus_auth_client_name: t.Optional[str] = None,
+        additional_scopes: t.Iterable[str] = (),
         **kwarg,
     ):
         """Create a new ActionProviderBlueprint. All arguments not listed here are the
@@ -74,8 +76,8 @@ class ActionProviderBlueprint(Blueprint):
 
         super().__init__(*args, **kwarg)
 
-        self.action_loader_plugin: Optional[ActionLoaderType] = None
-        self.action_saver_plugin: Optional[ActionSaverType] = None
+        self.action_loader_plugin: t.Optional[ActionLoaderType] = None
+        self.action_saver_plugin: t.Optional[ActionSaverType] = None
 
         self.provider_description = provider_description
         self.input_body_validator = get_input_body_validator(provider_description)
@@ -155,7 +157,7 @@ class ActionProviderBlueprint(Blueprint):
             allow_all_authenticated_users=True,
         ):
             current_app.logger.info(
-                f'User "{g.auth_state.effective_identity}" is unauthorized to introspect Action Provider'
+                f"{g.auth_state.effective_identity} is unauthorized to introspect Action Provider"
             )
             raise UnauthorizedRequest
 
@@ -175,7 +177,8 @@ class ActionProviderBlueprint(Blueprint):
                 allow_all_authenticated_users=True,
             ):
                 current_app.logger.info(
-                    f'User "{g.auth_state.effective_identity}" is unauthorized to enumerate Actions'
+                    f"{g.auth_state.effective_identity} is unauthorized to enumerate "
+                    "Actions"
                 )
                 raise UnauthorizedRequest
 
@@ -205,7 +208,7 @@ class ActionProviderBlueprint(Blueprint):
         )
         return wrapper
 
-    def action_run(self, func: ActionRunType) -> Callable[[], ViewReturn]:
+    def action_run(self, func: ActionRunType) -> t.Callable[[], ViewReturn]:
         """
         Decorates a function to be run as an Action Provider's run endpoint.
         """
@@ -217,21 +220,35 @@ class ActionProviderBlueprint(Blueprint):
                 allow_all_authenticated_users=True,
             ):
                 current_app.logger.info(
-                    f'User "{g.auth_state.effective_identity}" is unauthorized to run Action'
+                    f"{g.auth_state.effective_identity} is unauthorized to run Action"
                 )
                 raise UnauthorizedRequest
 
-            action_request = validate_input(
-                request.get_json(force=True), self.input_body_validator
-            )
+            try:
+                json_input = request.get_json(force=True)
+            except WerkzeugBadRequest:
+                current_app.logger.info(
+                    f"{g.auth_state.effective_identity} submitted input that could not "
+                    f"be parsed as JSON: {str(request.data)}"
+                )
+                raise BadActionRequest("Invalid JSON")
+            try:
+                action_request = validate_input(json_input, self.input_body_validator)
+            except BadActionRequest as err:
+                current_app.logger.info(
+                    f"{g.auth_state.effective_identity} submitted invalid input: "
+                    f"{err.get_body()}"
+                )
+                raise
+
             # It's possible the user will attempt to make a malformed ActionStatus -
             # pydantic won't like that. So log and handle the error with a 500
             try:
                 status = func(action_request, g.auth_state)
             except ValidationError as ve:
                 current_app.logger.error(
-                    f"ActionProvider attempted to create a non-conformant ActionStatus"
-                    f" in {func.__name__}: {ve.errors()}"
+                    f"ActionProvider attempted to create a non-conformant ActionStatus "
+                    f"in {func.__name__}: {ve.errors()}"
                 )
                 raise ActionProviderError
 
@@ -243,8 +260,8 @@ class ActionProviderBlueprint(Blueprint):
         self.add_url_rule("/actions", func.__name__, wrapper, methods=["POST"])
         return wrapper
 
-    @overload
-    def action_resume(self, func: Callable[[str, AuthState], ActionStatusReturn]):
+    @t.overload
+    def action_resume(self, func: t.Callable[[str, AuthState], ActionStatusReturn]):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
         for action_resume can accept a str or ActionStatus as the first arg type
@@ -253,9 +270,9 @@ class ActionProviderBlueprint(Blueprint):
         """
         ...
 
-    @overload
+    @t.overload
     def action_resume(
-        self, func: Callable[[ActionStatus, AuthState], ActionStatusReturn]
+        self, func: t.Callable[[ActionStatus, AuthState], ActionStatusReturn]
     ):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
@@ -263,7 +280,7 @@ class ActionProviderBlueprint(Blueprint):
         """
         ...
 
-    def action_resume(self, func) -> Callable[[str], ViewReturn]:
+    def action_resume(self, func) -> t.Callable[[str], ViewReturn]:
         """
         Decorates a function to be run as an Action Provider's resume endpoint.
         """
@@ -289,8 +306,8 @@ class ActionProviderBlueprint(Blueprint):
         )
         return wrapper
 
-    @overload
-    def action_status(self, func: Callable[[str, AuthState], ActionStatusReturn]):
+    @t.overload
+    def action_status(self, func: t.Callable[[str, AuthState], ActionStatusReturn]):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
         for action_status can accept a str or ActionStatus as the first arg type
@@ -299,9 +316,9 @@ class ActionProviderBlueprint(Blueprint):
         """
         ...
 
-    @overload
+    @t.overload
     def action_status(
-        self, func: Callable[[ActionStatus, AuthState], ActionStatusReturn]
+        self, func: t.Callable[[ActionStatus, AuthState], ActionStatusReturn]
     ):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
@@ -343,23 +360,23 @@ class ActionProviderBlueprint(Blueprint):
                 raise ActionProviderError
             except ValidationError as ve:
                 current_app.logger.error(
-                    f"ActionProvider attempted to create a non-conformant ActionStatus"
-                    f" in {self._action_status.__name__}: {ve.errors()}"
+                    f"ActionProvider attempted to create a non-conformant ActionStatus "
+                    f"in {self._action_status.__name__}: {ve.errors()}"
                 )
                 raise ActionProviderError
         return action_status_return_to_view_return(result, 200)
 
-    @overload
-    def action_cancel(self, func: Callable[[str, AuthState], ActionStatusReturn]):
+    @t.overload
+    def action_cancel(self, func: t.Callable[[str, AuthState], ActionStatusReturn]):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
         for action_cancel can accept a str or ActionStatus as the first arg type
         """
         ...
 
-    @overload
+    @t.overload
     def action_cancel(
-        self, func: Callable[[ActionStatus, AuthState], ActionStatusReturn]
+        self, func: t.Callable[[ActionStatus, AuthState], ActionStatusReturn]
     ):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
@@ -400,23 +417,23 @@ class ActionProviderBlueprint(Blueprint):
                 raise ActionProviderError
             except ValidationError as ve:
                 current_app.logger.error(
-                    f"ActionProvider attempted to create a non-conformant ActionStatus"
-                    f" in {self._action_cancel.__name__}: {ve.errors()}"
+                    f"ActionProvider attempted to create a non-conformant ActionStatus "
+                    f"in {self._action_cancel.__name__}: {ve.errors()}"
                 )
                 raise ActionProviderError
         return action_status_return_to_view_return(result, 200)
 
-    @overload
-    def action_release(self, func: Callable[[str, AuthState], ActionStatusReturn]):
+    @t.overload
+    def action_release(self, func: t.Callable[[str, AuthState], ActionStatusReturn]):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
         for action_release can accept a str or ActionStatus as the first arg type
         """
         ...
 
-    @overload
+    @t.overload
     def action_release(
-        self, func: Callable[[ActionStatus, AuthState], ActionStatusReturn]
+        self, func: t.Callable[[ActionStatus, AuthState], ActionStatusReturn]
     ):
         """
         Using these stubs w/ @overload tells mypy that the actual implementation
@@ -424,7 +441,7 @@ class ActionProviderBlueprint(Blueprint):
         """
         ...
 
-    def action_release(self, func) -> Callable[[str], ViewReturn]:
+    def action_release(self, func) -> t.Callable[[str], ViewReturn]:
         """
         Decorates a function to be run as an Action Provider's release endpoint.
         """
@@ -441,8 +458,8 @@ class ActionProviderBlueprint(Blueprint):
                 status = func(action_id, g.auth_state)
             except ValidationError as ve:
                 current_app.logger.error(
-                    f"ActionProvider attempted to create a non-conformant ActionStatus"
-                    f" in {func.__name__}: {ve.errors()}"
+                    f"ActionProvider attempted to create a non-conformant ActionStatus "
+                    f"in {func.__name__}: {ve.errors()}"
                 )
                 raise ActionProviderError
 
@@ -463,7 +480,7 @@ class ActionProviderBlueprint(Blueprint):
         )
         return wrapper
 
-    def action_log(self, func: ActionLogType) -> Callable[[str], ViewReturn]:
+    def action_log(self, func: ActionLogType) -> t.Callable[[str], ViewReturn]:
         """
         Decorates a function to be run an an Action Provider's logging endpoint.
         """
@@ -486,7 +503,7 @@ class ActionProviderBlueprint(Blueprint):
         )
         return wrapper
 
-    def register_action_loader(self, storage_backend: Any):
+    def register_action_loader(self, storage_backend: t.Any):
         """
         Decorates a function that will be used to lookup an ActionStatus by its
         action_id. Multiple action_loaders with different backends can be
