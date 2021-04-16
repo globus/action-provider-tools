@@ -112,7 +112,7 @@ def my_action_run(action_request: ActionRequest, auth: AuthState) -> ActionStatu
         label=action_request.label or None,
         monitor_by=action_request.monitor_by or auth.identities,
         manage_by=action_request.manage_by or auth.identities,
-        start_time=str(datetime.now(tz=timezone.utc)),
+        start_time=datetime.now(timezone.utc).isoformat(),
         completion_time=None,
         release_after=action_request.release_after or "P30D",
         display_status=ActionStatusValue.ACTIVE,
