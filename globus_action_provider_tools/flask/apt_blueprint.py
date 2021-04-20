@@ -294,7 +294,7 @@ class ActionProviderBlueprint(Blueprint):
                 authorize_action_access_or_404(action, g.auth_state)
 
             status = func(action_id, g.auth_state)
-            return jsonify(status), 200
+            return action_status_return_to_view_return(status, 200)
 
         # Add new and old-style AP API endpoints
         self.add_url_rule("/<string:action_id>/resume", None, wrapper, methods=["POST"])
