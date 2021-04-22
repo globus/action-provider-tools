@@ -5,9 +5,9 @@ from globus_action_provider_tools.testing.mocks import mock_authstate
 
 warnings.warn(
     (
-        "The globus_action_provider_tools.testing.patches module is deprecated. "
-        "Please consider using the globus_action_provider_tools.testing.fixtures "
-        "module instead."
+        "The globus_action_provider_tools.testing.patches module is deprecated and will "
+        "be removed in 0.12.0. Please consider using the "
+        "globus_action_provider_tools.testing.fixtures module instead."
     ),
     DeprecationWarning,
     stacklevel=2,

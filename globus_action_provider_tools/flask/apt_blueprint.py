@@ -5,7 +5,7 @@ from flask import Blueprint, blueprints, current_app, g, jsonify, request
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest as WerkzeugBadRequest
 
-from globus_action_provider_tools.authentication import TokenChecker
+from globus_action_provider_tools.authentication import AuthState, TokenChecker
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
@@ -15,9 +15,8 @@ from globus_action_provider_tools.data_types import (
     ActionProviderJsonEncoder,
     ActionStatus,
     ActionStatusValue,
-    AuthState,
 )
-from globus_action_provider_tools.exceptions import (
+from globus_action_provider_tools.flask.exceptions import (
     ActionNotFound,
     ActionProviderError,
     BadActionRequest,
@@ -351,13 +350,13 @@ class ActionProviderBlueprint(Blueprint):
                 # in which case just return the bare action as the result
                 result = action
         else:
+            if not hasattr(self, "_action_status"):
+                current_app.logger.error("ActionProvider has no action status endpoint")
+                raise ActionProviderError
             try:
                 # It's possible the user will attempt to make a malformed ActionStatus -
                 # pydantic won't like that. So handle the error with a 500
                 result = self._action_status(action_id, g.auth_state)
-            except AttributeError:
-                current_app.logger.error("ActionProvider has no action status endpoint")
-                raise ActionProviderError
             except ValidationError as ve:
                 current_app.logger.error(
                     f"ActionProvider attempted to create a non-conformant ActionStatus "
@@ -410,11 +409,12 @@ class ActionProviderBlueprint(Blueprint):
             finally:
                 self._save_action(action)
         else:
-            try:
-                result = self._action_cancel(action_id, g.auth_state)
-            except AttributeError:
+            if not hasattr(self, "_action_cancel"):
                 current_app.logger.error("ActionProvider has no action cancel endpoint")
                 raise ActionProviderError
+
+            try:
+                result = self._action_cancel(action_id, g.auth_state)
             except ValidationError as ve:
                 current_app.logger.error(
                     f"ActionProvider attempted to create a non-conformant ActionStatus "

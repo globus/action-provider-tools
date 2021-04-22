@@ -2,8 +2,7 @@ from unittest.mock import Mock
 
 from globus_sdk import ConfidentialAppAuthClient
 
-from globus_action_provider_tools.authentication import TokenChecker
-from globus_action_provider_tools.data_types import AuthState
+from globus_action_provider_tools.authentication import AuthState, TokenChecker
 
 
 def mock_authstate(*args, **kwargs):

@@ -6,22 +6,22 @@ from typing import Dict, Optional, Set, Tuple
 from flask import Blueprint, Flask
 
 from examples.watchasay.app import config
-from globus_action_provider_tools.authorization import (
-    authorize_action_access_or_404,
-    authorize_action_management_or_404,
-)
-from globus_action_provider_tools.data_types import (
+from globus_action_provider_tools import (
     ActionProviderDescription,
     ActionRequest,
     ActionStatus,
     ActionStatusValue,
     AuthState,
 )
-from globus_action_provider_tools.exceptions import ActionConflict, ActionNotFound
+from globus_action_provider_tools.authorization import (
+    authorize_action_access_or_404,
+    authorize_action_management_or_404,
+)
 from globus_action_provider_tools.flask import (
     ActionStatusReturn,
     add_action_routes_to_blueprint,
 )
+from globus_action_provider_tools.flask.exceptions import ActionConflict, ActionNotFound
 
 # A simulated database mapping input user action requests identifiers to a previously
 # seen request id and the corresponding action id

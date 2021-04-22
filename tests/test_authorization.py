@@ -7,7 +7,7 @@ from globus_action_provider_tools.authorization import (
     authorize_action_management_or_404,
 )
 from globus_action_provider_tools.data_types import ActionStatus, ActionStatusValue
-from globus_action_provider_tools.exceptions import ActionNotFound
+from globus_action_provider_tools.errors import AuthenticationError
 
 from .utils import random_creator_id
 
@@ -52,7 +52,7 @@ def test_unauthorized_access(auth_state):
         details={},
     )
 
-    with pytest.raises(ActionNotFound):
+    with pytest.raises(AuthenticationError):
         authorize_action_access_or_404(status, auth_state)
 
 
@@ -96,5 +96,5 @@ def test_unauthorized_management(auth_state):
         details={},
     )
 
-    with pytest.raises(ActionNotFound):
+    with pytest.raises(AuthenticationError):
         authorize_action_management_or_404(status, auth_state)

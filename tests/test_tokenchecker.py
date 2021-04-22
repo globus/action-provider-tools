@@ -5,7 +5,7 @@ from unittest.mock import patch
 import dogpile
 import pytest
 
-from globus_action_provider_tools.authentication import TokenChecker
+from globus_action_provider_tools import TokenChecker
 from globus_action_provider_tools.caching import dogpile_cache
 
 from .data import canned_responses

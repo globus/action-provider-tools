@@ -2,11 +2,11 @@ from typing import Any, Callable, Dict, Sequence, Set, Tuple, Union
 
 from flask import Response
 
+from globus_action_provider_tools.authentication import AuthState
 from globus_action_provider_tools.data_types import (
     ActionLogReturn,
     ActionRequest,
     ActionStatus,
-    AuthState,
 )
 
 ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]

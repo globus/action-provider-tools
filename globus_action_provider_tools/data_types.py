@@ -2,26 +2,17 @@ import datetime
 import inspect
 from enum import Enum
 from json import JSONEncoder
-from os import urandom
 from typing import AbstractSet, Any, Dict, List, Optional, Set, Type, Union
 
-import arrow
 import isodate
-from base62 import encodebytes as base62
 from pydantic import BaseModel, Field
 
-from globus_action_provider_tools.authentication import AuthState
-
-
-def now_isoformat():
-    return str(arrow.utcnow())
-
-
-def shortish_id() -> str:
-    """Generate a random relatively short string of URL safe alphanumeric characters. Value
-    space is sufficiently large that the odds of collision are extremely low.
-    """
-    return base62(urandom(9))
+from globus_action_provider_tools.utils import (
+    now_isoformat,
+    principal_urn_regex,
+    shortish_id,
+    uuid_regex,
+)
 
 
 class AutomateBaseEnum(str, Enum):
@@ -72,12 +63,6 @@ class ActionProviderDescription(BaseModel):
     runnable_by: List[str] = Field(default_factory=lambda: ["all_authenticated_users"])
     administered_by: Optional[List[str]] = None
     event_types: Optional[List[EventType]] = None
-
-
-_uuid_regex = (
-    "([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})"
-)
-_principal_urn_regex = f"^urn:globus:(auth:identity|groups:id):{_uuid_regex}$"
 
 
 class ActionRequest(BaseModel):
@@ -133,7 +118,7 @@ class ActionRequest(BaseModel):
             "operations. When not provided, defaults to the user that initiated "
             "the action."
         ),
-        regex=_principal_urn_regex,
+        regex=principal_urn_regex,
     )
     manage_by: Set[str] = Field(
         default_factory=set,
@@ -143,7 +128,7 @@ class ActionRequest(BaseModel):
             "operations. When not provided, defaults to the user that initiated "
             "the action."
         ),
-        regex=_principal_urn_regex,
+        regex=principal_urn_regex,
     )
     allowed_clients: List[str] = Field(
         default_factory=list, regex="^(public|globus|creator|.$)$"
@@ -211,7 +196,7 @@ class ActionStatus(BaseModel):
             "A URN representation of an Identity in Globus either of a "
             "user from Globus Auth or a group from Globus Groups."
         ),
-        regex=_principal_urn_regex,
+        regex=principal_urn_regex,
     )
     action_id: str = Field(
         default_factory=shortish_id, description="The id of the Action itself"
@@ -230,7 +215,7 @@ class ActionStatus(BaseModel):
             "monitor the progress of the action using the /status and /log operations. "
             "When not provided, defaults to the user that initiated the action."
         ),
-        regex=_principal_urn_regex,
+        regex=principal_urn_regex,
     )
     manage_by: Set[str] = Field(
         default_factory=set,
@@ -240,7 +225,7 @@ class ActionStatus(BaseModel):
             "operations. When not provided, defaults to the user that initiated "
             "the action."
         ),
-        regex=_principal_urn_regex,
+        regex=principal_urn_regex,
     )
     completion_time: Optional[datetime.datetime] = Field(
         None,

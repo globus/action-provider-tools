@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from globus_action_provider_tools.exceptions import (
+from globus_action_provider_tools.flask.exceptions import (
     ActionConflict,
     ActionNotFound,
     ActionProviderError,

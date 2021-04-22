@@ -1,16 +1,18 @@
+import logging
 from itertools import chain
 
-from globus_action_provider_tools.exceptions import ActionNotFound
+from globus_action_provider_tools.authentication import AuthState
+from globus_action_provider_tools.data_types import ActionStatus
+from globus_action_provider_tools.errors import AuthenticationError
 
-from .authentication import AuthState
-from .data_types import ActionStatus
+log = logging.getLogger(__name__)
 
 
 def authorize_action_access_or_404(status: ActionStatus, auth_state: AuthState) -> None:
     """
     Determines whether or not a principal is allowed to view an ActionStatus.
-    If not allowed to view the ActionStatus, this function will raise a
-    404 error indicating that the requested action was not found.
+    If not allowed to view the ActionStatus, this function will raise an
+    AuthenticationError.
     """
     if status.monitor_by is None:
         allowed_set = set([status.creator_id])
@@ -21,7 +23,12 @@ def authorize_action_access_or_404(status: ActionStatus, auth_state: AuthState) 
         allowed_set, allow_all_authenticated_users=True
     )
     if not authorized:
-        raise ActionNotFound(f"No Action with id {status.action_id}")
+        log.info(
+            f"None of {auth_state.effective_identity}'s identities are allowed to view "
+            f"{status.action_id}. User Identities={auth_state.principals} Allowed "
+            f"Identities={allowed_set}"
+        )
+        raise AuthenticationError(f"No Action with id {status.action_id}")
 
 
 def authorize_action_management_or_404(
@@ -29,8 +36,8 @@ def authorize_action_management_or_404(
 ) -> None:
     """
     Determines whether or not a principal is allowed to manage an ActionStatus.
-    If not allowed to manage the ActionStatus, this function will raise a
-    404 error indicating that the requested action was not found.
+    If not allowed to view the ActionStatus, this function will raise an
+    AuthenticationError.
     """
     if status.manage_by is None:
         allowed_set = set([status.creator_id])
@@ -41,4 +48,9 @@ def authorize_action_management_or_404(
         allowed_set, allow_all_authenticated_users=True
     )
     if not authorized:
-        raise ActionNotFound(f"No Action with id {status.action_id}")
+        log.info(
+            f"None of {auth_state.effective_identity}'s identities are allowed to manage "
+            f"{status.action_id}. User Identities={auth_state.principals} Allowed "
+            f"Identities={allowed_set}"
+        )
+        raise AuthenticationError(f"No Action with id {status.action_id}")
