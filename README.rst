@@ -107,15 +107,15 @@ Please follow the steps below when creating a new release of the toolkit:
     - poetry update
 - Update the project version (follow semantic versioning) in pyproject.toml
     - poetry version patch|minor|major
-- Update the project version in globus_action_provider_tools/__init__.py
+- Update the project version in `globus_action_provider_tools/__init__.py`
 - Create a pull request into the main branch, wait for CI tests to complete
 - Merge the passing pull request
 - Create and publish a git tag for the new release
     - git tag v$(poetry version -s)
     - git push --tags
 - Create a new GH release that references the recently created tag. Provide
-release notes with information on the changeset. Once the release is created,
-there's a GH workflow that will build the toolkit and publish it to pypi. 
+  release notes with information on the changeset. Once the release is created,
+  there's a GH workflow that will build the toolkit and publish it to pypi. 
 
 Links
 -----
