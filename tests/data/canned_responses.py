@@ -7,7 +7,7 @@ from globus_sdk.auth.token_response import OAuthDependentTokenResponse
 from globus_sdk.response import GlobusHTTPResponse
 from requests import Response
 
-from globus_action_provider_tools.authentication import GROUPS_SCOPE
+from globus_action_provider_tools.groups_client import GROUPS_SCOPE
 
 
 def resp(data, status_code=200):
