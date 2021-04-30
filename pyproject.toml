@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "globus-action-provider-tools"
-version = "0.11.0"
+version = "0.11.1"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
     "Jim Pruyne <pruyne@globus.org>",
@@ -29,7 +29,7 @@ readme = "README.rst"
 whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6.1"
 "dogpile.cache"="^0.7.1"
 globus-sdk="^1.9"
 jsonschema = "^3"
