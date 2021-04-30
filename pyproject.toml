@@ -38,6 +38,10 @@ arrow = "^0.15.5"
 pybase62 = "^0.4.0"
 pydantic = "^1.7.3"
 isodate = "^0.6.0"
+flask = { version = "^1", optional = true }
+
+[tool.poetry.extras]
+flask = ["flask"]
 
 [tool.poetry.dev-dependencies]
 python-language-server = "^0"

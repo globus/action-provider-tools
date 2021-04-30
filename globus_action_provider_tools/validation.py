@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional
-from warnings import warn
 
 import yaml
 from jsonschema.validators import Draft7Validator

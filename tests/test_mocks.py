@@ -2,8 +2,7 @@ from unittest import mock
 
 import pytest
 
-from globus_action_provider_tools.authentication import TokenChecker
-from globus_action_provider_tools.data_types import AuthState
+from globus_action_provider_tools import AuthState, TokenChecker
 from globus_action_provider_tools.testing.mocks import mock_authstate, mock_tokenchecker
 
 

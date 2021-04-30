@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import List, Optional
 
 import flask
@@ -11,7 +12,7 @@ from globus_action_provider_tools.data_types import (
     ActionProviderJsonEncoder,
     ActionStatusValue,
 )
-from globus_action_provider_tools.exceptions import (
+from globus_action_provider_tools.flask.exceptions import (
     ActionNotFound,
     ActionProviderError,
     UnauthorizedRequest,
@@ -31,6 +32,7 @@ from globus_action_provider_tools.flask.types import (
     ActionLogType,
     ActionReleaseType,
     ActionRunType,
+    ActionStatusReturn,
     ActionStatusType,
     ViewReturn,
 )
@@ -40,7 +42,16 @@ from globus_action_provider_tools.validation import (
     request_validator,
 )
 
-from .types import ActionStatusReturn
+warnings.warn(
+    (
+        "The globus_action_provider_tools.flask.api_helpers module is deprecated and will "
+        "be removed in 0.12.0. Please consider using the "
+        "globus_action_provider_tools.flask.apt_blueprint module instead."
+    ),
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 
 _request_schema_types = {"run": "ActionRequest"}
 

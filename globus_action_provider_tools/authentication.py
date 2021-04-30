@@ -1,31 +1,30 @@
 import logging
 from time import time
-from typing import FrozenSet, Iterable, List, Optional
+from typing import FrozenSet, Iterable, List, Optional, Union
 
 from globus_sdk import ConfidentialAppAuthClient
 from globus_sdk.auth.token_response import OAuthTokenResponse
-from globus_sdk.authorizers import (
-    AccessTokenAuthorizer,
-    GlobusAuthorizer,
-    RefreshTokenAuthorizer,
-)
+from globus_sdk.authorizers import AccessTokenAuthorizer, RefreshTokenAuthorizer
 from globus_sdk.exc import GlobusAPIError, GlobusError
 from globus_sdk.response import GlobusHTTPResponse
 
-from globus_action_provider_tools.exceptions import ActionProviderError
-
-from .caching import DEFAULT_CACHE_BACKEND, DEFAULT_CACHE_TIMEOUT, dogpile_cache
-from .groups_client import GROUPS_SCOPE, GroupsClient
+from globus_action_provider_tools.caching import (
+    DEFAULT_CACHE_BACKEND,
+    DEFAULT_CACHE_TIMEOUT,
+    dogpile_cache,
+)
+from globus_action_provider_tools.errors import ConfigurationError
+from globus_action_provider_tools.groups_client import GROUPS_SCOPE, GroupsClient
 
 log = logging.getLogger(__name__)
 
 
-def group_principal(id_):
-    return "urn:globus:groups:id:" + id_
+def group_principal(id_: str) -> str:
+    return f"urn:globus:groups:id:{id_}"
 
 
-def identity_principal(id_):
-    return "urn:globus:auth:identity:" + id_
+def identity_principal(id_: str) -> str:
+    return f"urn:globus:auth:identity:{id_}"
 
 
 class AuthState(object):
@@ -39,16 +38,14 @@ class AuthState(object):
         self.auth_client = auth_client
         self.bearer_token = bearer_token
         self.expected_scopes = expected_scopes
-        # NB: expected_audience can be removed once
-        # https://github.com/globusonline/globus-auth/issues/1527
-        # is completed
-        # UPDATE: Above issue has been implemented, so defaulting now to the client_id
-        # unless explicitly provided (supporting legacy clients that may have a different
+
+        # Default to client_id unless expected_audience has been explicitly
+        # provided (supporting legacy clients that may have a different
         # client name registered with Auth)
-        if expected_audience is not None:
-            self.expected_audience = expected_audience
-        else:
+        if expected_audience is None:
             self.expected_audience = auth_client.client_id
+        else:
+            self.expected_audience = expected_audience
         self.errors: List[Exception] = []
         self._groups_client: Optional[GroupsClient] = None
 
@@ -104,6 +101,10 @@ class AuthState(object):
             return frozenset()
         return frozenset(map(identity_principal, tkn_details["identity_set"]))
 
+    @property
+    def principals(self) -> FrozenSet[str]:
+        return self.identities.union(self.groups)
+
     @property  # type: ignore
     @dogpile_cache.cache_on_arguments()
     def groups(self) -> FrozenSet[str]:
@@ -135,7 +136,9 @@ class AuthState(object):
             self.bearer_token, {"access_type": "offline"}
         )
 
-    def get_authorizer_for_scope(self, scope: str) -> Optional[GlobusAuthorizer]:
+    def get_authorizer_for_scope(
+        self, scope: str
+    ) -> Optional[Union[RefreshTokenAuthorizer, AccessTokenAuthorizer]]:
         try:
             dep_tkn_resp = self.get_dependent_tokens().by_scopes[scope]
         except KeyError:
@@ -159,8 +162,8 @@ class AuthState(object):
         authorizer = self.get_authorizer_for_scope(GROUPS_SCOPE)
         if authorizer is None:
             raise ValueError(f"Unable to get authorizor for {GROUPS_SCOPE}")
-        else:
-            self._groups_client = GroupsClient(authorizer=authorizer)
+
+        self._groups_client = GroupsClient(authorizer=authorizer)
         return self._groups_client
 
     def check_authorization(
@@ -215,7 +218,7 @@ class TokenChecker:
             self.check_token("NotAToken").introspect_token()
         except GlobusAPIError as err:
             if err.http_status == 401:
-                raise ActionProviderError("Check client_id and client_secret", err)
+                raise ConfigurationError("Check client_id and client_secret", err)
 
     def check_token(
         self, access_token: str, expected_scopes: Iterable[str] = None

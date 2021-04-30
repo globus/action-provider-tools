@@ -1,24 +1,16 @@
 class ActionProviderToolsError(Exception):
-    """Base class for exceptions from this library."""
+    """
+    The base Exception class for errors in Action Provider Tools.
+    """
 
 
 class AuthenticationError(ActionProviderToolsError):
     """
-    Errors in the authentication helpers.
+    An Exception class for errors triggered due to Authentication.
     """
 
 
-class ConfigurationError(AuthenticationError):
+class ConfigurationError(ActionProviderToolsError):
     """
-    Raised for errors triggered by misconfiguration.
+    An Exception class for errors triggered by misconfiguration.
     """
-
-    def __init__(self, message, original_error):
-        super().__init__(message)
-        self.original_error = original_error
-
-
-class TokenValidationError(AuthenticationError):
-    def __init__(self, original_error):
-        super().__init__(str(original_error))
-        self.original_error = original_error

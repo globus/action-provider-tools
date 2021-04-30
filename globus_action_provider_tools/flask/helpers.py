@@ -14,10 +14,12 @@ from globus_action_provider_tools.data_types import (
     ActionRequest,
     ActionStatus,
 )
-from globus_action_provider_tools.exceptions import (
+from globus_action_provider_tools.errors import AuthenticationError
+from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
     ActionProviderToolsException,
     BadActionRequest,
+    UnauthorizedRequest,
 )
 from globus_action_provider_tools.flask.types import ActionStatusReturn, ViewReturn
 from globus_action_provider_tools.validation import validate_data
@@ -105,6 +107,11 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
     # return those directly
     if isinstance(exc, ActionProviderToolsException):
         return exc  # type: ignore
+
+    # If a component in the toolkit throw's an unhandled AuthenticationError,
+    # replace it with a Flask-based response
+    if isinstance(exc, AuthenticationError):
+        return UnauthorizedRequest()  # type: ignore
 
     current_app.logger.exception(str(exc))
     # Handle unexpected Exceptions in a somewhat predictable way

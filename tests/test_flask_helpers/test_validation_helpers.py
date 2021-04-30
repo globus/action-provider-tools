@@ -8,7 +8,7 @@ from flask import Flask, request
 from jsonschema.validators import Draft7Validator
 
 from globus_action_provider_tools.data_types import ActionStatusValue
-from globus_action_provider_tools.exceptions import (
+from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
     BadActionRequest,
 )

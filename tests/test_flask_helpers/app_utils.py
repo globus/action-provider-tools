@@ -11,6 +11,7 @@ from typing import Dict, List, Set
 from flask import request
 from pydantic import BaseModel, Field
 
+from globus_action_provider_tools import AuthState
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
@@ -22,10 +23,9 @@ from globus_action_provider_tools.data_types import (
     ActionRequest,
     ActionStatus,
     ActionStatusValue,
-    AuthState,
 )
-from globus_action_provider_tools.exceptions import ActionConflict, ActionNotFound
 from globus_action_provider_tools.flask.apt_blueprint import ActionStatusReturn
+from globus_action_provider_tools.flask.exceptions import ActionConflict, ActionNotFound
 
 simple_backend: Dict[str, ActionStatus] = {}
 

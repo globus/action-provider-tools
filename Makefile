@@ -1,51 +1,78 @@
 VIRTUAL_ENV ?= .venv
-PYTHON_VERSION ?= python3.6
-POETRY ?= poetry
 MIN_TEST_COVERAGE ?= 40
+LINT_PATHS = globus_action_provider_tools/ tests/ examples/
 
-.PHONY: help docs test install
+.PHONY: help install docs redoc autoformat lint clean test poetry.lock requirements.txt
 
 define HELPTEXT
-Please use "make <target>" where <target> is one of
- docs:   to build the project's documentation
- lint:   to run autoformatters and linters
- clean:  to remove any built artifacts or environments
- test:   to run the full suite of tests
- test-toolkit:
-	to run the toolkit's source code tests
- test-examples:
- 	to run the example Action Providers' tests
- poetry.lock:
-	to generate this project's poetry.lock file
- requirements.txt:
-	to generate this project's requirements.txt file
- install | venv | $(VIRTUAL_ENV):
-	to install this project and its dependencies into a virtual 
-	environment at $(VIRTUAL_ENV)
+Please use "make <target>" where <target> is one of:
+
+    install:
+        Install this project and its dependencies into a virtual 
+        environment at $(VIRTUAL_ENV)
+
+    docs:
+        Build this project's documentation locally in docs/build
+
+	redoc:
+        Build the ActionProvider OpenAPI Redoc Spec
+
+    autoformat:
+	    Format code according to the project's autoformatters and 
+        linters
+
+    lint:
+        Run autoformatters and linters in check-only mode
+    
+    clean:  
+        Remove any built artifacts or environments
+    
+    test:
+        Run the full suite of tests
+    
+    test-toolkit:
+        Run the toolkit's source code tests
+    
+    test-examples:
+        Run the example Action Providers' tests
+    
+    poetry.lock:
+        Generate this project's poetry.lock file
+    
+    requirements.txt:
+        Generate this project's requirements.txt file
+
 endef
 export HELPTEXT
 
 help:
 	@echo "$$HELPTEXT"
 
-#specdoc: docs/action_provider_api.html
+install:
+	poetry install
 
-# Generates human-friendly HTML from OpenAPI spec yaml
-#docs/action_provider_api.html:
-#	<globus_action_provider_tools/actions_spec.openapi.yaml docs/swagger-yaml-to-html.py > docs/actions_api.html
+docs:
+	poetry run make --directory=docs html
 
-poetry.lock: pyproject.toml
-	$(POETRY) lock
+redoc:
+	npx redoc-cli bundle --output index.html actions_spec.openapi.yaml
 
-requirements.txt: poetry.lock
-	poetry export --format requirements.txt -o requirements.txt
+autoformat:	
+	poetry run isort $(LINT_PATHS)
+	poetry run black $(LINT_PATHS)
 
-$(VIRTUAL_ENV): poetry.lock
-	poetry install 
-
-venv: $(VIRTUAL_ENV)
-
-install: $(VIRTUAL_ENV)
+lint:
+	poetry run black --check $(LINT_PATHS)
+	poetry run isort --check-only --diff $(LINT_PATHS)
+	poetry run mypy --ignore-missing-imports \
+		globus_action_provider_tools/ \
+		tests/
+	poetry run mypy --ignore-missing-imports \
+		examples/watchasay
+	poetry run mypy --ignore-missing-imports \
+		examples/whattimeisitrightnow
+	poetry run mypy --ignore-missing-imports \
+		examples/apt_blueprint
 
 clean:
 	rm -rf $(VIRTUAL_ENV)
@@ -59,25 +86,6 @@ clean:
 	rm -rf .mypy_cache
 	rm -rf .pytest_cache
 	rm -rf docs/build/*
-
-lint:
-	poetry run black --check \
-		globus_action_provider_tools/ \
-		tests/ \
-		examples/
-	poetry run isort --check-only --diff \
-		globus_action_provider_tools/ \
-		tests/ \
-		examples/
-	poetry run mypy --ignore-missing-imports \
-		globus_action_provider_tools/ \
-		tests/
-	poetry run mypy --ignore-missing-imports \
-		examples/watchasay
-	poetry run mypy --ignore-missing-imports \
-		examples/whattimeisitrightnow
-	poetry run mypy --ignore-missing-imports \
-		examples/apt_blueprint
 
 test: test-toolkit test-examples
 
@@ -104,5 +112,8 @@ test-examples:
 		--cov-fail-under=${MIN_TEST_COVERAGE} \
 		examples/apt_blueprint
 
-docs:
-	poetry run make --directory=docs html
+poetry.lock: 
+	poetry lock
+
+requirements.txt:
+	poetry export --format requirements.txt -o requirements.txt

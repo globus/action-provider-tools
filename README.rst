@@ -31,18 +31,20 @@ to use it for its intended, experimental, purpose.
 Basic Usage
 -----------
 
-Install with ``pip install globus_action_provider_tools``
+Install the base toolkit with ``pip install globus_action_provider_tools``
 
-You can then import the toolkit's components and helpers from
-``globus_action_provider_tools``. For example:
+You can then import the toolkit's standalone components from
+``globus_action_provider_tools``. This is useful in instances where you want to
+use pieces of the library to perform a function (such as token validation via
+the TokenChecker or API schema validation via the ActionStatus or ActionRequest)
+and plug into other web frameworks.
+
 
 .. code-block:: python
 
     from flask import Flask
-    from globus_action_provider_tools.data_types import (
-        ActionProviderDescription)
+    from globus_action_provider_tools import ActionProviderDescription
 
-    # Create an ActionProviderDescription
     description = ActionProviderDescription(              
         globus_auth_scope="https://auth.globus.org/scopes/00000000-0000-0000-0000-000000000000/action_all",
         title="My Action Provider",
@@ -66,6 +68,10 @@ You can then import the toolkit's components and helpers from
         administered_by=["support@example.org"],
     )
 
+To install the Flask helpers as well for use specifically in developing Flask
+based Action Providers, install this library using ``pip install
+globus_action_provider_tools[flask]``
+
 Reporting Issues
 ----------------
 
@@ -78,15 +84,38 @@ Testing, Development, and Contributing
 
 Welcome and thank you for taking the time to contribute! 
 
-The ``globus_action_provider_tools`` package is developed using poetry so to get started 
-you'll need to install `poetry <https://python-poetry.org/>`_. Once installed,
-clone the repository and run ``make install`` to install the package and its
-dependencies locally in a virtual environment (typically ``.venv``).
+The ``globus_action_provider_tools`` package is developed using poetry so to get
+started you'll need to install `poetry <https://python-poetry.org/>`_. Once
+installed, clone the repository and run ``make install`` to install the package
+and its dependencies locally in a virtual environment (typically ``.venv``).
 
 And that's it, you're ready to dive in and make code changes. Once you're
-satisfied with your changes, be sure to run ``make test`` and ``make lint`` as
-those need to be passing for us to accept incoming changes. Once you feel your
-work is ready to be submitted, feel free to create a PR.
+satisfied with your changes, be sure to run ``make autoformat`` to run the
+project's autoformatters on your changes and ``make test`` to validate there
+are no breaking changes introduced. Both these steps must be run for us to
+accept incoming changes. Once you feel your work is ready to be submitted, feel
+free to create a PR.
+
+PyPi Releases
+-------------
+
+Please follow the steps below when creating a new release of the toolkit:
+
+- Create a new release branch
+    - git checkout -b release/X.Y.Z
+- Update the project's dependencies
+    - poetry update
+- Update the project version (follow semantic versioning) in pyproject.toml
+    - poetry version patch|minor|major
+- Update the project version in globus_action_provider_tools/__init__.py
+- Create a pull request into the main branch, wait for CI tests to complete
+- Merge the passing pull request
+- Create and publish a git tag for the new release
+    - git tag v$(poetry version -s)
+    - git push --tags
+- Create a new GH release that references the recently created tag. Provide
+release notes with information on the changeset. Once the release is created,
+there's a GH workflow that will build the toolkit and publish it to pypi. 
 
 Links
 -----

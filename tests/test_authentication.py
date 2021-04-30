@@ -9,7 +9,7 @@ from globus_action_provider_tools.authentication import (
     TokenChecker,
     identity_principal,
 )
-from globus_action_provider_tools.exceptions import ActionProviderError
+from globus_action_provider_tools.errors import ConfigurationError
 from globus_action_provider_tools.groups_client import GROUPS_SCOPE, GroupsClient
 
 from .data import canned_responses
@@ -44,7 +44,7 @@ def bad_credentials_error(live_api, monkeypatch):
 
 
 def test_token_checker_bad_credentials():
-    with pytest.raises(ActionProviderError):
+    with pytest.raises(ConfigurationError):
         TokenChecker(
             client_id="bogus",
             client_secret="bogus",
