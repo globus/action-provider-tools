@@ -15,7 +15,7 @@ from globus_sdk.response import GlobusHTTPResponse
 from globus_action_provider_tools.exceptions import ActionProviderError
 
 from .caching import DEFAULT_CACHE_BACKEND, DEFAULT_CACHE_TIMEOUT, dogpile_cache
-from .groups_client import GroupsClient
+from .groups_client import GROUPS_SCOPE, GroupsClient
 
 log = logging.getLogger(__name__)
 
@@ -26,11 +26,6 @@ def group_principal(id_):
 
 def identity_principal(id_):
     return "urn:globus:auth:identity:" + id_
-
-
-GROUPS_SCOPE = (
-    "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships"
-)
 
 
 class AuthState(object):

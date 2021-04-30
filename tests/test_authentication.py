@@ -5,13 +5,12 @@ from globus_sdk import AccessTokenAuthorizer, AuthAPIError
 from globus_sdk.response import GlobusHTTPResponse
 
 from globus_action_provider_tools.authentication import (
-    GROUPS_SCOPE,
     AuthState,
     TokenChecker,
     identity_principal,
 )
 from globus_action_provider_tools.exceptions import ActionProviderError
-from globus_action_provider_tools.groups_client import GroupsClient
+from globus_action_provider_tools.groups_client import GROUPS_SCOPE, GroupsClient
 
 from .data import canned_responses
 

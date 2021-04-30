@@ -1,10 +1,14 @@
+import logging
 import os
-from typing import AbstractSet, Any, Dict, List, Optional, Set
+from typing import AbstractSet, Any, Dict, List
 
 from globus_sdk.authorizers import GlobusAuthorizer
 from globus_sdk.base import BaseClient
-from globus_sdk.exc import GlobusAPIError, GlobusError
 from globus_sdk.response import GlobusHTTPResponse
+
+GROUPS_SCOPE = (
+    "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships"
+)
 
 GROUPS_API_ENVIRONMENTS: Dict[str, str] = {
     "default": "https://groups.api.globus.org",
@@ -16,6 +20,8 @@ GROUPS_API_ENVIRONMENTS: Dict[str, str] = {
     "staging": "https://groups.api.staging.globuscs.info",
 }
 
+logger = logging.getLogger(__name__)
+
 
 class GroupsClient(BaseClient):
     def __init__(self, authorizer: GlobusAuthorizer, *args, **kwargs):
@@ -25,10 +31,14 @@ class GroupsClient(BaseClient):
         and set it appropriately.
         """
         environment = os.environ.get("GLOBUS_SDK_ENVIRONMENT", "default").lower()
+        base_url = GROUPS_API_ENVIRONMENTS.get(
+            environment, GROUPS_API_ENVIRONMENTS["default"]
+        )
+        logger.info(f"Instantiating GroupsClient with base_url={base_url}")
         super().__init__(
             "groups",
             *args,
-            base_url=GROUPS_API_ENVIRONMENTS[environment],
+            base_url=base_url,
             authorizer=authorizer,
             **kwargs,
         )
