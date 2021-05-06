@@ -155,6 +155,7 @@ class ActionProviderBlueprint(Blueprint):
             allow_public=True,
             allow_all_authenticated_users=True,
         ):
+            current_app.logger.info(g.auth_state.errors)
             current_app.logger.info(
                 f"{g.auth_state.effective_identity} is unauthorized to introspect Action Provider"
             )
@@ -175,6 +176,7 @@ class ActionProviderBlueprint(Blueprint):
                 allow_public=True,
                 allow_all_authenticated_users=True,
             ):
+                current_app.logger.info(g.auth_state.errors)
                 current_app.logger.info(
                     f"{g.auth_state.effective_identity} is unauthorized to enumerate "
                     "Actions"
@@ -218,6 +220,7 @@ class ActionProviderBlueprint(Blueprint):
                 self.provider_description.runnable_by,
                 allow_all_authenticated_users=True,
             ):
+                current_app.logger.info(g.auth_state.errors)
                 current_app.logger.info(
                     f"{g.auth_state.effective_identity} is unauthorized to run Action"
                 )

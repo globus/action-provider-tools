@@ -120,5 +120,6 @@ Please follow the steps below when creating a new release of the toolkit:
 Links
 -----
 | Full Documentation: https://action-provider-tools.readthedocs.io
+| Rendered Redoc: https://globus.github.io/action-provider-tools/
 | Source Code: https://github.com/globus/action-provider-tools
 | Release History + Changelog: https://github.com/globus/action-provider-tools/releases
