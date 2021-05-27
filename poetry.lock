@@ -301,7 +301,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "importlib-metadata"
-version = "4.1.0"
+version = "4.3.0"
 description = "Read metadata from Python packages"
 category = "main"
 optional = false
@@ -1307,8 +1307,8 @@ imagesize = [
     {file = "imagesize-1.2.0.tar.gz", hash = "sha256:b1f6b5a4eab1f73479a50fb79fcf729514a900c341d8503d62a62dbc4127a2b1"},
 ]
 importlib-metadata = [
-    {file = "importlib_metadata-4.1.0-py3-none-any.whl", hash = "sha256:227b5fae29e4e51343000c1d43e4213f6e3bc6b995c39b6cf6e434dc8026a815"},
-    {file = "importlib_metadata-4.1.0.tar.gz", hash = "sha256:daff3ed4f1e4545d7e60d606e989b1727f482de5da7e4fc6b387f4cd5bca8ece"},
+    {file = "importlib_metadata-4.3.0-py3-none-any.whl", hash = "sha256:c8b9a7c6000baa7adf7abcd2c41db11f172bcb5d6e448c73c2407dbc7e7e2af3"},
+    {file = "importlib_metadata-4.3.0.tar.gz", hash = "sha256:c4646abbce80191bb548636f846e353ff1edc46a06bc536ea0a60d53211dc690"},
 ]
 importmagic = [
     {file = "importmagic-0.1.7.tar.gz", hash = "sha256:3f7757a5b74c9a291e20e12023bb3bf71bc2fa3adfb15a08570648ab83eaf8d8"},
