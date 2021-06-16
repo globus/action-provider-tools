@@ -24,6 +24,7 @@ classifiers = [
   ]
 
 readme = "README.rst"
+license = "Apache-2.0"
 
 [tool.poetry.scripts]
 whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
