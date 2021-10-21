@@ -2,17 +2,13 @@ import logging
 from time import time
 from typing import FrozenSet, Iterable, List, Optional, Union
 
+from cachetools import LRUCache, TTLCache
 from globus_sdk import ConfidentialAppAuthClient
 from globus_sdk.auth.token_response import OAuthTokenResponse
 from globus_sdk.authorizers import AccessTokenAuthorizer, RefreshTokenAuthorizer
 from globus_sdk.exc import GlobusAPIError, GlobusError
 from globus_sdk.response import GlobusHTTPResponse
 
-from globus_action_provider_tools.caching import (
-    DEFAULT_CACHE_BACKEND,
-    DEFAULT_CACHE_TIMEOUT,
-    dogpile_cache,
-)
 from globus_action_provider_tools.errors import ConfigurationError
 from globus_action_provider_tools.groups_client import GROUPS_SCOPE, GroupsClient
 
@@ -28,6 +24,15 @@ def identity_principal(id_: str) -> str:
 
 
 class AuthState(object):
+    # Cache for introspection operations, max lifetime: 30 seconds
+    introspect_cache: TTLCache = TTLCache(maxsize=100, ttl=30)
+
+    # Cache for dependent tokens, max lifetime: 5 minutes
+    dependent_tokens_cache: LRUCache = LRUCache(maxsize=100)
+
+    # Cache for group lookups, max lifetime: 5 minutes
+    group_membership_cache: TTLCache = TTLCache(maxsize=100, ttl=60 * 5)
+
     def __init__(
         self,
         auth_client: ConfidentialAppAuthClient,
@@ -56,8 +61,16 @@ class AuthState(object):
         tmpl = "<AuthState for client_id='{}' with bearer_token='{}'>"
         return tmpl.format(self.auth_client.client_id, self.bearer_token)
 
-    @dogpile_cache.cache_on_arguments()
     def introspect_token(self) -> Optional[GlobusHTTPResponse]:
+        # There are cases where a null or empty string bearer token are present as a
+        # placeholder
+        if self.bearer_token is None:
+            return None
+
+        resp = AuthState.introspect_cache.get(self.bearer_token)
+        if resp is not None:
+            return resp
+
         resp = self.auth_client.oauth2_token_introspect(
             self.bearer_token, include="identity_set"
         )
@@ -83,7 +96,7 @@ class AuthState(object):
             log.info(err)
             return None
         else:
-            log.debug(resp)
+            AuthState.introspect_cache[self.bearer_token] = resp
             return resp
 
     @property
@@ -106,10 +119,13 @@ class AuthState(object):
         return self.identities.union(self.groups)
 
     @property  # type: ignore
-    @dogpile_cache.cache_on_arguments()
     def groups(self) -> FrozenSet[str]:
         try:
             groups_client = self._get_groups_client()
+            groups_token = groups_client.authorizer.access_token
+            groups_set = AuthState.group_membership_cache.get(groups_token)
+            if groups_set is not None:
+                return groups_set
         except (GlobusAPIError, KeyError, ValueError) as err:
             # Only debug level, because this could be normal state of
             # affairs for a system that doesn't use or care about groups.
@@ -124,17 +140,33 @@ class AuthState(object):
             self.errors.append(err)
             return frozenset()
         else:
-            return frozenset(map(group_principal, (grp["id"] for grp in groups)))
+            groups_set = frozenset(map(group_principal, (grp["id"] for grp in groups)))
+            AuthState.group_membership_cache[groups_token] = groups_set
+            return groups_set
 
-    @dogpile_cache.cache_on_arguments(expiration_time=86400)  # 24 hours
+    @property
+    def dependent_tokens_cache_id(self) -> Optional[str]:
+        tkn_details = self.introspect_token()
+        if tkn_details is None:
+            return None
+        return tkn_details.get("dependent_tokens_cache_id")
+
     def get_dependent_tokens(self) -> OAuthTokenResponse:
         """
         Returns OAuthTokenResponse representing the dependent tokens associated
         with a particular access token.
         """
-        return self.auth_client.oauth2_get_dependent_tokens(
+        dependent_tokens_cache_id = self.dependent_tokens_cache_id
+        if dependent_tokens_cache_id is not None:
+            resp = AuthState.dependent_tokens_cache.get(dependent_tokens_cache_id)
+            if resp is not None:
+                return resp
+        resp = self.auth_client.oauth2_get_dependent_tokens(
             self.bearer_token, {"access_type": "offline"}
         )
+        if resp is not None and dependent_tokens_cache_id is not None:
+            AuthState.dependent_tokens_cache[dependent_tokens_cache_id] = resp
+        return resp
 
     def get_authorizer_for_scope(
         self, scope: str
@@ -204,14 +236,6 @@ class TokenChecker:
             self.expected_audience = client_id
         else:
             self.expected_audience = expected_audience
-
-        if cache_config:
-            dogpile_cache.configure(
-                backend=cache_config.pop("backend", DEFAULT_CACHE_BACKEND),
-                expiration_time=cache_config.pop("timeout", DEFAULT_CACHE_TIMEOUT),
-                arguments=cache_config,
-                replace_existing_backend=True,
-            )
 
         # Try to check a 'token' and fail fast here in case client_id/secret are bad:
         try:

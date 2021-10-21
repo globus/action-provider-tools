@@ -30,8 +30,7 @@ license = "Apache-2.0"
 whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
 [tool.poetry.dependencies]
-python = "^3.6.1"
-"dogpile.cache"="^0.7.1"
+python = "^3.6.2"
 globus-sdk="^2"
 jsonschema = "^3"
 pyyaml = "^5.3.1"
@@ -40,15 +39,12 @@ pybase62 = "^0.4.0"
 pydantic = "^1.7.3"
 isodate = "^0.6.0"
 flask = { version = "^1", optional = true }
+cachetools = "^4.2.4"
 
 [tool.poetry.extras]
 flask = ["flask"]
 
 [tool.poetry.dev-dependencies]
-python-language-server = "^0"
-pyls-black = "^0"
-pyls-isort = "^0"
-pyls-mypy = "^0"
 importmagic = "^0"
 epc = "^0"
 pytest = "^5"
@@ -65,6 +61,8 @@ sphinx_material = "^0.0.30"
 mypy = "^0.910"
 types-PyYAML = "^6.0.0"
 types-requests = "^2.25.11"
+black = "^21.9b0"
+isort = "^5.9.3"
 
 [tool.isort]
 multi_line_output = 3
