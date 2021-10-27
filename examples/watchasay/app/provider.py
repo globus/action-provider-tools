@@ -17,11 +17,9 @@ from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
 )
-from globus_action_provider_tools.flask import (
-    ActionStatusReturn,
-    add_action_routes_to_blueprint,
-)
+from globus_action_provider_tools.flask import add_action_routes_to_blueprint
 from globus_action_provider_tools.flask.exceptions import ActionConflict, ActionNotFound
+from globus_action_provider_tools.flask.types import ActionCallbackReturn
 
 # A simulated database mapping input user action requests identifiers to a previously
 # seen request id and the corresponding action id
@@ -87,7 +85,7 @@ def action_enumerate(auth: AuthState, params: Dict[str, Set]):
     return matches
 
 
-def action_run(request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
+def action_run(request: ActionRequest, auth: AuthState) -> ActionCallbackReturn:
     """
     Asynchronous actions most likely need to implement retry logic here to
     prevent duplicate requests with matching request_ids from launching
@@ -140,7 +138,7 @@ def action_run(request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
     return status
 
 
-def action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def action_status(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     """
     action_status retrieves the most recent state of the action. This endpoint
     requires the user authenticate with a principal value which is in the
@@ -151,7 +149,7 @@ def action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
     return status, 200
 
 
-def action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def action_cancel(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     """
     Asynchronous actions need not ensure a running action is immediately
     completed or terminated. In this scenario, action_cancel should return
@@ -178,7 +176,7 @@ def action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
     return status
 
 
-def action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def action_release(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     """
     If the Action is not already in a completion state, action_release should
     return an error as this operation does not attempt to stop execution.

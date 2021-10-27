@@ -21,7 +21,7 @@ from globus_action_provider_tools.flask.exceptions import (
     BadActionRequest,
     UnauthorizedRequest,
 )
-from globus_action_provider_tools.flask.types import ActionStatusReturn, ViewReturn
+from globus_action_provider_tools.flask.types import ActionCallbackReturn, ViewReturn
 from globus_action_provider_tools.validation import validate_data
 
 ActionInputValidatorType = Callable[[Dict[str, Any]], None]
@@ -80,7 +80,7 @@ def query_args_to_enum(args: Iterable[str], enum_class: Enum):
 
 
 def action_status_return_to_view_return(
-    status: ActionStatusReturn, default_status_code: int
+    status: ActionCallbackReturn, default_status_code: int
 ) -> ViewReturn:
     """
     Helper function to return a ActionStatusReturn object as a valid Flask
@@ -113,7 +113,7 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
     if isinstance(exc, AuthenticationError):
         return UnauthorizedRequest()  # type: ignore
 
-    current_app.logger.exception(str(exc))
+    current_app.logger.exception("Handling unexpected exception", exc_info=True)
     # Handle unexpected Exceptions in a somewhat predictable way
     resp = {
         "code": ActionProviderError.__name__,

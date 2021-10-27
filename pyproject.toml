@@ -62,6 +62,9 @@ rstcheck = "^3.3.1"
 pygments = "^2.6.1"
 sphinx = "^3.2.1"
 sphinx_material = "^0.0.30"
+mypy = "^0.910"
+types-PyYAML = "^6.0.0"
+types-requests = "^2.25.11"
 
 [tool.isort]
 multi_line_output = 3
