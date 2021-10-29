@@ -177,7 +177,7 @@ class ActionProviderBlueprint(Blueprint):
             )
             raise UnauthorizedRequest
 
-        valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
+        valid_statuses = {e.name.casefold() for e in ActionStatusValue}
         statuses = parse_query_args(
             request,
             arg_name="status",
