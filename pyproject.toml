@@ -59,10 +59,11 @@ pygments = "^2.6.1"
 sphinx = "^3.2.1"
 sphinx_material = "^0.0.30"
 mypy = "^0.910"
-types-PyYAML = "^6.0.0"
-types-requests = "^2.25.11"
 black = "^21.9b0"
 isort = "^5.9.3"
+types-cachetools = "^4.2.4"
+types-PyYAML = "^6.0.0"
+types-requests = "^2.25.11"
 
 [tool.isort]
 multi_line_output = 3

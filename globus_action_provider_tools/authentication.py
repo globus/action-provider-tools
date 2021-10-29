@@ -198,6 +198,16 @@ class AuthState(object):
         self._groups_client = GroupsClient(authorizer=authorizer)
         return self._groups_client
 
+    @staticmethod
+    def group_in_principal_list(principal_list: Iterable[str]) -> bool:
+        """Check a list of principals to determine if any of the are group based
+        principals. Determined by looking for the urn:globus:groups:id prefix on any of
+        the values.
+        """
+        return any(
+            principal.startswith("urn:globus:groups:id") for principal in principal_list
+        )
+
     def check_authorization(
         self,
         allowed_principals: Iterable[str],
@@ -205,7 +215,12 @@ class AuthState(object):
         allow_all_authenticated_users: bool = False,
     ) -> bool:
         allowed_set = frozenset(allowed_principals)
-        all_principals = self.identities.union(self.groups)
+        all_principals = self.identities
+        # We only need to merge in the groups values to the principals list if there are
+        # group principals in the list. Can save a round trip to the Groups service if
+        # there's no need to check for group membership.
+        if AuthState.group_in_principal_list(allowed_set):
+            allowed_principals = set(allowed_principals).union(self.groups)
         if (
             (allow_public and "public" in allowed_set)
             or (allowed_set.intersection(all_principals))
