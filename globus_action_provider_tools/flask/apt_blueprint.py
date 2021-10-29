@@ -1,11 +1,10 @@
-import functools
 import typing as t
 
 from flask import Blueprint, blueprints, current_app, g, jsonify, request
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest as WerkzeugBadRequest
 
-from globus_action_provider_tools.authentication import AuthState, TokenChecker
+from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
@@ -32,16 +31,16 @@ from globus_action_provider_tools.flask.helpers import (
     validate_input,
 )
 from globus_action_provider_tools.flask.types import (
-    ActionCancelType,
-    ActionEnumerationType,
-    ActionLoaderType,
-    ActionLogType,
-    ActionRunType,
-    ActionSaverType,
-    ActionStatusReturn,
-    ActionStatusType,
-    ViewReturn,
+    ActionCallbackReturn,
+    ActionCancelCallback,
+    ActionEnumerationCallback,
+    ActionLogCallback,
+    ActionReleaseCallback,
+    ActionResumeCallback,
+    ActionRunCallback,
+    ActionStatusCallback,
 )
+from globus_action_provider_tools.storage import AbstractActionRepository
 
 
 class ActionProviderBlueprint(Blueprint):
@@ -51,6 +50,7 @@ class ActionProviderBlueprint(Blueprint):
         *args,
         globus_auth_client_name: t.Optional[str] = None,
         additional_scopes: t.Iterable[str] = (),
+        action_repository: t.Optional[AbstractActionRepository] = None,
         **kwarg,
     ):
         """Create a new ActionProviderBlueprint. All arguments not listed here are the
@@ -75,9 +75,7 @@ class ActionProviderBlueprint(Blueprint):
 
         super().__init__(*args, **kwarg)
 
-        self.action_loader_plugin: t.Optional[ActionLoaderType] = None
-        self.action_saver_plugin: t.Optional[ActionSaverType] = None
-
+        self.action_repo = action_repository
         self.provider_description = provider_description
         self.input_body_validator = get_input_body_validator(provider_description)
         self.globus_auth_client_name = globus_auth_client_name
@@ -96,33 +94,33 @@ class ActionProviderBlueprint(Blueprint):
             strict_slashes=False,
         )
 
-        # If using an action-loader, it's possible that the status and cancel
-        # endpoints do not need to be implemented. Therefore, we initialize the
-        # API route for those operations with "auto" functions that
-        # Old-style AP API endpoints
+        # If using an action-repository, the status and cancel endpoints do not
+        # need to be implemented. Therefore, we initialize the API route for
+        # those operations with "auto" functions
+        # Old style API endpoints
         self.add_url_rule(
             "/<string:action_id>/status",
             None,
-            self._auto_action_status,
+            self._action_status,
             methods=["GET"],
         )
         self.add_url_rule(
             "/<string:action_id>/cancel",
             None,
-            self._auto_action_cancel,
+            self._action_cancel,
             methods=["POST"],
         )
         # Add new-style AP API endpoints
         self.add_url_rule(
             "/actions/<string:action_id>",
             "action_status",
-            self._auto_action_status,
+            self._action_status,
             methods=["GET"],
         )
         self.add_url_rule(
             "/actions/<string:action_id>/cancel",
             "action_cancel",
-            self._auto_action_cancel,
+            self._action_cancel,
             methods=["POST"],
         )
 
@@ -139,6 +137,10 @@ class ActionProviderBlueprint(Blueprint):
         scopes = [self.provider_description.globus_auth_scope]
         scopes.extend(self.additional_scopes)
 
+        app.logger.info(
+            f"Initializing TokenChecker for client {client_id} and secret "
+            f"***{client_secret[-5:]}"
+        )
         self.checker = TokenChecker(
             client_id=client_id,
             client_secret=client_secret,
@@ -155,421 +157,328 @@ class ActionProviderBlueprint(Blueprint):
             allow_public=True,
             allow_all_authenticated_users=True,
         ):
-            current_app.logger.info(g.auth_state.errors)
             current_app.logger.info(
-                f"{g.auth_state.effective_identity} is unauthorized to introspect Action Provider"
+                f"{g.auth_state.effective_identity} is unauthorized to introspect Action "
+                f"Provider due {g.auth_state.errors}"
             )
             raise UnauthorizedRequest
 
         return jsonify(self.provider_description), 200
 
-    def action_enumerate(self, func: ActionEnumerationType):
-        """
-        Decorates a function to be run as an Action Provider's enumeration
-        endpoint.
-        """
-
-        @functools.wraps(func)
-        def wrapper():
-            if not g.auth_state.check_authorization(
-                self.provider_description.runnable_by,
-                allow_public=True,
-                allow_all_authenticated_users=True,
-            ):
-                current_app.logger.info(g.auth_state.errors)
-                current_app.logger.info(
-                    f"{g.auth_state.effective_identity} is unauthorized to enumerate "
-                    "Actions"
-                )
-                raise UnauthorizedRequest
-
-            valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
-            statuses = parse_query_args(
-                request,
-                arg_name="status",
-                default_value="active",
-                valid_vals=valid_statuses,
+    def _action_enumerate(self):
+        if not g.auth_state.check_authorization(
+            self.provider_description.runnable_by,
+            allow_public=True,
+            allow_all_authenticated_users=True,
+        ):
+            current_app.logger.info(
+                f"{g.auth_state.effective_identity} is unauthorized to enumerate "
+                f"Actions due to {g.auth_state.error}"
             )
-            statuses = query_args_to_enum(statuses, ActionStatusValue)
-            roles = parse_query_args(
-                request,
-                arg_name="roles",
-                default_value="creator_id",
-                valid_vals={"creator_id", "monitor_by", "manage_by"},
-            )
-            query_params = {"statuses": statuses, "roles": roles}
-            enumeration = func(g.auth_state, query_params)
-            return jsonify(enumeration), 200
+            raise UnauthorizedRequest
 
-        self.add_url_rule(
-            "/actions",
-            "action_enumerate",
-            wrapper,
-            methods=["GET"],
+        valid_statuses = {e.name.casefold() for e in ActionStatusValue}
+        statuses = parse_query_args(
+            request,
+            arg_name="status",
+            default_value="active",
+            valid_vals=valid_statuses,
         )
-        return wrapper
+        statuses = query_args_to_enum(statuses, ActionStatusValue)
+        roles = parse_query_args(
+            request,
+            arg_name="roles",
+            default_value="creator_id",
+            valid_vals={"creator_id", "monitor_by", "manage_by"},
+        )
+        query_params = {"statuses": statuses, "roles": roles}
+        enumeration = self.action_enumerate_callback(g.auth_state, query_params)
+        return jsonify(enumeration), 200
 
-    def action_run(self, func: ActionRunType) -> t.Callable[[], ViewReturn]:
+    def action_enumerate(self, func: ActionEnumerationCallback):
         """
-        Decorates a function to be run as an Action Provider's run endpoint.
+        Registers a function to run as the Action Provider's enumeration endpoint.
         """
+        self.action_enumerate_callback = func
+        self.add_url_rule(
+            "/actions", "action_enumerate", self._action_enumerate, methods=["GET"]
+        )
 
-        @functools.wraps(func)
-        def wrapper() -> ViewReturn:
-            if not g.auth_state.check_authorization(
-                self.provider_description.runnable_by,
-                allow_all_authenticated_users=True,
-            ):
-                current_app.logger.info(g.auth_state.errors)
-                current_app.logger.info(
-                    f"{g.auth_state.effective_identity} is unauthorized to run Action"
-                )
-                raise UnauthorizedRequest
+    def _action_run(self):
+        if not g.auth_state.check_authorization(
+            self.provider_description.runnable_by,
+            allow_all_authenticated_users=True,
+        ):
+            current_app.logger.info(
+                f"{g.auth_state.effective_identity} is unauthorized to run Action due to {g.auth_state.errors}"
+            )
+            raise UnauthorizedRequest
 
-            try:
-                json_input = request.get_json(force=True)
-            except WerkzeugBadRequest:
-                current_app.logger.info(
-                    f"{g.auth_state.effective_identity} submitted input that could not "
-                    f"be parsed as JSON: {str(request.data)}"
-                )
-                raise BadActionRequest("Invalid JSON")
-            try:
-                action_request = validate_input(json_input, self.input_body_validator)
-            except BadActionRequest as err:
-                current_app.logger.info(
-                    f"{g.auth_state.effective_identity} submitted invalid input: "
-                    f"{err.get_body()}"
-                )
-                raise
+        try:
+            json_input = request.get_json(force=True)
+        except WerkzeugBadRequest:
+            current_app.logger.info(
+                f"{g.auth_state.effective_identity} submitted input that could not "
+                f"be parsed as JSON: {str(request.data)}"
+            )
+            raise BadActionRequest("Invalid JSON")
+        try:
+            action_request = validate_input(json_input, self.input_body_validator)
+        except BadActionRequest as err:
+            current_app.logger.info(
+                f"{g.auth_state.effective_identity} submitted invalid input: "
+                f"{err.get_body()}"
+            )
+            raise
 
-            # It's possible the user will attempt to make a malformed ActionStatus -
-            # pydantic won't like that. So log and handle the error with a 500
-            try:
-                status = func(action_request, g.auth_state)
-            except ValidationError as ve:
-                current_app.logger.error(
-                    f"ActionProvider attempted to create a non-conformant ActionStatus "
-                    f"in {func.__name__}: {ve.errors()}"
-                )
-                raise ActionProviderError
+        # It's possible the user will attempt to make a malformed ActionStatus -
+        # pydantic won't like that. So log and handle the error with a 500
+        try:
+            status = self.action_run_callback(action_request, g.auth_state)
+        except ValidationError as ve:
+            current_app.logger.error(
+                f"ActionProvider attempted to create a non-conformant ActionStatus "
+                f"in {self.action_run_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
 
-            self._save_action(status)
-            return action_status_return_to_view_return(status, 202)
+        if self.action_repo:
+            self._save_action(self.action_repo, status)
+        return action_status_return_to_view_return(status, 202)
 
-        # Add new and old-style AP API endpoints
-        self.add_url_rule("/run", None, wrapper, methods=["POST"])
-        self.add_url_rule("/actions", func.__name__, wrapper, methods=["POST"])
-        return wrapper
-
-    @t.overload
-    def action_resume(self, func: t.Callable[[str, AuthState], ActionStatusReturn]):
+    def action_run(self, func: ActionRunCallback):
         """
-        Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_resume can accept a str or ActionStatus as the first arg type
-        NOTE: typing_extensions.Protocol would be better if not for it's poor
-        error messages
+        Registers a function to run as the Action Provider's run endpoint.
         """
-        ...
+        self.action_run_callback: ActionRunCallback = func
+        self.add_url_rule("/run", None, self._action_run, methods=["POST"])
+        self.add_url_rule("/actions", func.__name__, self._action_run, methods=["POST"])
 
-    @t.overload
-    def action_resume(
-        self, func: t.Callable[[ActionStatus, AuthState], ActionStatusReturn]
-    ):
-        """
-        Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_resume can accept a str or ActionStatus as the first arg type
-        """
-        ...
+    def _action_resume(self, action_id: str):
+        # Attempt to lookup the Action based on its action_id if there was an
+        # Action Repo defined. If an action is found, verify access to it.
+        action = None
+        if self.action_repo is not None:
+            action = self._load_action_by_id(self.action_repo, action_id)
+            authorize_action_management_or_404(action, g.auth_state)
 
-    def action_resume(self, func) -> t.Callable[[str], ViewReturn]:
+        try:
+            if action:
+                result = self.action_resume_callback(action, g.auth_state)  # type: ignore
+            else:
+                result = self.action_resume_callback(action_id, g.auth_state)  # type: ignore
+        except AttributeError:
+            current_app.logger.error("ActionProvider has no action resume endpoint")
+            raise ActionProviderError
+        except ValidationError as ve:
+            current_app.logger.error(
+                f"ActionProvider attempted to create a non-conformant ActionStatus "
+                f"in {self.action_resume_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
+
+        if self.action_repo:
+            self._save_action(self.action_repo, result)
+        return action_status_return_to_view_return(result, 200)
+
+    def action_resume(self, func: ActionResumeCallback):
         """
         Decorates a function to be run as an Action Provider's resume endpoint.
         """
-
-        @functools.wraps(func)
-        def wrapper(action_id: str) -> ViewReturn:
-            # Attempt to use a user-defined function to lookup the Action based
-            # on its action_id. If an action is found, authorize access to it
-            if self.action_loader_plugin:
-                action = self._load_action_by_id(action_id)
-                authorize_action_access_or_404(action, g.auth_state)
-
-            status = func(action_id, g.auth_state)
-            return action_status_return_to_view_return(status, 200)
-
-        # Add new and old-style AP API endpoints
-        self.add_url_rule("/<string:action_id>/resume", None, wrapper, methods=["POST"])
+        self.action_resume_callback: ActionResumeCallback = func
+        self.add_url_rule(
+            "/<string:action_id>/resume", None, self._action_resume, methods=["POST"]
+        )
         self.add_url_rule(
             "/actions/<string:action_id>/resume",
-            "action_resume",
-            wrapper,
+            func.__name__,
+            self._action_resume,
             methods=["POST"],
         )
-        return wrapper
 
-    @t.overload
-    def action_status(self, func: t.Callable[[str, AuthState], ActionStatusReturn]):
+    def action_status(self, func: ActionStatusCallback):
         """
-        Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_status can accept a str or ActionStatus as the first arg type
-        NOTE: typing_extensions.Protocol would be better if not for it's poor
-        error messages
+        Registers a function to run as the Action Provider's status endpoint.
         """
-        ...
+        self.action_status_callback: ActionStatusCallback = func
 
-    @t.overload
-    def action_status(
-        self, func: t.Callable[[ActionStatus, AuthState], ActionStatusReturn]
-    ):
-        """
-        Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_status can accept a str or ActionStatus as the first arg type
-        """
-        ...
-
-    def action_status(self, func) -> None:
-        """
-        Decorates a function to be run as an Action Provider's status endpoint.
-        """
-        self._action_status: ActionStatusType = func
-
-    def _auto_action_status(self, action_id: str) -> ViewReturn:
+    def _action_status(self, action_id: str):
         """
         Attempts to load an action_status via its action_id using an
         action_loader. If an action is successfully loaded, view access by the
         requesting user is verified before returning it to the caller.
         """
-        # Attempt to use a user-defined function to lookup the Action based
-        # on its action_id. If an action is found, verify access to it
-        if self.action_loader_plugin:
-            action = self._load_action_by_id(action_id)
+        # Attempt to lookup the Action based on its action_id if there was an
+        # Action Repo defined. If an action is found, verify access to it.
+        action = None
+        if self.action_repo is not None:
+            action = self._load_action_by_id(self.action_repo, action_id)
             authorize_action_access_or_404(action, g.auth_state)
-            try:
-                result = self._action_status(action, g.auth_state)
-            except AttributeError:
-                # Once an action_loader is registered, there is no reason to
-                # register an action_status. Therefore, an exception here is ok,
-                # in which case just return the bare action as the result
-                result = action
-        else:
-            if not hasattr(self, "_action_status"):
+
+        try:
+            if action:
+                result = self.action_status_callback(action, g.auth_state)  # type: ignore
+            else:
+                result = self.action_status_callback(action_id, g.auth_state)  # type: ignore
+        except AttributeError:
+            # If an ActionRepo is registered, there is no need to register an
+            # action_cancel callback. Therefore, an exception here might be ok
+            if action is None:
                 current_app.logger.error("ActionProvider has no action status endpoint")
                 raise ActionProviderError
-            try:
-                # It's possible the user will attempt to make a malformed ActionStatus -
-                # pydantic won't like that. So handle the error with a 500
-                result = self._action_status(action_id, g.auth_state)
-            except ValidationError as ve:
-                current_app.logger.error(
-                    f"ActionProvider attempted to create a non-conformant ActionStatus "
-                    f"in {self._action_status.__name__}: {ve.errors()}"
-                )
-                raise ActionProviderError
+            else:
+                result = action
+        except ValidationError as ve:
+            current_app.logger.error(
+                f"ActionProvider attempted to create a non-conformant ActionStatus "
+                f"in {self.action_status_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
+
+        if self.action_repo:
+            self._save_action(self.action_repo, result)
         return action_status_return_to_view_return(result, 200)
 
-    @t.overload
-    def action_cancel(self, func: t.Callable[[str, AuthState], ActionStatusReturn]):
-        """
-        Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_cancel can accept a str or ActionStatus as the first arg type
-        """
-        ...
-
-    @t.overload
-    def action_cancel(
-        self, func: t.Callable[[ActionStatus, AuthState], ActionStatusReturn]
-    ):
-        """
-        Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_cancel can accept a str or ActionStatus as the first arg type
-        """
-        ...
-
-    def action_cancel(self, func) -> None:
+    def action_cancel(self, func: ActionCancelCallback):
         """
         Decorates a function to be run as an Action Provider's cancel endpoint.
         """
-        self._action_cancel: ActionCancelType = func
+        self.action_cancel_callback: ActionCancelCallback = func
 
-    def _auto_action_cancel(self, action_id: str) -> ViewReturn:
+    def _action_cancel(self, action_id: str):
         """
         Executes a user-defined function for cancelling an Action.
         """
-        # Attempt to use a user-defined function to lookup the Action based
-        # on its action_id. If an action is found, verify access to it
-        if self.action_loader_plugin:
-            action = self._load_action_by_id(action_id)
+        # Attempt to lookup the Action based on its action_id if there was an
+        # Action Repo defined. If an action is found, verify access to it.
+        action = None
+        if self.action_repo is not None:
+            action = self._load_action_by_id(self.action_repo, action_id)
             authorize_action_management_or_404(action, g.auth_state)
-            try:
-                result = self._action_cancel(action, g.auth_state)
-            except AttributeError:
-                # Once an action_loader is registered, if the ActionProvider is
-                # synchronous, there is no reason to register an action_cancel.
-                # Therefore, an exception here might be ok, in which case just
-                # return the bare action as the result
-                result = action
-            finally:
-                self._save_action(action)
-        else:
-            if not hasattr(self, "_action_cancel"):
+
+        try:
+            if action:
+                result = self.action_cancel_callback(action, g.auth_state)  # type: ignore
+            else:
+                result = self.action_cancel_callback(action_id, g.auth_state)  # type: ignore
+        except AttributeError:
+            # If an ActionRepo is registered, there is no need to register an
+            # action_cancel callback. Therefore, an exception here might be ok
+            if action is None:
                 current_app.logger.error("ActionProvider has no action cancel endpoint")
                 raise ActionProviderError
+            else:
+                result = action
+        except ValidationError as ve:
+            current_app.logger.error(
+                f"Action Provider attempted to create a non-conformant ActionStatus "
+                f"in {self.action_cancel_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
 
-            try:
-                result = self._action_cancel(action_id, g.auth_state)
-            except ValidationError as ve:
-                current_app.logger.error(
-                    f"ActionProvider attempted to create a non-conformant ActionStatus "
-                    f"in {self._action_cancel.__name__}: {ve.errors()}"
-                )
-                raise ActionProviderError
+        if self.action_repo:
+            self._save_action(self.action_repo, result)
         return action_status_return_to_view_return(result, 200)
 
-    @t.overload
-    def action_release(self, func: t.Callable[[str, AuthState], ActionStatusReturn]):
+    def action_release(self, func: ActionReleaseCallback):
         """
-        Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_release can accept a str or ActionStatus as the first arg type
+        Decorates an Action Provider's release endpoint
         """
-        ...
-
-    @t.overload
-    def action_release(
-        self, func: t.Callable[[ActionStatus, AuthState], ActionStatusReturn]
-    ):
-        """
-        Using these stubs w/ @overload tells mypy that the actual implementation
-        for action_release can accept a str or ActionStatus as the first arg type
-        """
-        ...
-
-    def action_release(self, func) -> t.Callable[[str], ViewReturn]:
-        """
-        Decorates a function to be run as an Action Provider's release endpoint.
-        """
-
-        @functools.wraps(func)
-        def wrapper(action_id: str) -> ViewReturn:
-            # Attempt to use a user-defined function to lookup the Action based
-            # on its action_id. If an action is found, authorize access to it
-            if self.action_loader_plugin:
-                action = self._load_action_by_id(action_id)
-                authorize_action_management_or_404(action, g.auth_state)
-
-            try:
-                status = func(action_id, g.auth_state)
-            except ValidationError as ve:
-                current_app.logger.error(
-                    f"ActionProvider attempted to create a non-conformant ActionStatus "
-                    f"in {func.__name__}: {ve.errors()}"
-                )
-                raise ActionProviderError
-
-            return action_status_return_to_view_return(status, 200)
-
-        # Add new and old-style AP API endpoints
+        self.action_release_callback: ActionReleaseCallback = func
         self.add_url_rule(
             "/<string:action_id>/release",
-            None,
-            wrapper,
+            func.__name__,
+            self._action_release,
             methods=["POST"],
         )
         self.add_url_rule(
             "/actions/<string:action_id>",
-            "action_release",
-            wrapper,
+            func.__name__,
+            self._action_release,
             methods=["DELETE"],
         )
-        return wrapper
 
-    def action_log(self, func: ActionLogType) -> t.Callable[[str], ViewReturn]:
+    def _action_release(self, action_id: str):
+        """
+        Decorates a function to be run as an Action Provider's release endpoint.
+        """
+        # Attempt to lookup the Action based on its action_id if there was an
+        # Action Repo defined. If an action is found, verify access to it.
+        action = None
+        if self.action_repo is not None:
+            action = self._load_action_by_id(self.action_repo, action_id)
+            authorize_action_management_or_404(action, g.auth_state)
+
+        try:
+            if action:
+                result = self.action_release_callback(action, g.auth_state)  # type: ignore
+            else:
+                result = self.action_release_callback(action_id, g.auth_state)  # type: ignore
+        except ValidationError as ve:
+            current_app.logger.error(
+                f"ActionProvider attempted to create a non-conformant ActionStatus "
+                f"in {self.action_release_callback.__name__}: {ve.errors()}"
+            )
+            raise ActionProviderError
+
+        return action_status_return_to_view_return(result, 200)
+
+    def action_log(self, func: ActionLogCallback):
         """
         Decorates a function to be run an an Action Provider's logging endpoint.
         """
-
-        @functools.wraps(func)
-        def wrapper(action_id: str) -> ViewReturn:
-            # Attempt to use a user-defined function to lookup the Action based
-            # on its action_id. If an action is found, authorize access to it
-            if self.action_loader_plugin:
-                action = self._load_action_by_id(action_id)
-                authorize_action_access_or_404(action, g.auth_state)
-
-            status = func(action_id, g.auth_state)
-            return jsonify(status), 200
-
-        # Add new and old-style AP API endpoints
-        self.add_url_rule("/<string:action_id>/log", None, wrapper, methods=["GET"])
+        self.action_log_callback: ActionLogCallback = func
         self.add_url_rule(
-            "/actions/<string:action_id>/log", "action_log", wrapper, methods=["GET"]
+            "/<string:action_id>/log", func.__name__, self._action_log, methods=["GET"]
         )
-        return wrapper
+        self.add_url_rule(
+            "/actions/<string:action_id>/log",
+            func.__name__,
+            self._action_log,
+            methods=["GET"],
+        )
 
-    def register_action_loader(self, storage_backend: t.Any):
-        """
-        Decorates a function that will be used to lookup an ActionStatus by its
-        action_id. Multiple action_loaders with different backends can be
-        registered and each will be used sequentially when attempting to lookup
-        an ActionStatus. If any action_loaders are registered and they fail to
-        lookup an ActionStatus, a 404 error will be thrown.
+    def _action_log(self, action_id: str):
+        # Attempt to use a user-defined function to lookup the Action based
+        # on its action_id. If an action is found, authorize access to it
+        action = None
+        if self.action_repo is not None:
+            action = self._load_action_by_id(self.action_repo, action_id)
+            authorize_action_access_or_404(action, g.auth_state)
 
-        If an action_loader is registered, it will be used by the status,
-        cancel, release, and log endpoints. Those endpoints will then provide
-        the ActionStatus to the user-defined route functions.
-        """
+        status = self.action_log_callback(action_id, g.auth_state)
+        return jsonify(status), 200
 
-        # TODO figure out how to get a type annotation working on this inner func
-        def wrapper(func):
-            self.action_loader_plugin = (func, storage_backend)
-
-        return wrapper
-
-    def _load_action_by_id(self, action_id: str) -> ActionStatus:
+    def _load_action_by_id(
+        self, repo: AbstractActionRepository, action_id: str
+    ) -> ActionStatus:
         """
         If the actiond_id is not found in the registered action_loader, we
-        assume the ActionStatus is non-recoverable.
+        assume the ActionStatus is non-recoverable and return a helpful 404.
         """
-        if self.action_loader_plugin is None:
-            raise ActionNotFound
-
-        func, backend = self.action_loader_plugin
-        action = func(action_id, backend)
+        action = repo.get(action_id)
         if action:
             return action
+        current_app.logger.warning(f"No Action with ID {action_id} found in repo")
         raise ActionNotFound
 
-    def register_action_saver(self, storage_backend):
-        """
-        Decorates a function that will be used to save an ActionStatus. Multiple
-        action_savers with different backends can be registered and each backend
-        will save a copy of the ActionStatus. If any action_savers are
-        registered and they fail to save an ActionStatus, an error will be
-        thrown.
-
-        #TODO pickup here, what should the behavior for an action_saver be? When
-        should it be called?
-        # TODO the return of the action_loader is an action, the return for the plugins
-        # are actionStatusReturns, which are DIFFERENT [THANKS MYPY]
-        """
-
-        def wrapper(func):
-            self.action_saver_plugin: ActionSaverType = (func, storage_backend)
-
-        return wrapper
-
-    def _save_action(self, action: ActionStatusReturn) -> None:
+    def _save_action(
+        self, repo: AbstractActionRepository, result: ActionCallbackReturn
+    ) -> None:
         """
         Executes an action_saver to store the ActionStatus in the specified
         backend.
         """
-        if self.action_saver_plugin is None:
-            return
+        if isinstance(result, ActionStatus):
+            action = result
+        elif isinstance(result, tuple):
+            action = result[0]
         if not isinstance(action, ActionStatus):
-            action, _ = action
-
-        func, backend = self.action_saver_plugin
-        func(action, backend)
+            current_app.logger.warning(
+                f"Attempted to save a non ActionStatus: {action}"
+            )
+            raise ActionProviderError
+        repo.store(action)
 
     def _check_token(self) -> None:
         """
@@ -577,3 +486,7 @@ class ActionProviderBlueprint(Blueprint):
         then made available as the second argument to decorated functions.
         """
         g.auth_state = check_token(request, self.checker)
+        if g.auth_state.effective_identity is None:
+            current_app.logger.info(
+                f"Request failed authentication due to: {g.auth_state.errors}"
+            )

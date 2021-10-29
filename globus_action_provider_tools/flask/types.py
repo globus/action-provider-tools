@@ -9,17 +9,20 @@ from globus_action_provider_tools.data_types import (
     ActionStatus,
 )
 
-ActionStatusReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
-ActionStatusType = Callable[[Union[str, ActionStatus], AuthState], ActionStatusReturn]
+ActionCallbackReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
+ActionOperationCallback = Union[
+    Callable[[str, AuthState], ActionCallbackReturn],
+    Callable[[ActionStatus, AuthState], ActionCallbackReturn],
+]
 
-ActionLogType = Callable[[str, AuthState], ActionLogReturn]
-
-ActionRunType = Callable[[ActionRequest, AuthState], ActionStatusReturn]
-ActionCancelType = ActionStatusType
-ActionReleaseType = ActionStatusType
-ActionEnumerationType = Callable[[AuthState, Dict[str, Set]], Sequence[ActionStatus]]
+ActionRunCallback = Callable[[ActionRequest, AuthState], ActionCallbackReturn]
+ActionStatusCallback = ActionOperationCallback
+ActionResumeCallback = ActionOperationCallback
+ActionCancelCallback = ActionOperationCallback
+ActionReleaseCallback = ActionOperationCallback
+ActionLogCallback = Callable[[str, AuthState], ActionLogReturn]
+ActionEnumerationCallback = Callable[
+    [AuthState, Dict[str, Set]], Sequence[ActionStatus]
+]
 
 ViewReturn = Union[Tuple[Response, int], Tuple[str, int]]
-
-ActionLoaderType = Tuple[Callable[[str, Any], ActionStatus], Any]
-ActionSaverType = Tuple[Callable[[ActionStatus, Any], None], Any]

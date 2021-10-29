@@ -24,8 +24,8 @@ from globus_action_provider_tools.data_types import (
     ActionStatus,
     ActionStatusValue,
 )
-from globus_action_provider_tools.flask.apt_blueprint import ActionStatusReturn
 from globus_action_provider_tools.flask.exceptions import ActionConflict, ActionNotFound
+from globus_action_provider_tools.flask.types import ActionCallbackReturn
 
 simple_backend: Dict[str, ActionStatus] = {}
 
@@ -97,7 +97,7 @@ def test_action_enumeration(
 
 def test_action_run(
     action_request: ActionRequest, auth: AuthState
-) -> ActionStatusReturn:
+) -> ActionCallbackReturn:
     action_status = ActionStatus(
         status=ActionStatusValue.ACTIVE,
         creator_id=str(auth.effective_identity),
@@ -114,7 +114,7 @@ def test_action_run(
     return action_status
 
 
-def test_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def test_action_status(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise ActionNotFound(f"No action with {action_id}")
@@ -122,7 +122,7 @@ def test_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
     return action_status
 
 
-def test_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def test_action_cancel(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise ActionNotFound(f"No action with {action_id}")
@@ -138,7 +138,7 @@ def test_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
     return action_status
 
 
-def test_action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def test_action_release(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise ActionNotFound(f"No action with {action_id}")

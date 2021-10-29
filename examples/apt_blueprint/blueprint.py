@@ -18,7 +18,10 @@ from globus_action_provider_tools.authorization import (
 )
 from globus_action_provider_tools.flask import ActionProviderBlueprint
 from globus_action_provider_tools.flask.exceptions import ActionConflict, ActionNotFound
-from globus_action_provider_tools.flask.types import ActionLogReturn, ActionStatusReturn
+from globus_action_provider_tools.flask.types import (
+    ActionCallbackReturn,
+    ActionLogReturn,
+)
 
 from .backend import simple_backend
 
@@ -100,7 +103,9 @@ def action_enumeration(auth: AuthState, params: Dict[str, Set]) -> List[ActionSt
 
 
 @aptb.action_run
-def my_action_run(action_request: ActionRequest, auth: AuthState) -> ActionStatusReturn:
+def my_action_run(
+    action_request: ActionRequest, auth: AuthState
+) -> ActionCallbackReturn:
     """
     Implement custom business logic related to instantiating an Action here.
     Once launched, collect details on the Action and create an ActionStatus
@@ -123,7 +128,7 @@ def my_action_run(action_request: ActionRequest, auth: AuthState) -> ActionStatu
 
 
 @aptb.action_status
-def my_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def my_action_status(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     """
     Query for the action_id in some storage backend to return the up-to-date
     ActionStatus. It's possible that some ActionProviders will require querying
@@ -137,7 +142,7 @@ def my_action_status(action_id: str, auth: AuthState) -> ActionStatusReturn:
 
 
 @aptb.action_cancel
-def my_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def my_action_cancel(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     """
     Only Actions that are not in a completed state may be cancelled.
     Cancellations do not necessarily require that an Action's execution be
@@ -155,12 +160,11 @@ def my_action_cancel(action_id: str, auth: AuthState) -> ActionStatusReturn:
     action_status.status = ActionStatusValue.FAILED
     action_status.display_status = f"Cancelled by {auth.effective_identity}"
     simple_backend[action_id] = action_status
-
     return action_status
 
 
 @aptb.action_release
-def my_action_release(action_id: str, auth: AuthState) -> ActionStatusReturn:
+def my_action_release(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     """
     Only Actions that are in a completed state may be released. The release
     operation removes the ActionStatus object from the data store. The final, up

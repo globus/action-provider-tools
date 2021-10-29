@@ -27,13 +27,12 @@ from globus_action_provider_tools.flask.helpers import (
     validate_input,
 )
 from globus_action_provider_tools.flask.types import (
-    ActionCancelType,
-    ActionEnumerationType,
-    ActionLogType,
-    ActionReleaseType,
-    ActionRunType,
-    ActionStatusReturn,
-    ActionStatusType,
+    ActionCancelCallback,
+    ActionEnumerationCallback,
+    ActionLogCallback,
+    ActionReleaseCallback,
+    ActionRunCallback,
+    ActionStatusCallback,
     ViewReturn,
 )
 from globus_action_provider_tools.validation import (
@@ -106,13 +105,13 @@ def add_action_routes_to_blueprint(
     client_secret: str,
     client_name: Optional[str],
     provider_description: ActionProviderDescription,
-    action_run_callback: ActionRunType,
-    action_status_callback: ActionStatusType,
-    action_cancel_callback: ActionCancelType,
-    action_release_callback: ActionReleaseType,
-    action_log_callback: Optional[ActionLogType] = None,
+    action_run_callback: ActionRunCallback,
+    action_status_callback: ActionStatusCallback,
+    action_cancel_callback: ActionCancelCallback,
+    action_release_callback: ActionReleaseCallback,
+    action_log_callback: Optional[ActionLogCallback] = None,
     additional_scopes: Optional[List[str]] = None,
-    action_enumeration_callback: ActionEnumerationType = None,
+    action_enumeration_callback: ActionEnumerationCallback = None,
 ) -> None:
     """Add routes to a Flask Blueprint to implement the required operations of the Action
     Provider Interface: Introspect, Run, Status, Cancel and Release. The route handlers
@@ -243,7 +242,7 @@ def add_action_routes_to_blueprint(
     def action_status(action_id: str) -> ViewReturn:
         auth_state = check_token(request, checker)
         try:
-            status = action_status_callback(action_id, auth_state)
+            status = action_status_callback(action_id, auth_state)  # type: ignore
         except ValidationError as ve:
             log.error(
                 f"ActionProvider attempted to create a non-conformant ActionStatus"
@@ -257,7 +256,7 @@ def add_action_routes_to_blueprint(
     def action_cancel(action_id: str) -> ViewReturn:
         auth_state = check_token(request, checker)
         try:
-            status = action_cancel_callback(action_id, auth_state)
+            status = action_cancel_callback(action_id, auth_state)  # type: ignore
         except ValidationError as ve:
             log.error(
                 f"ActionProvider attempted to create a non-conformant ActionStatus"
@@ -271,7 +270,7 @@ def add_action_routes_to_blueprint(
     def action_release(action_id: str) -> ViewReturn:
         auth_state = check_token(request, checker)
         try:
-            status = action_release_callback(action_id, auth_state)
+            status = action_release_callback(action_id, auth_state)  # type: ignore
         except ValidationError as ve:
             log.error(
                 f"ActionProvider attempted to create a non-conformant ActionStatus"
