@@ -71,16 +71,40 @@ def test_effective_identity(auth_state):
 
 
 def test_caching_identities(auth_state):
-    for i in range(3):
+    num_test_calls = 3
+    for i in range(num_test_calls):
         auth_state.identities
         auth_state.effective_identity
 
-    assert auth_state.auth_client.oauth2_token_introspect.call_count == 1
+    # As the cache is global, we may have cached state from a previous test run meaning
+    # that this test may never hit the actual (Mocked) Auth API call. We set the
+    # condition for success to anything less than the total number of calls made
+    assert auth_state.auth_client.oauth2_token_introspect.call_count < num_test_calls
 
 
 def test_caching_groups(auth_state):
-    for i in range(3):
+    num_test_calls = 3
+    for i in range(num_test_calls):
         auth_state.groups
 
-    assert auth_state.auth_client.oauth2_get_dependent_tokens.call_count == 1
-    assert auth_state._groups_client.list_groups.call_count == 1
+    # See above in test_cachine_identities for a description of the test for this
+    # assertion
+    assert (
+        auth_state.auth_client.oauth2_get_dependent_tokens.call_count < num_test_calls
+    )
+    assert auth_state._groups_client.list_groups.call_count < num_test_calls
+
+
+def test_duplicate_auth_state(auth_state: AuthState, duplicate_auth_state: AuthState):
+    assert duplicate_auth_state is not auth_state
+    identities = auth_state.identities
+
+    pre_introspect_count = (
+        duplicate_auth_state.auth_client.oauth2_token_introspect.call_count
+    )
+    dup_identities = duplicate_auth_state.identities
+    post_introspect_count = (
+        duplicate_auth_state.auth_client.oauth2_token_introspect.call_count
+    )
+
+    assert pre_introspect_count == post_introspect_count

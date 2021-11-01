@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
+from globus_action_provider_tools import AuthState
 from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.groups_client import GroupsClient
 
@@ -38,7 +39,7 @@ def config():
 
 @pytest.fixture
 @patch("globus_action_provider_tools.authentication.ConfidentialAppAuthClient")
-def auth_state(MockAuthClient, config, monkeypatch):
+def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
     # Mock the introspection first because that gets called as soon as we create
     # a TokenChecker
     client = MockAuthClient.return_value
@@ -69,3 +70,25 @@ def auth_state(MockAuthClient, config, monkeypatch):
     # auth_state._groups_client = GroupsClient(authorizer=None)
     # auth_state._groups_client.list_groups = canned_responses.groups_response()
     return auth_state
+
+
+@pytest.fixture
+def duplicate_auth_state(auth_state: AuthState, config) -> AuthState:
+    """This fixture provides an AuthState type object that has the same token value as the
+    auth_state fixture above. This means that caching should make access to either of the
+    returned auth_state objects return values from the same cache as the root key is the
+    token value.
+
+    """
+
+    # Create a TokenChecker to be used to create a mocked auth_state object
+    checker = TokenChecker(
+        client_id=config["client_id"],
+        client_secret=config["client_secret"],
+        expected_scopes=config["expected_scopes"],
+        expected_audience=config["expected_audience"],
+    )
+    dup_auth_state = checker.check_token(auth_state.bearer_token)
+    # Set up the same mocked Auth client
+    dup_auth_state.auth_client = auth_state.auth_client
+    return dup_auth_state
