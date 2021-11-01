@@ -124,14 +124,15 @@ class AuthState(object):
             groups_client = self._get_groups_client()
             groups_token = groups_client.authorizer.access_token
             groups_set = AuthState.group_membership_cache.get(groups_token)
-            if groups_set is not None:
-                return groups_set
         except (GlobusAPIError, KeyError, ValueError) as err:
             # Only debug level, because this could be normal state of
             # affairs for a system that doesn't use or care about groups.
             log.debug(err)
             self.errors.append(err)
             return frozenset()
+        else:
+            if groups_set is not None:
+                return groups_set
 
         try:
             groups = groups_client.list_groups()

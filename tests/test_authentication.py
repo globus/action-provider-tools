@@ -93,3 +93,18 @@ def test_caching_groups(auth_state):
         auth_state.auth_client.oauth2_get_dependent_tokens.call_count < num_test_calls
     )
     assert auth_state._groups_client.list_groups.call_count < num_test_calls
+
+
+def test_duplicate_auth_state(auth_state: AuthState, duplicate_auth_state: AuthState):
+    assert duplicate_auth_state is not auth_state
+    identities = auth_state.identities
+
+    pre_introspect_count = (
+        duplicate_auth_state.auth_client.oauth2_token_introspect.call_count
+    )
+    dup_identities = duplicate_auth_state.identities
+    post_introspect_count = (
+        duplicate_auth_state.auth_client.oauth2_token_introspect.call_count
+    )
+
+    assert pre_introspect_count == post_introspect_count
