@@ -142,6 +142,17 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "click-log"
+version = "0.3.2"
+description = "Logging integration for Click"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+click = "*"
+
+[[package]]
 name = "colorama"
 version = "0.4.4"
 description = "Cross-platform colored terminal text."
@@ -694,6 +705,24 @@ python-versions = "*"
 docutils = ">=0.7"
 
 [[package]]
+name = "scriv"
+version = "0.12.0"
+description = "Scriv changelog management tool"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+attrs = "*"
+click = "*"
+click-log = "*"
+jinja2 = "*"
+tomli = {version = "*", optional = true, markers = "extra == \"toml\""}
+
+[package.extras]
+toml = ["tomli"]
+
+[[package]]
 name = "sexpdata"
 version = "0.0.3"
 description = "S-expression parser for Python"
@@ -968,7 +997,7 @@ flask = ["flask"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.2"
-content-hash = "55342e1d7e3e5de4aa63b029f09620774268ea825e97fa6b48cdb231445ba435"
+content-hash = "2b972a08248e07d1969a41d0b6c533559820fc4552c200a9f456ac8182694ff7"
 
 [metadata.files]
 alabaster = [
@@ -1066,6 +1095,10 @@ charset-normalizer = [
 click = [
     {file = "click-7.1.2-py2.py3-none-any.whl", hash = "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"},
     {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
+]
+click-log = [
+    {file = "click-log-0.3.2.tar.gz", hash = "sha256:16fd1ca3fc6b16c98cea63acf1ab474ea8e676849dc669d86afafb0ed7003124"},
+    {file = "click_log-0.3.2-py2.py3-none-any.whl", hash = "sha256:eee14dc37cdf3072158570f00406572f9e03e414accdccfccd4c538df9ae322c"},
 ]
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
@@ -1516,6 +1549,10 @@ requests = [
 ]
 rstcheck = [
     {file = "rstcheck-3.3.1.tar.gz", hash = "sha256:92c4f79256a54270e0402ba16a2f92d0b3c15c8f4410cb9c57127067c215741f"},
+]
+scriv = [
+    {file = "scriv-0.12.0-py2.py3-none-any.whl", hash = "sha256:62d9d91466a6c629fb72964290906eba1331d4d53c219e95c57f050b62d30ca5"},
+    {file = "scriv-0.12.0.tar.gz", hash = "sha256:0c1b055afea1773d50f13728f301dd4aa0d35e68be4e2f1e7373b51ec225de0a"},
 ]
 sexpdata = [
     {file = "sexpdata-0.0.3.tar.gz", hash = "sha256:1ac827a616c5e87ebb60fd6686fb86f8a166938c645f4089d92de3ffbdd494e0"},
