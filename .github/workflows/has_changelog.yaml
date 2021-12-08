@@ -1,0 +1,7 @@
+name: Enforce Changelog Fragment
+on:
+  - pull_request
+
+jobs:
+  call-scriv-workflow:
+    uses: globus/globus-automate-client/.github/workflows/has_changelog.yaml@main
