@@ -4,4 +4,4 @@ on:
 
 jobs:
   call-scriv-workflow:
-    uses: globus/globus-automate-client/.github/workflows/has_changelog.yaml@80f34115159a1dec25a78772865341c6e65ee0f9
+    uses: globus/globus-automate-client/.github/workflows/has_changelog.yaml@main
