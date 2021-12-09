@@ -27,8 +27,9 @@ class AuthState(object):
     # Cache for introspection operations, max lifetime: 30 seconds
     introspect_cache: TTLCache = TTLCache(maxsize=100, ttl=30)
 
-    # Cache for dependent tokens, max lifetime: 5 minutes
-    dependent_tokens_cache: LRUCache = LRUCache(maxsize=100)
+    # Cache for dependent tokens, max lifetime: 47 hours: a bit less than the 48 hours
+    # until a refresh would be required anyway
+    dependent_tokens_cache: TTLCache = TTLCache(maxsize=100, ttl=47 * 3600)
 
     # Cache for group lookups, max lifetime: 5 minutes
     group_membership_cache: TTLCache = TTLCache(maxsize=100, ttl=60 * 5)
@@ -53,13 +54,6 @@ class AuthState(object):
             self.expected_audience = expected_audience
         self.errors: List[Exception] = []
         self._groups_client: Optional[GroupsClient] = None
-
-    def __repr__(self):
-        # This repr is used in a cache key (see caching.py)
-        # Be careful about changing it without testing
-        # caching behavior.
-        tmpl = "<AuthState for client_id='{}' with bearer_token='{}'>"
-        return tmpl.format(self.auth_client.client_id, self.bearer_token)
 
     def introspect_token(self) -> Optional[GlobusHTTPResponse]:
         # There are cases where a null or empty string bearer token are present as a
@@ -163,7 +157,7 @@ class AuthState(object):
             if resp is not None:
                 return resp
         resp = self.auth_client.oauth2_get_dependent_tokens(
-            self.bearer_token, {"access_type": "offline"}
+            self.bearer_token, additional_params={"access_type": "offline"}
         )
         if resp is not None and dependent_tokens_cache_id is not None:
             AuthState.dependent_tokens_cache[dependent_tokens_cache_id] = resp
@@ -177,15 +171,20 @@ class AuthState(object):
         except KeyError:
             return None
 
-        if "refresh_token" in dep_tkn_resp:
+        refresh_token = dep_tkn_resp.get("refresh_token")
+        access_token = dep_tkn_resp.get("access_token")
+        token_expiration = dep_tkn_resp.get("expires_at_seconds")
+        now = time()
+
+        if refresh_token is not None:
             return RefreshTokenAuthorizer(
-                dep_tkn_resp["refresh_token"],
+                refresh_token,
                 self.auth_client,
-                access_token=dep_tkn_resp["access_token"],
-                expires_at=dep_tkn_resp["expires_at_seconds"],
+                access_token=access_token,
+                expires_at=token_expiration,
             )
-        elif "access_token" in dep_tkn_resp:
-            return AccessTokenAuthorizer(dep_tkn_resp["access_token"])
+        elif access_token is not None and token_expiration > now:
+            return AccessTokenAuthorizer(access_token)
         else:
             return None
 
