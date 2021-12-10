@@ -210,7 +210,16 @@ class AuthState(object):
 
         refresh_token = dep_tkn_resp.get("refresh_token")
         access_token = dep_tkn_resp.get("access_token")
-        token_expiration = dep_tkn_resp.get("expires_at_seconds")
+        token_expiration = dep_tkn_resp.get("expires_at_seconds", 0)
+        # IF for some reason the token_expiration comes in a string, or even a string
+        # containing a float representation, try converting to a proper int. If the
+        # conversion is impossible, set expiration to 0 which should force some sort of
+        # refresh as described elsewhere.
+        if not isinstance(token_expiration, int):
+            try:
+                token_expiration = int(float(token_expiration))
+            except ValueError:
+                token_expiration = 0
         now = time()
 
         # IF we have an access token, we'll try building an authorizer from it if it is

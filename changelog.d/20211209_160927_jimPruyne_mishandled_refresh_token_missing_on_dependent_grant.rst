@@ -22,8 +22,8 @@
 ..
 .. - A bullet item for the Deprecated category.
 ..
-.. Fixed
-.. -----
+Fixed
+-----
 ..
 .. - A bullet item for the Fixed category.
 ..
