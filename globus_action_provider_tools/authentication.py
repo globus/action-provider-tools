@@ -2,7 +2,7 @@ import logging
 from time import time
 from typing import FrozenSet, Iterable, List, Optional, Union
 
-from cachetools import LRUCache, TTLCache
+from cachetools import TTLCache
 from globus_sdk import ConfidentialAppAuthClient
 from globus_sdk.auth.token_response import OAuthTokenResponse
 from globus_sdk.authorizers import AccessTokenAuthorizer, RefreshTokenAuthorizer
@@ -43,6 +43,7 @@ class AuthState(object):
     ) -> None:
         self.auth_client = auth_client
         self.bearer_token = bearer_token
+        self.sanitized_token = self.bearer_token[-7:]
         self.expected_scopes = expected_scopes
 
         # Default to client_id unless expected_audience has been explicitly
@@ -63,8 +64,12 @@ class AuthState(object):
 
         resp = AuthState.introspect_cache.get(self.bearer_token)
         if resp is not None:
+            log.info(
+                f"Using cached introspection response for token ***{self.sanitized_token}"
+            )
             return resp
 
+        log.info(f"Introspecting token ***{self.sanitized_token}")
         resp = self.auth_client.oauth2_token_introspect(
             self.bearer_token, include="identity_set"
         )
@@ -90,6 +95,7 @@ class AuthState(object):
             log.info(err)
             return None
         else:
+            log.info(f"Caching token response for token ***{self.sanitized_token}")
             AuthState.introspect_cache[self.bearer_token] = resp
             return resp
 
@@ -116,26 +122,35 @@ class AuthState(object):
     def groups(self) -> FrozenSet[str]:
         try:
             groups_client = self._get_groups_client()
-            groups_token = groups_client.authorizer.access_token
-            groups_set = AuthState.group_membership_cache.get(groups_token)
         except (GlobusAPIError, KeyError, ValueError) as err:
             # Only debug level, because this could be normal state of
             # affairs for a system that doesn't use or care about groups.
-            log.debug(err)
+            log.warning(
+                "Unable to determine groups membership. Setting groups to {}",
+                exc_info=True,
+            )
             self.errors.append(err)
             return frozenset()
         else:
+            groups_token = groups_client.authorizer.access_token
+            safe_groups_token = groups_token[-7:]
+            groups_set = AuthState.group_membership_cache.get(groups_token)
             if groups_set is not None:
+                log.info(
+                    f"Using cached group membership for groups token ***{safe_groups_token}"
+                )
                 return groups_set
 
         try:
+            log.info(f"Querying groups for groups token ***{safe_groups_token}")
             groups = groups_client.list_groups()
         except GlobusError as err:
-            log.exception(f"Error getting groups: {str(err)}")
+            log.exception(f"Error getting groups", exc_info=True)
             self.errors.append(err)
             return frozenset()
         else:
             groups_set = frozenset(map(group_principal, (grp["id"] for grp in groups)))
+            log.info(f"Caching groups for token **{safe_groups_token}")
             AuthState.group_membership_cache[groups_token] = groups_set
             return groups_set
 
@@ -155,11 +170,20 @@ class AuthState(object):
         if dependent_tokens_cache_id is not None and not bypass_cache_lookup:
             resp = AuthState.dependent_tokens_cache.get(dependent_tokens_cache_id)
             if resp is not None:
+                log.info(
+                    f"Using cached dependent token response with cache ID {dependent_tokens_cache_id} "
+                    f"for token ***{self.sanitized_token}"
+                )
                 return resp
+
+        log.info(f"Doing a dependent token grant for token ***{self.sanitized_token}")
         resp = self.auth_client.oauth2_get_dependent_tokens(
             self.bearer_token, additional_params={"access_type": "offline"}
         )
         if resp is not None and dependent_tokens_cache_id is not None:
+            log.info(
+                f"Caching dependent token response for token ***{self.sanitized_token}"
+            )
             AuthState.dependent_tokens_cache[dependent_tokens_cache_id] = resp
         return resp
 
@@ -206,6 +230,10 @@ class AuthState(object):
                 bypass_cache_lookup=bypass_dependent_token_cache
             ).by_scopes[scope]
         except KeyError:
+            log.warning(
+                f"Unable to create GlobusAuthorizer for scope {scope}. Using 'None'",
+                exc_info=True,
+            )
             return None
 
         refresh_token = dep_tkn_resp.get("refresh_token")
@@ -228,13 +256,14 @@ class AuthState(object):
             # If the access token will not expire for at least the required expiration
             # time, we return an authorizer based on that access token.
             if token_expiration > (int(now) + required_authorizer_expiration_time):
+                log.debug(f"Creating an AccessTokenAuthorizer for scope {scope}")
                 return AccessTokenAuthorizer(access_token)
             elif refresh_token is not None:
                 # If the access token is going to expire, but we have a refresh token, ew
                 # build an authorizer using the refresh token which will, in turn, perform
                 # token refresh when needed.
 
-                # TODO: Setup so that should a refresh happen, it will update the cache
+                log.debug(f"Creating a RefreshTokenAuthorizer for scope {scope}")
                 return RefreshTokenAuthorizer(
                     refresh_token,
                     self.auth_client,
@@ -251,7 +280,11 @@ class AuthState(object):
                     required_authorizer_expiration_time=required_authorizer_expiration_time,
                 )
 
-        # Fall through and haven't been able to create an authorizer, so return none
+        # Fall through and haven't been able to create an authorizer, so return
+        # none
+        log.warning(
+            f"Unable to create GlobusAuthorizer for scope {scope}. Using 'None'"
+        )
         return None
 
     def _get_groups_client(self) -> GroupsClient:
