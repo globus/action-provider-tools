@@ -10,6 +10,25 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+0.11.5 - 2021-12-13
+===================
+
+Documentation
+-------------
+
+- Add a CHANGELOG and include it in the documentation.
+- Use scriv for CHANGELOG management.
+
+Added
+-----
+
+- Improved logging around the authentication module's cache hits and misses.
+
+Fixed
+-----
+
+* Fixed handling of missing refresh tokens in dependent token grants. Now, even if a refresh token is expected in a dependent grant, it falls back to just using the access token up until the time the access token expires. We also shorten the dependent token grant cache to be less than the expected lifetime of an access token and, thus, from cache, we should not retrieve an access token which is already expired.
+
 0.11.4 - 2021-11-01
 ===================
 
