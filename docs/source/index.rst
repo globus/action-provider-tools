@@ -44,4 +44,5 @@ throughout the Globus Automate platform.
    installation
    toolkit
    examples
+   changelog
    license
