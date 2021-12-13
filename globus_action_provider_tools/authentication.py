@@ -27,8 +27,9 @@ class AuthState(object):
     # Cache for introspection operations, max lifetime: 30 seconds
     introspect_cache: TTLCache = TTLCache(maxsize=100, ttl=30)
 
-    # Cache for dependent tokens, max lifetime: 5 minutes
-    dependent_tokens_cache: LRUCache = LRUCache(maxsize=100)
+    # Cache for dependent tokens, max lifetime: 47 hours: a bit less than the 48 hours
+    # until a refresh would be required anyway
+    dependent_tokens_cache: TTLCache = TTLCache(maxsize=100, ttl=47 * 3600)
 
     # Cache for group lookups, max lifetime: 5 minutes
     group_membership_cache: TTLCache = TTLCache(maxsize=100, ttl=60 * 5)
@@ -53,13 +54,6 @@ class AuthState(object):
             self.expected_audience = expected_audience
         self.errors: List[Exception] = []
         self._groups_client: Optional[GroupsClient] = None
-
-    def __repr__(self):
-        # This repr is used in a cache key (see caching.py)
-        # Be careful about changing it without testing
-        # caching behavior.
-        tmpl = "<AuthState for client_id='{}' with bearer_token='{}'>"
-        return tmpl.format(self.auth_client.client_id, self.bearer_token)
 
     def introspect_token(self) -> Optional[GlobusHTTPResponse]:
         # There are cases where a null or empty string bearer token are present as a
@@ -152,42 +146,113 @@ class AuthState(object):
             return None
         return tkn_details.get("dependent_tokens_cache_id")
 
-    def get_dependent_tokens(self) -> OAuthTokenResponse:
+    def get_dependent_tokens(self, bypass_cache_lookup=False) -> OAuthTokenResponse:
         """
         Returns OAuthTokenResponse representing the dependent tokens associated
         with a particular access token.
         """
         dependent_tokens_cache_id = self.dependent_tokens_cache_id
-        if dependent_tokens_cache_id is not None:
+        if dependent_tokens_cache_id is not None and not bypass_cache_lookup:
             resp = AuthState.dependent_tokens_cache.get(dependent_tokens_cache_id)
             if resp is not None:
                 return resp
         resp = self.auth_client.oauth2_get_dependent_tokens(
-            self.bearer_token, {"access_type": "offline"}
+            self.bearer_token, additional_params={"access_type": "offline"}
         )
         if resp is not None and dependent_tokens_cache_id is not None:
             AuthState.dependent_tokens_cache[dependent_tokens_cache_id] = resp
         return resp
 
     def get_authorizer_for_scope(
-        self, scope: str
+        self,
+        scope: str,
+        bypass_dependent_token_cache=False,
+        required_authorizer_expiration_time: int = 60,
     ) -> Optional[Union[RefreshTokenAuthorizer, AccessTokenAuthorizer]]:
+        """Retrieve a Globus SDK authorizer for use in accessing a further Globus Auth registered
+        service / "resource server". This authorizer can be passed to any Globus SDK
+        Client class for use in accessing the Client's service.
+
+        The authorizer is created by first performing a Globus Auth dependent token grant
+        and looking for the requested scope in the set of tokens returned by the
+        grant. If a refresh token is present in the grant response, a
+        RefreshTokenAuthorizer is returned. If no refresh token is present, but an access
+        token is present, an AccessTokenAuthorizer will be returned.
+
+        A returned AccessTokenAuthorizer is guaranteed to be usable for at least the
+        value passed in via required_authorizer_expiration_time which defaults to 60
+        seconds. This implies that the authorizer, and the client created from it will be
+        usable for at least this long. It is possible that the access token in the
+        authorizer may expire after a time greater than this limit.
+
+        If no dependent tokens can be generated for the requested scope, a None value is
+        returned.
+
+        To avoid redundant calls to perform dependent token grants, the class
+        caches dependent token results for a particular incoming Bearer token used to
+        access this Action Provider.
+
+        If for any reason the caller of this function does not want to use a cached
+        result, but would require that a new dependent grant is performed, the
+        bypass_dependent_token_cache parameter may be set to True. This is used
+        automatically in a case where an access token retrieved from cache is already
+        expired: the function is called recursively to perform a new dependent token
+        grant to get a new, valid token (even though bypass is set, the new token value
+        will be added to the cache).
+
+        """
         try:
-            dep_tkn_resp = self.get_dependent_tokens().by_scopes[scope]
+            dep_tkn_resp = self.get_dependent_tokens(
+                bypass_cache_lookup=bypass_dependent_token_cache
+            ).by_scopes[scope]
         except KeyError:
             return None
 
-        if "refresh_token" in dep_tkn_resp:
-            return RefreshTokenAuthorizer(
-                dep_tkn_resp["refresh_token"],
-                self.auth_client,
-                access_token=dep_tkn_resp["access_token"],
-                expires_at=dep_tkn_resp["expires_at_seconds"],
-            )
-        elif "access_token" in dep_tkn_resp:
-            return AccessTokenAuthorizer(dep_tkn_resp["access_token"])
-        else:
-            return None
+        refresh_token = dep_tkn_resp.get("refresh_token")
+        access_token = dep_tkn_resp.get("access_token")
+        token_expiration = dep_tkn_resp.get("expires_at_seconds", 0)
+        # IF for some reason the token_expiration comes in a string, or even a string
+        # containing a float representation, try converting to a proper int. If the
+        # conversion is impossible, set expiration to 0 which should force some sort of
+        # refresh as described elsewhere.
+        if not isinstance(token_expiration, int):
+            try:
+                token_expiration = int(float(token_expiration))
+            except ValueError:
+                token_expiration = 0
+        now = time()
+
+        # IF we have an access token, we'll try building an authorizer from it if it is
+        # valid long enough
+        if access_token is not None:
+            # If the access token will not expire for at least the required expiration
+            # time, we return an authorizer based on that access token.
+            if token_expiration > (int(now) + required_authorizer_expiration_time):
+                return AccessTokenAuthorizer(access_token)
+            elif refresh_token is not None:
+                # If the access token is going to expire, but we have a refresh token, ew
+                # build an authorizer using the refresh token which will, in turn, perform
+                # token refresh when needed.
+
+                # TODO: Setup so that should a refresh happen, it will update the cache
+                return RefreshTokenAuthorizer(
+                    refresh_token,
+                    self.auth_client,
+                    access_token=access_token,
+                    expires_at=token_expiration,
+                )
+            elif not bypass_dependent_token_cache:
+                # If we aren't already trying to force a new grant by bypassing the
+                # cache, try again to find a usable token, but bypass the cache so we
+                # force a new dependent grant
+                return self.get_authorizer_for_scope(
+                    scope,
+                    bypass_dependent_token_cache=True,
+                    required_authorizer_expiration_time=required_authorizer_expiration_time,
+                )
+
+        # Fall through and haven't been able to create an authorizer, so return none
+        return None
 
     def _get_groups_client(self) -> GroupsClient:
         if self._groups_client is not None:
