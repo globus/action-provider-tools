@@ -203,6 +203,7 @@ class ActionProviderBlueprint(Blueprint):
         self.add_url_rule(
             "/actions", "action_enumerate", self._action_enumerate, methods=["GET"]
         )
+        return func
 
     def _action_run(self):
         if not g.auth_state.check_authorization(
@@ -253,6 +254,7 @@ class ActionProviderBlueprint(Blueprint):
         self.action_run_callback: ActionRunCallback = func
         self.add_url_rule("/run", None, self._action_run, methods=["POST"])
         self.add_url_rule("/actions", func.__name__, self._action_run, methods=["POST"])
+        return func
 
     def _action_resume(self, action_id: str):
         # Attempt to lookup the Action based on its action_id if there was an
@@ -295,12 +297,14 @@ class ActionProviderBlueprint(Blueprint):
             self._action_resume,
             methods=["POST"],
         )
+        return func
 
     def action_status(self, func: ActionStatusCallback):
         """
         Registers a function to run as the Action Provider's status endpoint.
         """
         self.action_status_callback: ActionStatusCallback = func
+        return func
 
     def _action_status(self, action_id: str):
         """
@@ -344,6 +348,7 @@ class ActionProviderBlueprint(Blueprint):
         Decorates a function to be run as an Action Provider's cancel endpoint.
         """
         self.action_cancel_callback: ActionCancelCallback = func
+        return func
 
     def _action_cancel(self, action_id: str):
         """
@@ -397,6 +402,7 @@ class ActionProviderBlueprint(Blueprint):
             self._action_release,
             methods=["DELETE"],
         )
+        return func
 
     def _action_release(self, action_id: str):
         """
@@ -437,6 +443,7 @@ class ActionProviderBlueprint(Blueprint):
             self._action_log,
             methods=["GET"],
         )
+        return func
 
     def _action_log(self, action_id: str):
         # Attempt to use a user-defined function to lookup the Action based
