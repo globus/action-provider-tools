@@ -1,8 +1,8 @@
-from unittest.mock import Mock, patch
+import typing
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from globus_sdk import AccessTokenAuthorizer, AuthAPIError
-from globus_sdk.response import GlobusHTTPResponse
+from globus_sdk import AccessTokenAuthorizer, AuthAPIError, GlobusHTTPResponse
 
 from globus_action_provider_tools.authentication import (
     AuthState,
@@ -95,16 +95,13 @@ def test_caching_groups(auth_state):
     assert auth_state._groups_client.list_groups.call_count < num_test_calls
 
 
+# for some reason mypy thinks introspect is not a mock
+@typing.no_type_check
 def test_duplicate_auth_state(auth_state: AuthState, duplicate_auth_state: AuthState):
     assert duplicate_auth_state is not auth_state
     identities = auth_state.identities
-
-    pre_introspect_count = (
-        duplicate_auth_state.auth_client.oauth2_token_introspect.call_count
-    )
+    introspect = duplicate_auth_state.auth_client.oauth2_token_introspect
+    pre_introspect_count = introspect.call_count
     dup_identities = duplicate_auth_state.identities
-    post_introspect_count = (
-        duplicate_auth_state.auth_client.oauth2_token_introspect.call_count
-    )
-
+    post_introspect_count = introspect.call_count
     assert pre_introspect_count == post_introspect_count

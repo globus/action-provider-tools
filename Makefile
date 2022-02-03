@@ -87,30 +87,12 @@ clean:
 	rm -rf .pytest_cache
 	rm -rf docs/build/*
 
-test: test-toolkit test-examples
-
-test-toolkit:
-	poetry run pytest -n auto \
+test:
+	poetry run pytest \
 		--cov=globus_action_provider_tools \
 		--cov-report= \
-		--cov-fail-under=${MIN_TEST_COVERAGE} tests/
-
-test-examples:
-	poetry run pytest -n auto \
-		--cov=examples/watchasay \
-		--cov-report= \
 		--cov-fail-under=${MIN_TEST_COVERAGE} \
-		examples/watchasay
-	poetry run pytest \
-		--cov=examples/whattimeisitrightnow \
-		--cov-report= \
-		--cov-fail-under=${MIN_TEST_COVERAGE} \
-		examples/whattimeisitrightnow
-	poetry run pytest \
-		--cov=examples/apt_blueprint \
-		--cov-report= \
-		--cov-fail-under=${MIN_TEST_COVERAGE} \
-		examples/apt_blueprint
+		tests/ examples/
 
 poetry.lock: 
 	poetry lock

@@ -12,19 +12,27 @@ from globus_action_provider_tools.data_types import (
 
 from .utils import random_creator_id
 
+ACTION_STATUS_ARGS = dict(
+    status=ActionStatusValue.SUCCEEDED,
+    creator_id=random_creator_id(),
+    monitor_by=set(),
+    manage_by=set(),
+    completion_time=str(datetime.datetime.now().isoformat()),
+    release_after="P30D",
+    display_status=ActionStatusValue.SUCCEEDED,
+    details={},
+)
 
-def test_action_status_jsonable():
-    action_status = ActionStatus(
-        status=ActionStatusValue.SUCCEEDED,
-        creator_id=random_creator_id(),
-        monitor_by=set(),
-        manage_by=set(),
-        start_time=str(datetime.datetime.now().isoformat()),
-        completion_time=str(datetime.datetime.now().isoformat()),
-        release_after="P30D",
-        display_status=ActionStatusValue.SUCCEEDED,
-        details={},
-    )
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        ACTION_STATUS_ARGS,
+        {**ACTION_STATUS_ARGS, "start_time": str(datetime.datetime.now().isoformat())},
+    ],
+)
+def test_action_status_jsonable(kwargs):
+    action_status = ActionStatus(**kwargs)
     try:
         # This will fail if ActionProviderJsonEncoder cannot json dump an
         # ActionStatus or if the dumped ActionStatus cannot be parsed as a valid
