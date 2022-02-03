@@ -1,11 +1,11 @@
+import datetime
 from os import urandom
 
-import arrow
 from base62 import encodebytes as base62
 
 
 def now_isoformat():
-    return str(arrow.utcnow())
+    return str(datetime.datetime.now(datetime.timezone.utc).isoformat())
 
 
 def shortish_id() -> str:

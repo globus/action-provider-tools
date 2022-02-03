@@ -1,13 +1,17 @@
 import logging
 from time import time
-from typing import FrozenSet, Iterable, List, Optional, Union
+from typing import FrozenSet, Iterable, List, Optional, Union, cast
 
 from cachetools import TTLCache
-from globus_sdk import ConfidentialAppAuthClient
-from globus_sdk.auth.token_response import OAuthTokenResponse
-from globus_sdk.authorizers import AccessTokenAuthorizer, RefreshTokenAuthorizer
-from globus_sdk.exc import GlobusAPIError, GlobusError
-from globus_sdk.response import GlobusHTTPResponse
+from globus_sdk import (
+    AccessTokenAuthorizer,
+    ConfidentialAppAuthClient,
+    GlobusAPIError,
+    GlobusError,
+    GlobusHTTPResponse,
+    RefreshTokenAuthorizer,
+)
+from globus_sdk.services.auth import OAuthTokenResponse
 
 from globus_action_provider_tools.errors import ConfigurationError
 from globus_action_provider_tools.groups_client import GROUPS_SCOPE, GroupsClient
@@ -123,7 +127,7 @@ class AuthState(object):
         try:
             groups_client = self._get_groups_client()
         except (GlobusAPIError, KeyError, ValueError) as err:
-            # Only debug level, because this could be normal state of
+            # Only warning level, because this could be normal state of
             # affairs for a system that doesn't use or care about groups.
             log.warning(
                 "Unable to determine groups membership. Setting groups to {}",
@@ -132,7 +136,12 @@ class AuthState(object):
             self.errors.append(err)
             return frozenset()
         else:
-            groups_token = groups_client.authorizer.access_token
+            try:
+                groups_token = getattr(groups_client.authorizer, "access_token")
+            except AttributeError as err:
+                log.error("Missing access token to use for groups service")
+                self.errors.append(err)
+                return frozenset()
             safe_groups_token = groups_token[-7:]
             groups_set = AuthState.group_membership_cache.get(groups_token)
             if groups_set is not None:
@@ -145,7 +154,7 @@ class AuthState(object):
             log.info(f"Querying groups for groups token ***{safe_groups_token}")
             groups = groups_client.list_groups()
         except GlobusError as err:
-            log.exception(f"Error getting groups", exc_info=True)
+            log.exception("Error getting groups", exc_info=True)
             self.errors.append(err)
             return frozenset()
         else:
@@ -236,8 +245,8 @@ class AuthState(object):
             )
             return None
 
-        refresh_token = dep_tkn_resp.get("refresh_token")
-        access_token = dep_tkn_resp.get("access_token")
+        refresh_token = cast(str, dep_tkn_resp.get("refresh_token"))
+        access_token = cast(str, dep_tkn_resp.get("access_token"))
         token_expiration = dep_tkn_resp.get("expires_at_seconds", 0)
         # IF for some reason the token_expiration comes in a string, or even a string
         # containing a float representation, try converting to a proper int. If the
