@@ -10,6 +10,26 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+0.12.0b1 - 2022-02-11
+=====================
+
+Features
+--------
+
+- Upgrade to use major version 3 of the `Globus SDK
+  <https://github.com/globus/globus-sdk-python>`_. If you are using Action
+  Provider Tools in an environment which is currently using an earlier version
+  of the Globus SDK, then you will need to upgrade first in order for this
+  version to be compatible.
+
+Bugfixes
+--------
+
+- Fixes an issue where the `ActionProviderBlueprint` decorators were not
+  returning the decorated functions. This meant that the registered functions
+  were loaded onto the Action Provider correctly but were `None` in the module
+  in which they were defined.
+
 0.11.5 - 2021-12-13
 ===================
 

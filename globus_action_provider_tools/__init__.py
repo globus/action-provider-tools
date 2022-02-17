@@ -8,7 +8,7 @@ from globus_action_provider_tools.data_types import (
 )
 from globus_action_provider_tools.utils import now_isoformat, principal_urn_regex
 
-all = [
+__all__ = [
     "AuthState",
     "TokenChecker",
     "ActionProviderDescription",
@@ -20,4 +20,4 @@ all = [
     "now_isoformat",
 ]
 
-__version__ = "0.11.5"
+__version__ = "0.12.0b1"
