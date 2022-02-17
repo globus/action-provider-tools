@@ -3,11 +3,14 @@ from time import time
 from typing import Callable, List
 from unittest.mock import Mock
 
-from globus_sdk.auth.token_response import OAuthDependentTokenResponse
-from globus_sdk.response import GlobusHTTPResponse
+from globus_sdk import BaseClient, GlobusHTTPResponse, OAuthDependentTokenResponse
 from requests import Response
 
 from globus_action_provider_tools.groups_client import GROUPS_SCOPE
+
+
+class MockClient(BaseClient):
+    service_name = "mock"
 
 
 def resp(data, status_code=200):
@@ -47,7 +50,8 @@ def dependent_token_response() -> Callable[[], GlobusHTTPResponse]:
                         "refresh_token": "REFRESH_TOKEN",
                     }
                 ]
-            )
+            ),
+            client=MockClient(),
         )
     )
 
@@ -86,7 +90,8 @@ def introspect_response() -> Callable[[], GlobusHTTPResponse]:
                     "iat": now - 300,
                     "email": "brendan.mccollam+revalidate@gmail.com",
                 }
-            )
+            ),
+            client=MockClient(),
         )
     )
 
