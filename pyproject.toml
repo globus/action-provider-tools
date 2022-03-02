@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "globus-action-provider-tools"
-version = "0.12.0b1"
+version = "0.12.0"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
     "Kurt McKee <kurt@globus.org>",
