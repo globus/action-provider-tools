@@ -24,9 +24,6 @@ project = "Action Provider Tools"
 copyright = "2020, University of Chicago"
 author = "Uriel Mandujano"
 
-# The full version, including alpha/beta/rc tags
-# release = globus_action_provider_tools.__version__
-
 
 # -- General configuration ---------------------------------------------------
 
