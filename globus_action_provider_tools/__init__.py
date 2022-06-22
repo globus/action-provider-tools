@@ -19,5 +19,3 @@ __all__ = [
     "principal_urn_regex",
     "now_isoformat",
 ]
-
-__version__ = "0.12.0b1"
