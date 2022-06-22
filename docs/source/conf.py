@@ -11,22 +11,13 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
-import os
-import sys
-
-# sys.path.insert(0, os.path.abspath("../"))
-# import globus_action_provider_tools
 import sphinx_material
 
 # -- Project information -----------------------------------------------------
 
 project = "Action Provider Tools"
-copyright = "2020, University of Chicago"
+copyright = "2022, University of Chicago"
 author = "Uriel Mandujano"
-
-# The full version, including alpha/beta/rc tags
-# release = globus_action_provider_tools.__version__
-
 
 # -- General configuration ---------------------------------------------------
 
