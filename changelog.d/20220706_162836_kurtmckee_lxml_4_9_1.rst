@@ -1,0 +1,4 @@
+Development
+-----------
+
+-   Upgrade lxml from version 4.7.1 to 4.9.1.
