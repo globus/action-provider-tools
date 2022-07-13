@@ -1,8 +1,13 @@
 import typing
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
-from globus_sdk import AccessTokenAuthorizer, AuthAPIError, GlobusHTTPResponse
+from globus_sdk import (
+    AccessTokenAuthorizer,
+    AuthAPIError,
+    GlobusHTTPResponse,
+    GroupsClient,
+)
 
 from globus_action_provider_tools.authentication import (
     AuthState,
@@ -10,7 +15,6 @@ from globus_action_provider_tools.authentication import (
     identity_principal,
 )
 from globus_action_provider_tools.errors import ConfigurationError
-from globus_action_provider_tools.groups_client import GROUPS_SCOPE, GroupsClient
 
 from .data import canned_responses
 
@@ -18,7 +22,7 @@ from .data import canned_responses
 def new_groups_client(auth_client, upstream_token):
     resp = auth_client.oauth2_get_dependent_tokens(
         upstream_token, {"access_type": "offline"}
-    ).by_scopes[GROUPS_SCOPE]
+    ).by_scopes[GroupsClient.scopes.view_my_groups_and_memberships]
     authz = AccessTokenAuthorizer(resp["access_token"])
     return GroupsClient(authorizer=authz)
 
@@ -92,16 +96,14 @@ def test_caching_groups(auth_state):
     assert (
         auth_state.auth_client.oauth2_get_dependent_tokens.call_count < num_test_calls
     )
-    assert auth_state._groups_client.list_groups.call_count < num_test_calls
+    assert auth_state._groups_client.get_my_groups.call_count < num_test_calls
 
 
 # for some reason mypy thinks introspect is not a mock
 @typing.no_type_check
 def test_duplicate_auth_state(auth_state: AuthState, duplicate_auth_state: AuthState):
     assert duplicate_auth_state is not auth_state
-    identities = auth_state.identities
     introspect = duplicate_auth_state.auth_client.oauth2_token_introspect
     pre_introspect_count = introspect.call_count
-    dup_identities = duplicate_auth_state.identities
     post_introspect_count = introspect.call_count
     assert pre_introspect_count == post_introspect_count

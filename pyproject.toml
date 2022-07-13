@@ -31,7 +31,7 @@ whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
-globus-sdk="^3.3.0"
+globus-sdk="^3.9.0"
 jsonschema = "^3"
 pyyaml = "^5.3.1"
 pybase62 = "^0.4.0"

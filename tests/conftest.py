@@ -1,10 +1,10 @@
 from unittest.mock import patch
 
+import globus_sdk
 import pytest
 
 from globus_action_provider_tools import AuthState
 from globus_action_provider_tools.authentication import TokenChecker
-from globus_action_provider_tools.groups_client import GroupsClient
 
 from .data import canned_responses
 
@@ -52,7 +52,9 @@ def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
     client.oauth2_get_dependent_tokens.return_value = (
         canned_responses.dependent_token_response()()
     )
-    monkeypatch.setattr(GroupsClient, "list_groups", canned_responses.groups_response())
+    monkeypatch.setattr(
+        globus_sdk.GroupsClient, "get_my_groups", canned_responses.groups_response()
+    )
 
     # Create a TokenChecker to be used to create a mocked auth_state object
     checker = TokenChecker(
