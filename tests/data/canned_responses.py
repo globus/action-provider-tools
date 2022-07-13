@@ -3,10 +3,13 @@ from time import time
 from typing import Callable, List
 from unittest.mock import Mock
 
-from globus_sdk import BaseClient, GlobusHTTPResponse, OAuthDependentTokenResponse
+from globus_sdk import (
+    BaseClient,
+    GlobusHTTPResponse,
+    GroupsClient,
+    OAuthDependentTokenResponse,
+)
 from requests import Response
-
-from globus_action_provider_tools.groups_client import GROUPS_SCOPE
 
 
 class MockClient(BaseClient):
@@ -46,7 +49,7 @@ def dependent_token_response() -> Callable[[], GlobusHTTPResponse]:
                         "expires_in": 172800,
                         "resource_server": "nexus.api.globus.org",
                         "token_type": "Bearer",
-                        "scope": GROUPS_SCOPE,
+                        "scope": GroupsClient.scopes.view_my_groups_and_memberships,
                         "refresh_token": "REFRESH_TOKEN",
                     }
                 ]
