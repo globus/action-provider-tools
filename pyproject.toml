@@ -15,8 +15,6 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "License :: Free To Use But Restricted",
-  "Programming Language :: Python :: 3.6",
-  "Programming Language :: Python :: 3.7",
   "Topic :: Internet :: WWW/HTTP",
   "Topic :: Software Development :: Libraries :: Application Frameworks",
   "Topic :: Software Development :: Libraries :: Python Modules"
@@ -29,7 +27,7 @@ license = "Apache-2.0"
 whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.7"
 globus-sdk="^3.9.0"
 jsonschema = "^3"
 pyyaml = "^5.3.1"
