@@ -43,23 +43,18 @@ flask = ["flask"]
 [tool.poetry.dev-dependencies]
 importmagic = "^0"
 epc = "^0"
-pytest = "^5"
 werkzeug = "^1"
 flask = "^1"
 isodate = "^0.6.0"
-pytest-cov = "^2.8.1"
 docutils = "^0.16"
 rstcheck = "^3.3.1"
 pygments = "^2.6.1"
 sphinx = "^5.0.2"
 sphinx_material = "^0.0.35"
-mypy = "^0.910"
-types-cachetools = "^4.2.4"
-types-PyYAML = "^6.0.0"
-types-requests = "^2.25.11"
 
 [tool.poetry.group.dev.dependencies]
 scriv = {extras = ["toml"], version = "^0.17.0"}
+tox = "^3.26.0"
 
 [tool.isort]
 multi_line_output = 3
@@ -82,3 +77,15 @@ categories = [
     "Dependencies",
 ]
 version = "literal: pyproject.toml: tool.poetry.version"
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source = [
+    "globus_action_provider_tools",
+    "tests",
+]
+
+[tool.coverage.report]
+# When the test coverage increases, this bar should also raise.
+fail_under = 71

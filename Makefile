@@ -1,8 +1,6 @@
 VIRTUAL_ENV ?= .venv
-MIN_TEST_COVERAGE ?= 40
-LINT_PATHS = globus_action_provider_tools/ tests/ examples/
 
-.PHONY: help install docs redoc lint clean test poetry.lock requirements.txt
+.PHONY: help install docs redoc clean test poetry.lock requirements.txt
 
 define HELPTEXT
 Please use "make <target>" where <target> is one of:
@@ -17,10 +15,7 @@ Please use "make <target>" where <target> is one of:
 	redoc:
         Build the ActionProvider OpenAPI Redoc Spec
 
-    lint:
-        Run autoformatters and linters in check-only mode
-    
-    clean:  
+    clean:
         Remove any built artifacts or environments
     
     test:
@@ -53,17 +48,6 @@ docs:
 redoc:
 	npx redoc-cli bundle --output index.html actions_spec.openapi.yaml
 
-lint:
-	poetry run mypy --ignore-missing-imports \
-		globus_action_provider_tools/ \
-		tests/
-	poetry run mypy --ignore-missing-imports \
-		examples/watchasay
-	poetry run mypy --ignore-missing-imports \
-		examples/whattimeisitrightnow
-	poetry run mypy --ignore-missing-imports \
-		examples/apt_blueprint
-
 clean:
 	rm -rf $(VIRTUAL_ENV)
 	rm -rf .make_install_flag
@@ -78,11 +62,7 @@ clean:
 	rm -rf docs/build/*
 
 test:
-	poetry run pytest \
-		--cov=globus_action_provider_tools \
-		--cov-report= \
-		--cov-fail-under=${MIN_TEST_COVERAGE} \
-		tests/ examples/
+	poetry run tox
 
 poetry.lock: 
 	poetry lock
