@@ -59,7 +59,9 @@ isort = "^5.9.3"
 types-cachetools = "^4.2.4"
 types-PyYAML = "^6.0.0"
 types-requests = "^2.25.11"
-scriv = {extras = ["toml"], version = "^0.12.0"}
+
+[tool.poetry.group.dev.dependencies]
+scriv = {extras = ["toml"], version = "^0.17.0"}
 
 [tool.isort]
 multi_line_output = 3
@@ -73,4 +75,11 @@ requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
 
 [tool.scriv]
-categories = ["Features", "Bugfixes", "Documentation", "Deprecations"]
+categories = [
+    "Features",
+    "Bugfixes",
+    "Documentation",
+    "Deprecations",
+    "Dependencies",
+]
+version = "literal: pyproject.toml: tool.poetry.version"

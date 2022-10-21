@@ -418,22 +418,22 @@ pyparsing = ">=2.0.2,<3.0.5 || >3.0.5"
 
 [[package]]
 name = "pathspec"
-version = "0.9.0"
+version = "0.10.1"
 description = "Utility library for gitignore style pattern matching of file paths."
 category = "dev"
 optional = false
-python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+python-versions = ">=3.7"
 
 [[package]]
 name = "platformdirs"
-version = "2.4.0"
+version = "2.5.2"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.extras]
-docs = ["Sphinx (>=4)", "furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx-autodoc-typehints (>=1.12)"]
+docs = ["furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx (>=4)", "sphinx-autodoc-typehints (>=1.12)"]
 test = ["appdirs (==1.4.4)", "pytest (>=6)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)"]
 
 [[package]]
@@ -634,7 +634,7 @@ docutils = ">=0.7"
 
 [[package]]
 name = "scriv"
-version = "0.12.0"
+version = "0.17.0"
 description = "Scriv changelog management tool"
 category = "dev"
 optional = false
@@ -645,6 +645,7 @@ attrs = "*"
 click = "*"
 click-log = "*"
 jinja2 = "*"
+requests = "*"
 tomli = {version = "*", optional = true, markers = "extra == \"toml\""}
 
 [package.extras]
@@ -950,7 +951,7 @@ flask = ["flask"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "e946034d71d4989730e373b0f449d8ef7b4dd4031f09a7d7c3b344c4bdc2444f"
+content-hash = "6854804f83191757e0db127eef85009f1de005675a8d5e2a1410c809ba620c07"
 
 [metadata.files]
 alabaster = [
@@ -1359,12 +1360,12 @@ packaging = [
     {file = "packaging-21.3.tar.gz", hash = "sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb"},
 ]
 pathspec = [
-    {file = "pathspec-0.9.0-py2.py3-none-any.whl", hash = "sha256:7d15c4ddb0b5c802d161efc417ec1a2558ea2653c2e8ad9c19098201dc1c993a"},
-    {file = "pathspec-0.9.0.tar.gz", hash = "sha256:e564499435a2673d586f6b2130bb5b95f04a3ba06f81b8f895b651a3c76aabb1"},
+    {file = "pathspec-0.10.1-py3-none-any.whl", hash = "sha256:46846318467efc4556ccfd27816e004270a9eeeeb4d062ce5e6fc7a87c573f93"},
+    {file = "pathspec-0.10.1.tar.gz", hash = "sha256:7ace6161b621d31e7902eb6b5ae148d12cfd23f4a249b9ffb6b9fee12084323d"},
 ]
 platformdirs = [
-    {file = "platformdirs-2.4.0-py3-none-any.whl", hash = "sha256:8868bbe3c3c80d42f20156f22e7131d2fb321f5bc86a2a345375c6481a67021d"},
-    {file = "platformdirs-2.4.0.tar.gz", hash = "sha256:367a5e80b3d04d2428ffa76d33f124cf11e8fff2acdaa9b43d545f5c7d661ef2"},
+    {file = "platformdirs-2.5.2-py3-none-any.whl", hash = "sha256:027d8e83a2d7de06bbac4e5ef7e023c02b863d7ea5d079477e722bb41ab25788"},
+    {file = "platformdirs-2.5.2.tar.gz", hash = "sha256:58c8abb07dcb441e6ee4b11d8df0ac856038f944ab98b7be6b27b2a3c7feef19"},
 ]
 pluggy = [
     {file = "pluggy-0.13.1-py2.py3-none-any.whl", hash = "sha256:966c145cd83c96502c3c3868f50408687b38434af77734af1e9ca461a4081d2d"},
@@ -1509,8 +1510,8 @@ rstcheck = [
     {file = "rstcheck-3.3.1.tar.gz", hash = "sha256:92c4f79256a54270e0402ba16a2f92d0b3c15c8f4410cb9c57127067c215741f"},
 ]
 scriv = [
-    {file = "scriv-0.12.0-py2.py3-none-any.whl", hash = "sha256:62d9d91466a6c629fb72964290906eba1331d4d53c219e95c57f050b62d30ca5"},
-    {file = "scriv-0.12.0.tar.gz", hash = "sha256:0c1b055afea1773d50f13728f301dd4aa0d35e68be4e2f1e7373b51ec225de0a"},
+    {file = "scriv-0.17.0-py2.py3-none-any.whl", hash = "sha256:97fdaf0e987d9e3dcc4466e9999d51e414ddec44b6bd04d6241a09fb1c7968f3"},
+    {file = "scriv-0.17.0.tar.gz", hash = "sha256:8f23883ef83dfc50f09f76aef08ff3073f2752c7255db15d24cd8bfecc32379c"},
 ]
 setuptools = [
     {file = "setuptools-65.5.0-py3-none-any.whl", hash = "sha256:f62ea9da9ed6289bfe868cd6845968a2c854d1427f8548d52cae02a42b4f0356"},
