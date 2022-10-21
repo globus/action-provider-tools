@@ -2,7 +2,7 @@ VIRTUAL_ENV ?= .venv
 MIN_TEST_COVERAGE ?= 40
 LINT_PATHS = globus_action_provider_tools/ tests/ examples/
 
-.PHONY: help install docs redoc autoformat lint clean test poetry.lock requirements.txt
+.PHONY: help install docs redoc lint clean test poetry.lock requirements.txt
 
 define HELPTEXT
 Please use "make <target>" where <target> is one of:
@@ -16,10 +16,6 @@ Please use "make <target>" where <target> is one of:
 
 	redoc:
         Build the ActionProvider OpenAPI Redoc Spec
-
-    autoformat:
-	    Format code according to the project's autoformatters and 
-        linters
 
     lint:
         Run autoformatters and linters in check-only mode
@@ -57,13 +53,7 @@ docs:
 redoc:
 	npx redoc-cli bundle --output index.html actions_spec.openapi.yaml
 
-autoformat:	
-	poetry run isort $(LINT_PATHS)
-	poetry run black $(LINT_PATHS)
-
 lint:
-	poetry run black --check $(LINT_PATHS)
-	poetry run isort --check-only --diff $(LINT_PATHS)
 	poetry run mypy --ignore-missing-imports \
 		globus_action_provider_tools/ \
 		tests/

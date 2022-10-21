@@ -54,8 +54,6 @@ pygments = "^2.6.1"
 sphinx = "^5.0.2"
 sphinx_material = "^0.0.35"
 mypy = "^0.910"
-black = "^21.9b0"
-isort = "^5.9.3"
 types-cachetools = "^4.2.4"
 types-PyYAML = "^6.0.0"
 types-requests = "^2.25.11"
@@ -80,6 +78,7 @@ categories = [
     "Bugfixes",
     "Documentation",
     "Deprecations",
+    "Development",
     "Dependencies",
 ]
 version = "literal: pyproject.toml: tool.poetry.version"
