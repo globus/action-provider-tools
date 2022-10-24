@@ -1,4 +1,3 @@
-import typing
 from unittest.mock import Mock
 
 import pytest
@@ -99,8 +98,6 @@ def test_caching_groups(auth_state):
     assert auth_state._groups_client.get_my_groups.call_count < num_test_calls
 
 
-# for some reason mypy thinks introspect is not a mock
-@typing.no_type_check
 def test_duplicate_auth_state(auth_state: AuthState, duplicate_auth_state: AuthState):
     assert duplicate_auth_state is not auth_state
     introspect = duplicate_auth_state.auth_client.oauth2_token_introspect
