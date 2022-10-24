@@ -9,7 +9,6 @@ from pydantic import ValidationError
 from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
-    ActionProviderJsonEncoder,
     ActionStatusValue,
 )
 from globus_action_provider_tools.flask.exceptions import (
@@ -19,6 +18,7 @@ from globus_action_provider_tools.flask.exceptions import (
 )
 from globus_action_provider_tools.flask.helpers import (
     action_status_return_to_view_return,
+    assign_json_provider,
     blueprint_error_handler,
     check_token,
     get_input_body_validator,
@@ -189,7 +189,7 @@ def add_action_routes_to_blueprint(
         expected_audience=client_name,
     )
 
-    blueprint.json_encoder = ActionProviderJsonEncoder
+    assign_json_provider(blueprint)
     input_body_validator = get_input_body_validator(provider_description)
     blueprint.register_error_handler(Exception, blueprint_error_handler)
 

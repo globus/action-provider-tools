@@ -272,8 +272,9 @@ class ActionStatus(BaseModel):
         return self.status in (ActionStatusValue.SUCCEEDED, ActionStatusValue.FAILED)
 
 
-class ActionProviderJsonEncoder(JSONEncoder):
-    def default(self, obj):
+class ActionProviderJSONEncoderMixin:
+    @staticmethod
+    def default(obj):
         if isinstance(obj, AbstractSet):
             return list(obj)
         elif isinstance(obj, BaseModel):
@@ -284,4 +285,8 @@ class ActionProviderJsonEncoder(JSONEncoder):
             return obj.isoformat()
         elif isinstance(obj, datetime.timedelta):
             return isodate.duration_isoformat(obj)
-        return super(ActionProviderJsonEncoder, self).default(obj)
+        return JSONEncoder().default(obj)
+
+
+class ActionProviderJsonEncoder(ActionProviderJSONEncoderMixin, JSONEncoder):
+    pass

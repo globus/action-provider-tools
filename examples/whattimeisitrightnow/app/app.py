@@ -19,13 +19,14 @@ from globus_action_provider_tools.authorization import (
 )
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
-    ActionProviderJsonEncoder,
     ActionStatus,
     ActionStatusValue,
 )
 from globus_action_provider_tools.flask import flask_validate_request
+from globus_action_provider_tools.flask.helpers import assign_json_provider
 
 app = Flask(__name__)
+assign_json_provider(app)
 
 token_checker = TokenChecker(
     config.client_id, config.client_secret, [config.our_scope], config.token_audience
@@ -36,9 +37,6 @@ INCOMPLETE_STATES = (ActionStatusValue.ACTIVE, ActionStatusValue.INACTIVE)
 
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "schema.json")) as f:
     schema = json.load(f)
-
-
-app.json_encoder = ActionProviderJsonEncoder
 
 
 @app.errorhandler(err.ApiError)
