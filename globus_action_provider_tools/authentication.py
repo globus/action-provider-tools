@@ -137,7 +137,7 @@ class AuthState(object):
             return frozenset()
         else:
             try:
-                groups_token = getattr(groups_client.authorizer, "access_token")
+                groups_token = groups_client.authorizer.access_token
             except AttributeError as err:
                 log.error("Missing access token to use for groups service")
                 self.errors.append(err)

@@ -1,5 +1,3 @@
-from unittest import mock
-
 import pytest
 
 from globus_action_provider_tools import AuthState, TokenChecker

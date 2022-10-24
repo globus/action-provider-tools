@@ -4,10 +4,8 @@ This module tests some of the shared validation functions in the Flask helpers.
 import json
 
 import pytest
-from flask import Flask, request
 from jsonschema.validators import Draft7Validator
 
-from globus_action_provider_tools.data_types import ActionStatusValue
 from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
     BadActionRequest,
@@ -51,7 +49,7 @@ def test_exception_on_invalid_input_schema():
     ap_description.input_schema = None
 
     with pytest.raises(ActionProviderError):
-        validator = get_input_body_validator(ap_description)
+        get_input_body_validator(ap_description)
 
 
 def test_passing_json_schema_validation():

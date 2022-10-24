@@ -11,7 +11,6 @@ from globus_action_provider_tools.utils import (
     now_isoformat,
     principal_urn_regex,
     shortish_id,
-    uuid_regex,
 )
 
 

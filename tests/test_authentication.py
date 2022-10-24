@@ -75,7 +75,7 @@ def test_effective_identity(auth_state):
 
 def test_caching_identities(auth_state):
     num_test_calls = 3
-    for i in range(num_test_calls):
+    for _ in range(num_test_calls):
         auth_state.identities
         auth_state.effective_identity
 
@@ -87,7 +87,7 @@ def test_caching_identities(auth_state):
 
 def test_caching_groups(auth_state):
     num_test_calls = 3
-    for i in range(num_test_calls):
+    for _ in range(num_test_calls):
         auth_state.groups
 
     # See above in test_cachine_identities for a description of the test for this

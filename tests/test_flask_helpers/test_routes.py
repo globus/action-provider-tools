@@ -3,7 +3,7 @@ A test module for unit testing the Action Provider Tools' Flask helper
 libraries.
 
 The helpers automatically handle creating routes that implement the
-Action Provider API. These tests validate that the supported AP API versions 
+Action Provider API. These tests validate that the supported AP API versions
 are in fact implemented.
 """
 

@@ -1,13 +1,11 @@
 import json
 import logging
 import os
-import uuid
 from datetime import datetime, timedelta, timezone
 from random import randint
 from typing import Any, Dict, Tuple
 
 from flask import Flask, Response, jsonify, request
-from isodate import duration_isoformat
 
 from examples.whattimeisitrightnow.app import config
 from examples.whattimeisitrightnow.app import error as err
@@ -101,7 +99,7 @@ def introspect() -> Tuple[Response, int]:
     if not request.auth.check_authorization(  # type: ignore
         description.visible_to, allow_all_authenticated_users=True
     ):
-        raise err.NotAuthorized(f"Not visible_to this access token.")
+        raise err.NotAuthorized("Not visible_to this access token.")
     return jsonify(description), 200
 
 

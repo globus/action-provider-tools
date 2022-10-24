@@ -1,7 +1,7 @@
 """
 This module contains JSON-able HTTP exceptions based off Werkzeug's
 HTTPException class. These custom exceptions produce a JSON response containing
-error name, http status code, and a description of the issue. 
+error name, http status code, and a description of the issue.
 
 These exceptions can be raised with a default message directly from Werkzeug:
     raise ActionProviderToolsException

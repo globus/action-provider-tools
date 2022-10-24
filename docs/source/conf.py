@@ -11,8 +11,6 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
-import sphinx_material
-
 # -- Project information -----------------------------------------------------
 
 project = "Action Provider Tools"

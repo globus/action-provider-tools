@@ -4,8 +4,8 @@ correctly.
 
 When a Provider using the flask API helpers starts up, it internally creates an
 instance of a TokenChecker.  The TokenChecker expects to have a valid CLIENT_ID and
-CLIENT_SECRET. The patch imported below modifies the TokenChecker's behavior 
-such that it does not care if the ActionProvider is tested with valid CLIENT 
+CLIENT_SECRET. The patch imported below modifies the TokenChecker's behavior
+such that it does not care if the ActionProvider is tested with valid CLIENT
 credentials.
 
 Depending on your ActionProvider's configuration, each request to an endpoint

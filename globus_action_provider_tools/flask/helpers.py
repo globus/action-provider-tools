@@ -103,7 +103,9 @@ def check_token(request: Request, checker: TokenChecker) -> AuthState:
     """
     Parses a Flask request to extract its bearer token.
     """
-    access_token = request.headers.get("Authorization", "").strip().lstrip("Bearer ")
+    access_token = request.headers.get("Authorization", "").strip()
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer ") :]
     auth_state = checker.check_token(access_token)
     return auth_state
 
@@ -123,7 +125,7 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
     # Handle unexpected Exceptions in a somewhat predictable way
     resp = {
         "code": ActionProviderError.__name__,
-        "description": f"Internal Server Error",
+        "description": "Internal Server Error",
     }
     return jsonify(resp), 500
 
@@ -140,10 +142,7 @@ def validate_input(
     except ValidationError as ve:
         raise BadActionRequest(ve.errors())
 
-    try:
-        input_body_validator(action_request.body)
-    except BadActionRequest as err:
-        raise
+    input_body_validator(action_request.body)
 
     return action_request
 
