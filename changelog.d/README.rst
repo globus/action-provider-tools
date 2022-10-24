@@ -13,7 +13,7 @@ To correctly include your GitHub username in the fragment filename,
 run this command to modify your global git configuration:
 
 ..  code-block:: shell
-    
+
     git config --global github.user GITHUB_USERNAME
 
 Collecting fragments

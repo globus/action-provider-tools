@@ -26,7 +26,7 @@ helpers internally creates a *TokenChecker* which does two things: it validates
 that the Action Provider is correctly configured with a valid Globus Auth Client
 ID and Secret, and it validates that incoming requests contain a valid token.
 These fixtures abstract both aspects of the internal *TokenChecker* so that you
-can focus on testing your Action Provider's behavior and logic. 
+can focus on testing your Action Provider's behavior and logic.
 
 
 Action Provider Blueprint
@@ -37,7 +37,7 @@ helper, use the :code:`apt_blueprint_noauth` fixture in
 :code:`globus_action_provider_tools.testing.fixtures`:
 
 .. code-block:: python
-                
+
     from globus_action_provider_tools.testing.fixtures import (
         apt_blueprint_noauth
     )
@@ -80,7 +80,7 @@ If your Action Provider is built using the
 :code:`globus_action_provider_tools.testing.fixtures*`:
 
 .. code-block:: python
-                
+
     from globus_action_provider_tools.testing.fixtures import (
         flask_helpers_noauth
     )
@@ -112,8 +112,8 @@ Provider:
         response = client.get("/")
         assert response.status_code == 200
 
-.. note:: 
-    
+.. note::
+
     The :code:`flask_helpers_noauth` fixture will patch the TokenChecker in a
     global scope during testing, meaning that any other Action Providers that
     are themselves built using the Flask API Helpers will also have their
@@ -134,7 +134,7 @@ non-Flask framework or if you've decided not to use the built in Flask helpers.
 .. note::
 
     This toolkit uses these mocks within the
-    :code:`globus_action_provider_tools.testing.fixtures` module.  
+    :code:`globus_action_provider_tools.testing.fixtures` module.
 
 
 .. _mock-authstate:
@@ -167,7 +167,7 @@ useful when used in a patch as the return value for the *TokenChecker*'s
         yield app.test_client()
 
 The example above creates a fixture which can be used to create a client that
-can make unauthenticated HTTP requests against an Action Provider. 
+can make unauthenticated HTTP requests against an Action Provider.
 
 
 Mock TokenChecker

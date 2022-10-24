@@ -28,7 +28,7 @@ We recommend creating a virtualenvironment to install project dependencies and
 run the Action Provider. Once the virtualenvironment has been created and
 activated, run the following:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         cd examples/watchasay
         pip install -r requirements.txt
@@ -40,7 +40,7 @@ We provide example tests to validate that your Action Provider is working and
 enable some form of continuous integration. To run the example test suite, once
 again activate the project's virtualenvironment and run the following:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         cd examples/watchasay
         pytest
@@ -55,7 +55,7 @@ You'll notice that the only endpoint we can reach without a valid token is the
 introspect endpoint (*/skeleton*). Issuing the below command will report the
 expected request schema and the required scope for using the Provider:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         curl http://localhost:5000/skeleton/
 
@@ -64,7 +64,7 @@ Setting the introspection endpoint to be publicly visible is useful way of
 providing documentation on how to interact with the ActionProvider.
 All other operations on the Action Provider will require a valid token:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         curl --request POST \
             --url http://localhost:5000/skeleton/run \
@@ -75,17 +75,17 @@ All other operations on the Action Provider will require a valid token:
 But how to get the token? The recommended route to retrieve a token is to use
 the globus-automate-client CLI tool. Conveniently, the globus-automate-client
 CLI tool removes the need to create curl requests and the need to manually
-format Action request bodies. See the doc on downloading the CLI tool. Once 
-downloaded, issue a command simliar to to the one below.  The first time you 
-run the command, you will need to follow a flow to request the necessary grants 
-for your Action Provider's scopes.  Later attempts to use the 
-globus-automate-client tool will use locally cached tokens and transparently 
+format Action request bodies. See the doc on downloading the CLI tool. Once
+downloaded, issue a command simliar to to the one below.  The first time you
+run the command, you will need to follow a flow to request the necessary grants
+for your Action Provider's scopes.  Later attempts to use the
+globus-automate-client tool will use locally cached tokens and transparently
 refresh expired tokens.
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         globus-automate action-run \
-            --action-url http://localhost:5000/skeleton/run \                         
+            --action-url http://localhost:5000/skeleton/run \
             --action-scope $YOUR_PROVIDERS_SCOPE \
             --body '{"input_string":"hi"}'
 

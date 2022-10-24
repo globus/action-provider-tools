@@ -4,7 +4,7 @@ This is a sample Flask application implemented using the Flask Decorators in the
 Action Provider Toolkit. The Toolkit provides an `ActionProviderBlueprint` with five
 decorators which are used to decorate functions that will be run when the Action
 Provider is invoked. Each decorator corresponds to one of the Action Provider
-Interface endpoints. The decorators available are: 
+Interface endpoints. The decorators available are:
 
 - `action_run`
 - `action_status`
@@ -31,15 +31,15 @@ streamlined development experience. The ActionProviderBlueprint will:
 
 All the ActionProvider developer needs to do is create an
 `ActionProviderDescription` and use it when creating the
-`ActionProviderBlueprint`: 
+`ActionProviderBlueprint`:
 
-.. code-block:: python    
+.. code-block:: python
 
     from globus_action_provider_tools.flask.apt_blueprint import (
         ActionProviderBlueprint)
     from globus_action_provider_tools.data_types import (
         ActionProviderDescription)
-    
+
     description = ActionProviderDescription(...)
     aptb = ActionProviderBlueprint(
         name="apt",
@@ -57,8 +57,8 @@ All the ActionProvider developer needs to do is create an
 Once the ActionProviderBlueprint has been created, use its decorators to
 register functions which implement your ActionProvider's logic:
 
-.. code-block:: python    
-    
+.. code-block:: python
+
     @aptb.action_run
     def my_action_run(action_request: ActionRequest, auth: AuthState):
         pass
@@ -92,7 +92,7 @@ The toolkit provides a convenient way of authorizing access to an Action when a
 request to view or modify the Action's execution gets made. You can import them
 via:
 
-.. code-block:: python    
+.. code-block:: python
 
     from globus_action_provider_tools.authorization import (
         authorize_action_access_or_404, authorize_action_management_or_404)
@@ -100,7 +100,7 @@ via:
 To use these, obtain an `ActionStatus` object from your ActionProvider's storage
 backend and use the provided `AuthState` argument:
 
-.. code-block:: python    
+.. code-block:: python
 
     @aptb.action_status
     def my_action_status(action_id: str, auth: AuthState):
@@ -149,9 +149,9 @@ would register any other Flask Blueprint and run your ActionProvider:
     Provider will not be able to authenticate requests against Globus Auth.
 
     As an example, if we created the following `ActionProviderBlueprint`:
-    
-    .. code-block:: python    
-        
+
+    .. code-block:: python
+
         aptb = ActionProviderBlueprint(
             name="apt",
             import_name=__name__,
@@ -159,7 +159,7 @@ would register any other Flask Blueprint and run your ActionProvider:
             provider_description=description,
         )
 
-    Once `aptb` gets registered with a Flask app, it will attempt to find the 
+    Once `aptb` gets registered with a Flask app, it will attempt to find the
     "APT_CLIENT_ID" and "APT_CLIENT_SECRET" keys in the Flask application's
     configuration. Failing to find those, it will search for and use the Flask
     application's "CLIENT_ID" and "CLIENT_SECRET" values.
@@ -179,7 +179,7 @@ We recommend creating a virtualenvironment to install project dependencies and
 run the Action Provider. Once the virtualenvironment has been created and
 activated, run the following:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         cd examples/apt_blueprint
         pip install -r requirements.txt

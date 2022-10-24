@@ -6,7 +6,7 @@ define HELPTEXT
 Please use "make <target>" where <target> is one of:
 
     install:
-        Install this project and its dependencies into a virtual 
+        Install this project and its dependencies into a virtual
         environment at $(VIRTUAL_ENV)
 
     docs:
@@ -17,19 +17,19 @@ Please use "make <target>" where <target> is one of:
 
     clean:
         Remove any built artifacts or environments
-    
+
     test:
         Run the full suite of tests
-    
+
     test-toolkit:
         Run the toolkit's source code tests
-    
+
     test-examples:
         Run the example Action Providers' tests
-    
+
     poetry.lock:
         Generate this project's poetry.lock file
-    
+
     requirements.txt:
         Generate this project's requirements.txt file
 
@@ -64,7 +64,7 @@ clean:
 test:
 	poetry run tox
 
-poetry.lock: 
+poetry.lock:
 	poetry lock
 
 requirements.txt:

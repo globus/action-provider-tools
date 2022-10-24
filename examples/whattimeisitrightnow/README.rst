@@ -11,8 +11,8 @@ return the current UTC time as. To demonstrate some degree of complexity, the
 application randomly assigns each request an *estimated_completion_time* so that
 an action's results will not be available until the *estimated_completion_time*.
 To do this, we store and make use of "private" data fields which are never
-displayed to any requestor. Additionally, some percentage of requests to the 
-ActionProvider fail to demonstrate how to report errors back to the requestors. 
+displayed to any requestor. Additionally, some percentage of requests to the
+ActionProvider fail to demonstrate how to report errors back to the requestors.
 
 Presteps
 ========
@@ -27,7 +27,7 @@ We recommend creating a virtualenvironment to install project dependencies and
 run the Action Provider. Once the virtualenvironment has been created and
 activated, run the following:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         cd examples/whattimeisitrightnow
         pip install -r requirements.txt
@@ -39,7 +39,7 @@ We provide example tests to validate that your Action Provider is working and
 enable some form of continuous integration. To run the example test suite, once
 again activate the project's virtualenvironment and run the following:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         cd examples/whattimeisitrightnow
         pytest
@@ -54,7 +54,7 @@ You'll notice that just because its running doesn't mean we can actually use the
 Action Provider. In particular, once the whattimeisitrightnow Action Provider is
 run, this will fail:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         curl http://localhost:5000/
 
@@ -63,7 +63,7 @@ to only authenticated users (see the ActionProviderDescription initialization
 values).  Therefore, requests need proper HTTP authorization headers (i.e.
 a token needs to be provided):
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         curl --request GET \
             --url http://localhost:5000/ \
@@ -72,26 +72,26 @@ a token needs to be provided):
 But how to get the token? The recommended route to retrieve a token is to use
 the globus-automate-client CLI tool. Conveniently, the globus-automate-client
 CLI tool removes the need to create curl requests and the need to manually
-format Action request bodies. See the doc on downloading the CLI tool. Once 
-downloaded, issue a command simliar to to the one below.  The first time you 
-run the command, you will need to follow a flow to request the necessary grants 
-for your Action Provider's scopes.  Later attempts to use the 
-globus-automate-client tool will use locally cached tokens and transparently 
+format Action request bodies. See the doc on downloading the CLI tool. Once
+downloaded, issue a command simliar to to the one below.  The first time you
+run the command, you will need to follow a flow to request the necessary grants
+for your Action Provider's scopes.  Later attempts to use the
+globus-automate-client tool will use locally cached tokens and transparently
 refresh expired tokens.
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         globus-automate action-provider-introspect \
-            --action-url http://localhost:5000/ \                         
+            --action-url http://localhost:5000/ \
             --action-scope $YOUR_PROVIDERS_SCOPE
 
 The globus-automate-client CLI tool can also make requests to endpoints besides
 the introspection endpoint, for example:
 
-    .. code-block:: BASH    
+    .. code-block:: BASH
 
         globus-automate action-run \
-            --action-url http://localhost:5000/ \                         
+            --action-url http://localhost:5000/ \
             --action-scope $YOUR_PROVIDERS_SCOPE \
             --body '{"utc_offset": 1}'
 
