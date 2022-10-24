@@ -9,24 +9,6 @@ from globus_action_provider_tools.authentication import TokenChecker
 from .data import canned_responses
 
 
-def pytest_addoption(parser):
-    """
-    Add CLI options to `pytest` to pass those options to the test cases.
-    These options are used in `pytest_generate_tests`.
-    """
-    parser.addoption(
-        "--live-api-calls",
-        action="store_true",
-        default=False,
-        help="Don't mock out API calls during test run.",
-    )
-
-
-@pytest.fixture
-def live_api(request):
-    return request.config.getoption("--live-api-calls")
-
-
 @pytest.fixture
 def config():
     return dict(

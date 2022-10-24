@@ -27,20 +27,15 @@ def new_groups_client(auth_client, upstream_token):
 
 
 @pytest.fixture
-def invalid_token(live_api, monkeypatch):
-    if live_api:
-        return
-    else:
-        fake_introspect = Mock(
-            return_value=GlobusHTTPResponse(canned_responses.resp({"active": False}))
-        )
-        monkeypatch.setattr(AuthState, "introspect_token", fake_introspect)
+def invalid_token(monkeypatch):
+    fake_introspect = Mock(
+        return_value=GlobusHTTPResponse(canned_responses.resp({"active": False}))
+    )
+    monkeypatch.setattr(AuthState, "introspect_token", fake_introspect)
 
 
 @pytest.fixture
-def bad_credentials_error(live_api, monkeypatch):
-    if live_api:
-        return
+def bad_credentials_error(monkeypatch):
     resp = canned_responses.resp({"error": "invalid_client"}, 401)
     fake_introspect = Mock(side_effect=AuthAPIError(resp))
     monkeypatch.setattr(AuthState, "introspect_token", fake_introspect)
