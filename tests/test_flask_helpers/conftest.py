@@ -67,8 +67,8 @@ def add_routes_app(flask_helpers_noauth, auth_state):
     bp = Blueprint("func_helper", __name__, url_prefix="/func_helper")
     add_action_routes_to_blueprint(
         blueprint=bp,
-        client_id=None,
-        client_secret=None,
+        client_id="bogus",
+        client_secret="bogus",
         client_name=None,
         provider_description=ap_description,
         action_run_callback=test_action_run,

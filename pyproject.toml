@@ -53,6 +53,7 @@ sphinx_material = "^0.0.35"
 [tool.poetry.group.dev.dependencies]
 scriv = {extras = ["toml"], version = "^0.17.0"}
 tox = "^3.26.0"
+freezegun = "^1.2.2"
 
 [tool.isort]
 multi_line_output = 3
@@ -86,4 +87,4 @@ source = [
 
 [tool.coverage.report]
 # When the test coverage increases, this bar should also raise.
-fail_under = 71
+fail_under = 81
