@@ -1,5 +1,12 @@
 # POST /v2/oauth2/token
 
+invalid-grant:
+  service: auth
+  path: /v2/oauth2/token
+  method: POST
+  status: 400
+  json: {"error":"invalid_grant"}
+
 success:
   service: auth
   path: /v2/oauth2/token
