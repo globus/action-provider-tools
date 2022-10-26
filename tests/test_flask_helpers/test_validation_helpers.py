@@ -85,3 +85,21 @@ def test_validating_action_request():
     ap_description.input_schema = {}
     validator = get_input_body_validator(ap_description)
     validate_input({"request_id": 100, "body": {}}, validator)
+
+
+def test_validate_input_typeerror():
+    """Verify that a non-object `request_json` argument results in HTTP 400."""
+
+    ap_description.input_schema = json.dumps(action_provider_json_input_schema)
+    validator = get_input_body_validator(ap_description)
+    with pytest.raises(BadActionRequest) as catcher:
+        validate_input("{}", validator)  # type: ignore
+    expected = [
+        {
+            "loc": [""],
+            "msg": "json document must be an object",
+            "type": "value_error",
+        }
+    ]
+    assert catcher.value.get_response().status_code == 400
+    assert catcher.value.get_description() == expected

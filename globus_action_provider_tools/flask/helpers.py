@@ -140,6 +140,16 @@ def validate_input(
         action_request = ActionRequest(**request_json)
     except ValidationError as ve:
         raise BadActionRequest(ve.errors())
+    except TypeError:
+        raise BadActionRequest(
+            [
+                {
+                    "loc": [""],
+                    "msg": "json document must be an object",
+                    "type": "value_error",
+                },
+            ]
+        )
 
     input_body_validator(action_request.body)
 
