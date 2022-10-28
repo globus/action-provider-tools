@@ -1,7 +1,7 @@
 import datetime
 import inspect
+import json
 from enum import Enum
-from json import JSONEncoder
 from typing import AbstractSet, Any, Dict, List, Optional, Set, Type, Union
 
 import isodate
@@ -271,21 +271,20 @@ class ActionStatus(BaseModel):
         return self.status in (ActionStatusValue.SUCCEEDED, ActionStatusValue.FAILED)
 
 
-class ActionProviderJSONEncoderMixin:
-    @staticmethod
-    def default(obj):
-        if isinstance(obj, AbstractSet):
-            return list(obj)
-        elif isinstance(obj, BaseModel):
-            return obj.dict()
-        elif inspect.isclass(obj) and issubclass(obj, BaseModel):
-            return obj.schema()
-        elif isinstance(obj, datetime.datetime):
-            return obj.isoformat()
-        elif isinstance(obj, datetime.timedelta):
-            return isodate.duration_isoformat(obj)
-        return JSONEncoder().default(obj)
+def convert_to_json(o: Any) -> Any:
+    if isinstance(o, AbstractSet):
+        return list(o)
+    elif isinstance(o, BaseModel):
+        return o.dict()
+    elif inspect.isclass(o) and issubclass(o, BaseModel):
+        return o.schema()
+    elif isinstance(o, datetime.datetime):
+        return o.isoformat()
+    elif isinstance(o, datetime.timedelta):
+        return isodate.duration_isoformat(o)
+    return json.JSONEncoder().default(o)
 
 
-class ActionProviderJsonEncoder(ActionProviderJSONEncoderMixin, JSONEncoder):
-    pass
+class ActionProviderJsonEncoder(json.JSONEncoder):
+    def default(self, o: Any) -> Any:
+        return convert_to_json(o)

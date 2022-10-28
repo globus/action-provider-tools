@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 import json
-import re
 from enum import Enum
 from functools import partial
 from typing import Any, Callable, Dict, Iterable, Optional, Set, Type
@@ -16,9 +15,9 @@ from globus_action_provider_tools.authentication import AuthState, TokenChecker
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionProviderJsonEncoder,
-    ActionProviderJSONEncoderMixin,
     ActionRequest,
     ActionStatus,
+    convert_to_json,
 )
 from globus_action_provider_tools.errors import AuthenticationError
 from globus_action_provider_tools.flask.exceptions import (
@@ -208,28 +207,20 @@ def pydantic_input_validation(
         raise BadActionRequest(ve.errors())
 
 
-def get_flask_version(version: str = flask.__version__) -> tuple[int, ...]:
-    """Parse the Flask version into a tuple of integers.
-
-    The parsed version is used internally to avoid deprecated Flask use.
-    """
-
-    match = re.search(r"(\d+)(?:\.(\d+)(?:\.(\d+))?)?", version)
-    if match is None:
-        return ()
-
-    return tuple(int(v) for v in match.groups() if v is not None)
-
-
-if get_flask_version() >= (2, 2):
+try:
     from flask.json.provider import DefaultJSONProvider
-
-    class JsonProvider(ActionProviderJSONEncoderMixin, DefaultJSONProvider):
-        # The ".default" method is all that is needed.
-        pass
-
+except ImportError:
+    # Flask < 2.2: Use the deprecated JSON encoder interface.
+    json_provider_available = False
+    JsonProvider: Optional["DefaultJSONProvider"] = None
 else:
-    JsonProvider: Optional["DefaultJSONProvider"] = None  # type: ignore[no-redef]
+    # Flask >= 2.2: Use the new JSON provider interface.
+    json_provider_available = True
+
+    class JsonProvider(DefaultJSONProvider):  # type: ignore[no-redef]
+        @staticmethod
+        def default(o: Any) -> Any:
+            return convert_to_json(o)
 
 
 def assign_json_provider(app_or_blueprint: flask.Flask | flask.Blueprint):
@@ -241,7 +232,7 @@ def assign_json_provider(app_or_blueprint: flask.Flask | flask.Blueprint):
     and avoid deprecation warnings.
     """
 
-    if get_flask_version() >= (2, 2):
+    if json_provider_available:
         assert JsonProvider is not None
         app_or_blueprint.json = JsonProvider(app_or_blueprint)
     else:
