@@ -4,7 +4,7 @@ import inspect
 import json
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, Optional, Set, Type
+from typing import Any, Callable, Dict, Iterable, Set, Type
 
 import flask
 from flask import Request, current_app, jsonify
@@ -212,15 +212,18 @@ try:
 except ImportError:
     # Flask < 2.2: Use the deprecated JSON encoder interface.
     json_provider_available = False
-    JsonProvider: Optional["DefaultJSONProvider"] = None
+
+    JsonProvider: type[DefaultJSONProvider] | None = None
 else:
     # Flask >= 2.2: Use the new JSON provider interface.
     json_provider_available = True
 
-    class JsonProvider(DefaultJSONProvider):  # type: ignore[no-redef]
+    class _JsonProvider(DefaultJSONProvider):
         @staticmethod
         def default(o: Any) -> Any:
             return convert_to_json(o)
+
+    JsonProvider = _JsonProvider
 
 
 def assign_json_provider(app_or_blueprint: flask.Flask | flask.Blueprint):
