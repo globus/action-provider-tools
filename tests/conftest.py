@@ -80,12 +80,8 @@ def mocked_responses() -> responses.RequestsMock:
     For example, they might check the number of intercepted `.calls`.
     """
 
-    responses.reset()
-    responses.start()
-    try:
+    with responses.mock:
         yield responses.mock
-    finally:
-        responses.stop()
 
 
 @pytest.fixture
