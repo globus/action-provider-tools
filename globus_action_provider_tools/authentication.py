@@ -2,6 +2,7 @@ import logging
 from time import time
 from typing import FrozenSet, Iterable, List, Optional, Union, cast
 
+import globus_sdk
 from cachetools import TTLCache
 from globus_sdk import (
     AccessTokenAuthorizer,
@@ -238,7 +239,7 @@ class AuthState(object):
             dep_tkn_resp = self.get_dependent_tokens(
                 bypass_cache_lookup=bypass_dependent_token_cache
             ).by_scopes[scope]
-        except KeyError:
+        except (KeyError, globus_sdk.AuthAPIError):
             log.warning(
                 f"Unable to create GlobusAuthorizer for scope {scope}. Using 'None'",
                 exc_info=True,

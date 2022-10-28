@@ -111,3 +111,9 @@ def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_res
     # resulting in no additional HTTP calls.
     assert len(duplicate_auth_state.identities) == len(response.metadata["identities"])
     assert len(mocked_responses.calls) == 1
+
+
+def test_invalid_grant_exception(auth_state):
+    load_response("token-introspect", case="success")
+    load_response("token", case="invalid-grant")
+    assert auth_state.get_authorizer_for_scope("doesn't matter") is None
