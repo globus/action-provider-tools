@@ -1,0 +1,17 @@
+# POST /v2/oauth2/token
+
+success:
+  service: auth
+  path: /v2/oauth2/token
+  method: POST
+  json:
+    [
+      {
+        "access_token": "7ZdPhhvija1MUDw6koBYgAAGnbrU79qF...",
+        "resource_server": "groups.api.globus.org",
+        "scope": "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships",
+        "expires_in": 3600,
+        "refresh_token": "dPVJBKAUs0x8UW4zhgQWv6snDmo2X72E",
+        "token_type": "bearer",
+      },
+    ]

@@ -9,7 +9,6 @@ from pydantic import ValidationError
 from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
-    ActionProviderJsonEncoder,
     ActionStatusValue,
 )
 from globus_action_provider_tools.flask.exceptions import (
@@ -19,6 +18,7 @@ from globus_action_provider_tools.flask.exceptions import (
 )
 from globus_action_provider_tools.flask.helpers import (
     action_status_return_to_view_return,
+    assign_json_provider,
     blueprint_error_handler,
     check_token,
     get_input_body_validator,
@@ -43,8 +43,8 @@ from globus_action_provider_tools.validation import (
 
 warnings.warn(
     (
-        "The globus_action_provider_tools.flask.api_helpers module is deprecated and will "
-        "be removed in 0.12.0. Please consider using the "
+        "The globus_action_provider_tools.flask.api_helpers module is deprecated "
+        "and will be removed in 0.12.0. Please consider using the "
         "globus_action_provider_tools.flask.apt_blueprint module instead."
     ),
     DeprecationWarning,
@@ -113,7 +113,8 @@ def add_action_routes_to_blueprint(
     additional_scopes: Optional[List[str]] = None,
     action_enumeration_callback: ActionEnumerationCallback = None,
 ) -> None:
-    """Add routes to a Flask Blueprint to implement the required operations of the Action
+    """
+    Add routes to a Flask Blueprint to implement the required operations of the Action
     Provider Interface: Introspect, Run, Status, Cancel and Release. The route handlers
     added to the blueprint perform basic functionality such as input validation and
     authorization checks where appropriate, and use the provided callbacks to implement
@@ -122,13 +123,13 @@ def add_action_routes_to_blueprint(
 
     **Parameters**
 
-    ``blueprint`` (*Flask.Blueprint*) 
+    ``blueprint`` (*Flask.Blueprint*)
     A flask blueprint to which routes for the URL paths '/', '/run', '/status',
-    '/cancel', and '/release' will be added. Optionally, (see below) '/log' will be added
+    '/cancel', and '/release' will be added. Optionally, (see below) '/log' may be added
     as well. The blueprint should define a ``url_prefix`` to define a root to the paths
     where these new paths will be added. In addition to the new URL paths, the blueprint
-    will also have a custom JSONEncoder associated with it to aid in the serialization of
-    data-types associated with these operations.
+    will also have a custom JSONEncoder associated with it to aid in the serialization
+    of data-types associated with these operations.
 
     ``client_id`` (*string*)
     A Globus Auth registered ``client_id`` which will be used when validating input
@@ -152,8 +153,8 @@ def add_action_routes_to_blueprint(
     `input_schema` field is used to validate the `body` of incoming action requests on
     the `/run` operation. The `globus_auth_scope` value is used to validate the incoming
     tokens on all requests. The `visible_to` and `runnable_by` lists are used to
-    authorization operations on the introspect (GET '/') and run (POST '/run') operations
-    respectively. The `log_supported` field should be `True` only if the
+    authorization operations on the introspect (GET '/') and run (POST '/run')
+    operations respectively. The `log_supported` field should be `True` only if the
     `action_log_callback` parameter is provided a value.
 
     ``action_run_callback`` (* Callable[[ActionRequest, AuthState], Union[ActionStatus,
@@ -170,9 +171,9 @@ def add_action_routes_to_blueprint(
     an `ActionStatus` value to be returned on the invocation. Optionally, a status
     integer can be added to the return (making the return a (ActionStatus, int) tuple)
     which defines the HTTP status code to be returned. This is useful in the case where
-    an existing request with the same id and body are seen which should return a 200 HTTP
-    status rather than the normal 201 HTTP status (which is the default when the status
-    code is not returned).
+    an existing request with the same id and body are seen which should return a 200
+    HTTP status rather than the normal 201 HTTP status (which is the default when the
+    status code is not returned).
 
     """
     if additional_scopes:
@@ -189,7 +190,7 @@ def add_action_routes_to_blueprint(
         expected_audience=client_name,
     )
 
-    blueprint.json_encoder = ActionProviderJsonEncoder
+    assign_json_provider(blueprint)
     input_body_validator = get_input_body_validator(provider_description)
     blueprint.register_error_handler(Exception, blueprint_error_handler)
 
@@ -284,7 +285,7 @@ def add_action_routes_to_blueprint(
         @blueprint.route("/actions/<string:action_id>/log", methods=["GET"])
         @blueprint.route("/<string:action_id>/log", methods=["GET"])
         def action_log(action_id: str) -> ViewReturn:
-            auth_state = check_token(request, checker)
+            check_token(request, checker)
             return jsonify({"log": "message"}), 200
 
     if action_enumeration_callback is not None:

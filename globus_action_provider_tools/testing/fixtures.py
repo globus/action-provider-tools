@@ -28,7 +28,7 @@ def apt_blueprint_noauth():
     return _apt_blueprint_noauth
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def flask_helpers_noauth():
     """
     A fixture designed to mock the Globus Auth integration in an Flask app

@@ -3,7 +3,7 @@ This module tests some of the shared utility functions in the Flask helpers.
 """
 
 import pytest
-from flask import Flask, request
+from flask import Flask
 
 from globus_action_provider_tools.data_types import ActionStatusValue
 from globus_action_provider_tools.flask.helpers import (

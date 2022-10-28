@@ -1,0 +1,44 @@
+# groups/my_groups
+
+success:
+  metadata:
+    group-ids:
+      - &group-id-1
+        "45d14160-9ad2-42da-9e7c-5640886b2945"
+      - &group-id-2
+        "55a27ead-ffd7-4ee7-8aa3-e493b349dcf6"
+
+  service: groups
+  path: /groups/my_groups
+  method: GET
+  json:
+    [
+      {
+        "id": *group-id-1,
+        "name": "A Group",
+        "group_type": "regular",
+        "enforce_session": False,
+        "my_memberships": [
+          {
+            "group_id": "927a9cd9-a426-469b-b3dd-095ca65d6764",
+            "identity_id": "a8651b1e-1cb3-4816-8186-1ac8f08aa80d",
+            "username": "alice@example.com",
+            "role": "admin",
+          },
+        ],
+      },
+      {
+        "id": *group-id-2,
+        "name": "B Group",
+        "group_type": "regular",
+        "enforce_session": False,
+        "my_memberships": [
+          {
+            "group_id": "0bd49f13-a1b6-41bb-9cf5-b95350ce19d7",
+            "identity_id": "5c1e8e5b-a647-405c-9bb3-15c201e6e08d",
+            "username": "alice@example.com",
+            "role": "admin",
+          },
+        ],
+      },
+    ]

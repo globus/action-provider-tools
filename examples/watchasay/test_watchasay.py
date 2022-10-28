@@ -4,8 +4,8 @@ correctly.
 
 When a Provider using the flask API helpers starts up, it internally creates an
 instance of a TokenChecker.  The TokenChecker expects to have a valid CLIENT_ID and
-CLIENT_SECRET. The patch imported below modifies the TokenChecker's behavior 
-such that it does not care if the ActionProvider is tested with valid CLIENT 
+CLIENT_SECRET. The patch imported below modifies the TokenChecker's behavior
+such that it does not care if the ActionProvider is tested with valid CLIENT
 credentials.
 
 Depending on your ActionProvider's configuration, each request to an endpoint
@@ -24,7 +24,7 @@ from globus_action_provider_tools.data_types import ActionStatusValue
 from globus_action_provider_tools.testing.fixtures import flask_helpers_noauth
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def client(flask_helpers_noauth):
     # Patch the app using the flask_helpers_noauth fixture so that the Provider
     # can start up without valid credentials AND requests can be made without

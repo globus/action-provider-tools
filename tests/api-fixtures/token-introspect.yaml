@@ -1,0 +1,49 @@
+# /v2/oauth2/token/introspect
+
+invalid-client:
+  service: auth
+  path: /v2/oauth2/token/introspect
+  method: POST
+  status: 401
+  json:
+    {"error": "invalid_client"}
+
+success:
+  metadata:
+    # Time must be frozen so the token introspection below can be valid.
+    freezegun: 1666716500
+    audience: &success-audience
+      - expected-audience
+    scope: &success-scope
+      expected-scope
+    identities: &success-identities
+      - 2c3c6ce2-96ee-4104-9ba8-8d7a5f5e3c7b
+      - 2106ff4e-6a6f-4215-b0d4-aa78dcc43cc8
+      - 843e5e0b-a5ce-4e38-8dce-85a46488feb8
+      - 84b6fc41-022a-42c2-ae31-ab41cd94d08f
+      - ecad897d-eb0b-4970-aa12-ac523c3567d9
+      - 02d1f36c-a798-410b-95fe-3a9ea1a83610
+    effective-id: &success-effective-id
+      f7e81526-1610-47e2-a7c5-b071db77ca47
+
+  service: auth
+  path: /v2/oauth2/token/introspect
+  method: POST
+  json:
+    {
+      "active": True,
+      "token_type": "bearer",
+      "dependent_tokens_cache_id": "",
+      "scope": *success-scope,
+      "sub": *success-effective-id,
+      "username": "willy@wonka.com@accounts.google.com",
+      "name": "Willy Wonka",
+      "email": "willy@wonka.com",
+      "client_id": ,
+      "aud": *success-audience,
+      "iss": "https://auth.globus.org",
+      "exp": 1666717000,
+      "iat": 1666716000,
+      "nbf": 1666716000,
+      "identity_set": *success-identities,
+    }

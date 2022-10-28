@@ -3,7 +3,7 @@ Action Provider Tools
 This toolkit provides the following components:
 
 1. :doc:`Authentication helpers<toolkit/authentication>` that make it easier to
-validate Globus Auth tokens and determine if a given request should be authorized. 
+validate Globus Auth tokens and determine if a given request should be authorized.
 
 2. Pydantic_ and `OpenAPI v3 specification`_ based :doc:`validation
 helpers<toolkit/validation>` that can be used to validate

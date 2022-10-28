@@ -1,8 +1,5 @@
-import random
 from typing import Dict
 from unittest.mock import patch
-
-import pytest
 
 from globus_action_provider_tools import TokenChecker
 

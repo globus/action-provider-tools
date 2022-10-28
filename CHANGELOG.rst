@@ -62,7 +62,7 @@ Documentation
 -------------
 
 - Adds documentation around the new caching behavior:
-  https://action-provider-tools.readthedocs.io/en/latest/toolkit/caching.html 
+  https://action-provider-tools.readthedocs.io/en/latest/toolkit/caching.html
 
 
 0.11.3 - 2021-05-27
@@ -94,7 +94,7 @@ Features
 
 - Allows the detail field to be a string.
 - Improves logging output in the case where there is an Action Provider throws
-  Exceptions or an authentication issue. 
+  Exceptions or an authentication issue.
 - Allows for environment variable configuration.
 - Bundles Flask an an optional dependency. See the README.md for information on
   installing the toolkit with Flask.
@@ -112,7 +112,7 @@ Deprecations
 ------------
 
 - The Flask Callback Loader Helper is now deprecated in favor of the Flask
-  Blueprint Helper. 
+  Blueprint Helper.
 
 0.11.0 - 2021-03-29
 ===================
@@ -159,7 +159,7 @@ Features
 --------
 
 - Improves testing tools for isolating tests between different instances of
-  ActionProviderBlueprints and the Flask helpers. 
+  ActionProviderBlueprints and the Flask helpers.
 
 0.10.3 - 2020-10-01
 ===================
@@ -168,11 +168,11 @@ Features
 --------
 
 - Adds a shared patch to the testing library to mock out an
-  ActionProviderBlueprints TokenChecker 
+  ActionProviderBlueprints TokenChecker
 - Users can now specify a Globus Auth Client Name (legacy) when creating an
-  instance of the ActionProviderBlueprint 
+  instance of the ActionProviderBlueprint
 - Users can now specify multiple acceptable scopes when creating an instance of
-  the ActionProviderBlueprint 
+  the ActionProviderBlueprint
 
 Bugfixes
 --------

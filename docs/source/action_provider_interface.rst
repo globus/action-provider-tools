@@ -2,7 +2,7 @@ Action Provider Interface
 =========================
 
 We provide an overview of the *Action Provider Interface* as a guide for use
-when implementing an *Action Provider*. 
+when implementing an *Action Provider*.
 
 .. raw:: html
     :file: cli/example_action_run.html
@@ -37,10 +37,10 @@ and how it can transition between the states. The states are defined as follows:
     Interface) measures may be required to allow the Action to proceed.
 
 * | ``SUCCEEDED``: The Action reached a completion state which was considered
-    "normal" or not due to failure or other unrecoverable error. 
+    "normal" or not due to failure or other unrecoverable error.
 
 * | ``FAILED``: The Action is in a completion state which is "not normal" such as
-    due to an error condition which is not considered recoverable in any manner. 
+    due to an error condition which is not considered recoverable in any manner.
 
 * | ``RELEASED``: The Action Provider has removed the record of the existence of
     the Action. Further attempts to interact with the Action will be errors as if
@@ -79,14 +79,14 @@ document, and the *Action Status* document which contains the life-cycle status
 described above along with additional detailed status information specific to
 the type of Action being executed.
 
-.. note:: 
+.. note::
     Below, we describe URL paths where operations can be performed. We assume that
     all of these share a common "Base URL" which we don't name in this document. The
     Base URL may be at any place in the URL path namespace desired by the Action
     Provider, and so may be used in conjunction with any other service URLs it may
     support.
 
-.. note:: 
+.. note::
     For brevity and clear presentation, in the descriptions of document types in
     the following sections, we present the key concepts, but do not enumerate
     every option or field on the documents. Refer to the toolkit components,
@@ -141,7 +141,7 @@ the following fields:
 
 Any request to the ``/run`` method which contains an Action Request which
 adheres to the input schema will return an Action Status document as described
-in the next section. 
+in the next section.
 
 Monitoring and Managing an Action: The Action Status Document
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -162,7 +162,7 @@ of the Action Status document include:
     above. ``display_status`` is an optional field the Action Provider may supply
     which gives a short text description of the status using language which is
     specific to the Action.
-     
+
 * | ``details``: The Action Provider-specific state, particularly the completion
     state, of the Action are returned in the ``details`` field. In the completion
     states, the ``details`` can be considered the "result" or the "return value" of
@@ -193,7 +193,7 @@ In addition to the ``/run`` method described above, the Action Status is the
 "universal" return value from operations on an Action. We describe the
 operations on Actions next. Each uses the ``action_id`` as part of the URL path
 much like other RESTful resources do with their ids, and none of them require
-an input body. 
+an input body.
 
 * | ``GET /<action_id>/status``: This is a read-only operation for retrieving
     the most recent state of the Action. It is commonly used to poll an Action's
@@ -210,7 +210,7 @@ an input body.
     Action is already in a completed state, the Action Provider may treat the
     request much as a ``/status`` request to simply return the current status. Use
     of this API call requires that the user authenticates with a principal value
-    which is in the ``manage_by`` list established when the Action was started. 
+    which is in the ``manage_by`` list established when the Action was started.
 
 * | ``POST /<action_id>/release``: As described in the section on life-cycle,
     the very last step of the life-cycle is for the Action state to be removed from
@@ -305,7 +305,7 @@ useful for administrators who are interested in collecting success and failure
 information from the Action Provider, or for users who simply want a list of
 currently executing Actions that may be waiting for some external action. This
 enumeration endpoint supports filters via query parameters to indicate to the
-type of ActionStatuses to return. 
+type of ActionStatuses to return.
 
 The supported query parameters are ``roles`` and ``status``, where roles can
 be any one or more of ``creator_id``, ``monitor_by``, ``manage_by``.
@@ -323,7 +323,7 @@ When both of these filters are used together, the resulting set of Actions will
 contain the result of applying a logical AND between the results of the two
 filters. That is, the Actions in the returned set will contain actions with a
 status listed in the ``status`` filter and the returned actions will also list
-the requestor as an identity in the queried ``roles``. The query takes the form 
+the requestor as an identity in the queried ``roles``. The query takes the form
 of ``GET /actions?roles=role1,role2,role3&status=status_1,status2``.
 
 .. note::

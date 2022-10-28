@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Sequence, Set, Tuple, Union
+from typing import Callable, Dict, Sequence, Set, Tuple, Union
 
 from flask import Response
 

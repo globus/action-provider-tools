@@ -5,7 +5,7 @@ The toolkit provides some simple bindings for the document types defined by the
 Action Provider Interface to type-annotated Pydantic_ models. These classes
 provide a convenient way to manipulate these document types within an Action
 Provider implementation. We also provider an ActionProviderJsonEncoder which
-can be used with the built-in Python json package to properly encode these data 
+can be used with the built-in Python json package to properly encode these data
 types into JSON.
 
 .. code-block:: python
