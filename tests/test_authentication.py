@@ -27,7 +27,7 @@ def get_auth_state_instance(
 
 
 @pytest.fixture
-def auth_state(responses) -> t.Iterator[AuthState]:
+def auth_state(mocked_responses) -> t.Iterator[AuthState]:
     """Create an AuthState instance.
 
     AuthState compares its `expected_scopes` and `expected_audience` values
@@ -73,7 +73,7 @@ def test_effective_identity(auth_state, freeze_time):
     )
 
 
-def test_caching_identities(auth_state, freeze_time, responses):
+def test_caching_identities(auth_state, freeze_time, mocked_responses):
     response = freeze_time(load_response("token-introspect", case="success"))
     num_test_calls = 10
     for _ in range(num_test_calls):
@@ -82,10 +82,10 @@ def test_caching_identities(auth_state, freeze_time, responses):
             response.metadata["effective-id"]
         )
 
-    assert len(responses.calls) == 1
+    assert len(mocked_responses.calls) == 1
 
 
-def test_caching_groups(auth_state, freeze_time, responses):
+def test_caching_groups(auth_state, freeze_time, mocked_responses):
     load_response("token", case="success")
     freeze_time(load_response("token-introspect", case="success"))
     group_response = load_response("groups-my_groups", case="success")
@@ -93,10 +93,10 @@ def test_caching_groups(auth_state, freeze_time, responses):
     for _ in range(num_test_calls):
         assert len(auth_state.groups) == len(group_response.metadata["group-ids"])
 
-    assert len(responses.calls) == 3
+    assert len(mocked_responses.calls) == 3
 
 
-def test_auth_state_caching_across_instances(auth_state, freeze_time, responses):
+def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_responses):
     response = freeze_time(load_response("token-introspect", case="success"))
 
     duplicate_auth_state = get_auth_state_instance(
@@ -106,8 +106,8 @@ def test_auth_state_caching_across_instances(auth_state, freeze_time, responses)
     assert duplicate_auth_state is not auth_state
 
     assert len(auth_state.identities) == len(response.metadata["identities"])
-    assert len(responses.calls) == 1
+    assert len(mocked_responses.calls) == 1
     # The second instance should see the cached value,
     # resulting in no additional HTTP calls.
     assert len(duplicate_auth_state.identities) == len(response.metadata["identities"])
-    assert len(responses.calls) == 1
+    assert len(mocked_responses.calls) == 1

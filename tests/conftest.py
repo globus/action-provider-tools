@@ -8,7 +8,7 @@ from unittest.mock import patch
 import freezegun
 import globus_sdk
 import pytest
-import responses as responses_module
+import responses
 import yaml
 from globus_sdk._testing import RegisteredResponse, register_response_set
 
@@ -72,7 +72,7 @@ def register_api_fixtures():
 
 
 @pytest.fixture(autouse=True)
-def responses() -> responses_module.RequestsMock:
+def mocked_responses() -> responses.RequestsMock:
     """Mock all requests.
 
     The default `responses.mock` object is returned,
@@ -80,12 +80,12 @@ def responses() -> responses_module.RequestsMock:
     For example, they might check the number of intercepted `.calls`.
     """
 
-    responses_module.reset()
-    responses_module.start()
+    responses.reset()
+    responses.start()
     try:
-        yield responses_module.mock
+        yield responses.mock
     finally:
-        responses_module.stop()
+        responses.stop()
 
 
 @pytest.fixture
