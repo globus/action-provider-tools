@@ -105,6 +105,7 @@ def freeze_time() -> t.Generator[
             instant = datetime.datetime.utcfromtimestamp(response.metadata["freezegun"])
             # Update `frozen_time` in the outer scope.
             nonlocal frozen_time
+            assert frozen_time is None, "You can't freeze time twice!"
             frozen_time = freezegun.freeze_time(instant)
             frozen_time.start()
         return response
