@@ -87,19 +87,20 @@ def test_validating_action_request():
     validate_input({"request_id": 100, "body": {}}, validator)
 
 
-def test_validate_input_typeerror():
-    """Verify that a non-object `request_json` argument results in HTTP 400."""
+@pytest.mark.parametrize(
+    "document, type_, message",
+    (
+        ("wrong object type", "type_error.dict", "value is not a valid dict"),
+        ({1: "wrong key type"}, "type_error.str", "str type expected"),
+    ),
+)
+def test_validate_input_typeerror(document, type_, message):
+    """Verify that the `request_json` argument types are validated."""
 
     ap_description.input_schema = json.dumps(action_provider_json_input_schema)
     validator = get_input_body_validator(ap_description)
     with pytest.raises(BadActionRequest) as catcher:
-        validate_input("{}", validator)  # type: ignore
-    expected = [
-        {
-            "loc": [""],
-            "msg": "json document must be an object",
-            "type": "value_error",
-        }
-    ]
+        validate_input(document, validator)
     assert catcher.value.get_response().status_code == 400
-    assert catcher.value.get_description() == expected
+    assert catcher.value.get_description()[0]["msg"] == message
+    assert catcher.value.get_description()[0]["type"] == type_
