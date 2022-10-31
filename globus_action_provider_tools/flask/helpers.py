@@ -17,6 +17,7 @@ from globus_action_provider_tools.data_types import (
     ActionProviderJsonEncoder,
     ActionRequest,
     ActionStatus,
+    RequestObject,
     convert_to_json,
 )
 from globus_action_provider_tools.errors import AuthenticationError
@@ -130,13 +131,17 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
 
 
 def validate_input(
-    request_json: Dict[str, Any], input_body_validator: ActionInputValidatorType
+    request_json: Any, input_body_validator: ActionInputValidatorType
 ) -> ActionRequest:
     """
-    Ensures the incoming request conforms to the ActionRequest schema and
-    the user-defined ActionProvider input schema.
+    Verify the incoming request is a JSON object that conforms to the required schemata.
+    This includes both the Action Request schema and the user-defined input schema.
     """
+
     try:
+        # Enforce that the request is a JSON object,
+        # then enforce that the object conforms to schema requirements.
+        request_json = RequestObject.parse_obj(request_json).__root__
         action_request = ActionRequest(**request_json)
     except ValidationError as ve:
         raise BadActionRequest(ve.errors())

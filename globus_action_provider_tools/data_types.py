@@ -5,7 +5,7 @@ from enum import Enum
 from typing import AbstractSet, Any, Dict, List, Optional, Set, Type, Union
 
 import isodate
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictStr
 
 from globus_action_provider_tools.utils import (
     now_isoformat,
@@ -62,6 +62,12 @@ class ActionProviderDescription(BaseModel):
     runnable_by: List[str] = Field(default_factory=lambda: ["all_authenticated_users"])
     administered_by: Optional[List[str]] = None
     event_types: Optional[List[EventType]] = None
+
+
+class RequestObject(BaseModel):
+    """Use pydantic to enforce that the request object is a Python dictionary."""
+
+    __root__: Dict[StrictStr, Any]
 
 
 class ActionRequest(BaseModel):
