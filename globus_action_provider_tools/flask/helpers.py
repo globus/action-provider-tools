@@ -7,8 +7,8 @@ from functools import partial
 from typing import Any, Callable, Dict, Iterable, Optional, Set, Type
 
 import flask
+import jsonschema
 from flask import Request, current_app, jsonify
-from jsonschema.validators import Draft7Validator
 from pydantic import BaseModel, ValidationError
 
 from globus_action_provider_tools.authentication import AuthState, TokenChecker
@@ -160,7 +160,7 @@ def get_input_body_validator(
     validation function to use.
 
     If the input_schema is a str or dict, raw json_schema validation will
-    be used. An jsonschema DraftValidator is created and applied to
+    be used. A jsonschema Validator is created and applied to
     json_schema_input_validation creating a new partial which can be called by
     simply supplying the input to validate.
 
@@ -181,13 +181,14 @@ def get_input_body_validator(
             "Unable to determine input schema from ActionProviderDescription"
         )
 
-    return partial(
-        json_schema_input_validation, validator=Draft7Validator(input_schema)
-    )
+    validator_cls = jsonschema.validators.validator_for(input_schema)
+    validator = validator_cls(input_schema)
+
+    return partial(json_schema_input_validation, validator=validator)
 
 
 def json_schema_input_validation(
-    action_input: Dict[str, Any], validator: Draft7Validator
+    action_input: Dict[str, Any], validator: jsonschema.Validator
 ) -> None:
     """
     Use a created JSON Validator to verify the input body of an incoming
