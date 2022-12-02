@@ -2,8 +2,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional
 
+import jsonschema
 import yaml
-from jsonschema.validators import Draft7Validator
 
 log = logging.getLogger(__name__)
 
@@ -11,13 +11,14 @@ _schema_to_file_map = {
     "ActionRequest": "action_request.yaml",
     "ActionStatus": "action_status.yaml",
 }
-_validator_map: Dict[str, Draft7Validator] = {}
+_validator_map: Dict[str, jsonschema.Validator] = {}
 
 HERE: Path = Path(__file__).parent
 for schema_name, yaml_file in _schema_to_file_map.items():
     with open(HERE / yaml_file, "r", encoding="utf-8") as specfile:
-        jsonschema = yaml.safe_load(specfile)
-        _validator_map[schema_name] = Draft7Validator(jsonschema)
+        schema = yaml.safe_load(specfile)
+        validator_cls = jsonschema.validators.validator_for(schema)
+        _validator_map[schema_name] = validator_cls(schema)
 
 
 class ValidationRequest(NamedTuple):
@@ -41,7 +42,9 @@ def request_validator(request: ValidationRequest) -> ValidationResult:
 response_validator = request_validator
 
 
-def validate_data(data: Dict[str, Any], validator: Draft7Validator) -> ValidationResult:
+def validate_data(
+    data: Dict[str, Any], validator: jsonschema.Validator
+) -> ValidationResult:
     error_messages = []
     for error in validator.iter_errors(data):
         if error.path:
