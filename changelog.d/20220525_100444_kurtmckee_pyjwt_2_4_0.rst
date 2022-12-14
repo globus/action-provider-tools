@@ -1,5 +1,0 @@
-Bugfixes
---------
-
--   Update the ``pyjwt`` package to version 2.4.0.
-    This mitigates a security vulnerability.
