@@ -15,16 +15,14 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 0.13.0b1 — 2022-12-14
 =====================
 
-Features
---------
+Python support
+--------------
 
-- Support Python 3.11.
+- Add support for Python 3.11.
+- Drop support for Python 3.6.
 
 Bugfixes
 --------
-
--   Update the ``pyjwt`` package to version 2.4.0.
-    This mitigates a security vulnerability.
 
 -   Fix a crash that will occur if a non-object JSON document is submitted.
     For example, this will happen if the incoming JSON document is ``"string"``
@@ -43,39 +41,6 @@ Changes
     The ``importlib.metadata`` module in Python 3.8 and higher
     (or the backported ``importlib_metadata`` package)
     can be used to query the version of installed packages if needed.
-
-- Drop support for Python 3.6.
-
-Development
------------
-
--   Upgrade lxml from version 4.7.1 to 4.9.1.
-
-- Add pre-commit hooks for black, isort, and some standard text file hooks.
-
-  The black and isort hooks are configured in anticipation of being called by tox.
-
-- Use tox to test and lint the project.
-
-- Begin migrating to ``globus_sdk._testing`` to mock Globus endpoint API responses.
-
-Dependencies
-------------
-
-- Update scriv (development dependency) from 0.12.0 to 0.17.0.
-
-- Remove black and isort (development dependencies).
-
-- Add tox (development dependency) for unit testing.
-- Remove mypy (development dependency) and associated ``types-*`` packages.
-- Remove pytest (development dependency) and associated ``pytest-*`` packages.
-
-- Add freezegun (development dependency) to freeze time for token validity checks.
-
-- Manage testing packages in Poetry as optional dependencies in an extra named ``testing``.
-
-  This allows Poetry to manage the version requirements
-  and allows tox to install them in a supported way.
 
 - ``jsonschema>=4.17,<5`` is now required by action-provider-tools.
 

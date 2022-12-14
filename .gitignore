@@ -111,3 +111,6 @@ whattimeisitrightnow.example.db.*
 # Editor config
 .dir-locals.el
 .idea/
+
+# Poetry
+poetry.lock
