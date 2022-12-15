@@ -10,6 +10,49 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.13.0b1:
+
+0.13.0b1 — 2022-12-14
+=====================
+
+Python support
+--------------
+
+- Add support for Python 3.11.
+- Drop support for Python 3.6.
+
+Bugfixes
+--------
+
+-   Fix a crash that will occur if a non-object JSON document is submitted.
+    For example, this will happen if the incoming JSON document is ``"string"``
+    or ``["array"]``.
+
+- Fix a crash that occurs when an HTTP 400 "invalid grant" error is received
+  from Globus Auth while getting an authorizer for a given scope.
+
+  This is now caught by ``AuthState.get_authorizer_for_scope()`` and ``None`` is returned.
+
+Changes
+-------
+
+-   Remove the ``__version__`` attribute.
+
+    The ``importlib.metadata`` module in Python 3.8 and higher
+    (or the backported ``importlib_metadata`` package)
+    can be used to query the version of installed packages if needed.
+
+- ``jsonschema>=4.17,<5`` is now required by action-provider-tools.
+
+  Consumers of the library will have to update to a more recent version of ``jsonschema``
+  if they are using it explicitly.
+
+0.12.0 - 2022-03-02
+===================
+
+*No changes from 0.12.0b1.*
+
+
 0.12.0b1 - 2022-02-11
 =====================
 
