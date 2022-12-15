@@ -8,11 +8,11 @@ the only difference being in the helper that is used to create the app.
 import pytest
 from flask import Blueprint, Flask
 
-from globus_action_provider_tools.data_types import ActionProviderDescription
 from globus_action_provider_tools.flask import (
     ActionProviderBlueprint,
     add_action_routes_to_blueprint,
 )
+from globus_action_provider_tools.flask.helpers import assign_json_provider
 from globus_action_provider_tools.testing.fixtures import (
     apt_blueprint_noauth,
     flask_helpers_noauth,
@@ -37,6 +37,7 @@ def aptb_app(apt_blueprint_noauth, auth_state):
     endpoint's functions.
     """
     app = Flask(__name__)
+    assign_json_provider(app)
     aptb = ActionProviderBlueprint(
         name="aptb",
         import_name=__name__,
@@ -62,11 +63,12 @@ def add_routes_app(flask_helpers_noauth, auth_state):
     add_action_routes_to_blueprint Flask helper.
     """
     app = Flask(__name__)
+    assign_json_provider(app)
     bp = Blueprint("func_helper", __name__, url_prefix="/func_helper")
     add_action_routes_to_blueprint(
         blueprint=bp,
-        client_id=None,
-        client_secret=None,
+        client_id="bogus",
+        client_secret="bogus",
         client_name=None,
         provider_description=ap_description,
         action_run_callback=test_action_run,

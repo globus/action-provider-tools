@@ -1,18 +1,24 @@
+from __future__ import annotations
+
 import inspect
 import json
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, Set, Type
+from typing import Any, Callable, Dict, Iterable, Optional, Set, Type
 
+import flask
+import jsonschema
 from flask import Request, current_app, jsonify
-from jsonschema.validators import Draft7Validator
 from pydantic import BaseModel, ValidationError
 
 from globus_action_provider_tools.authentication import AuthState, TokenChecker
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
+    ActionProviderJsonEncoder,
     ActionRequest,
     ActionStatus,
+    RequestObject,
+    convert_to_json,
 )
 from globus_action_provider_tools.errors import AuthenticationError
 from globus_action_provider_tools.flask.exceptions import (
@@ -97,7 +103,9 @@ def check_token(request: Request, checker: TokenChecker) -> AuthState:
     """
     Parses a Flask request to extract its bearer token.
     """
-    access_token = request.headers.get("Authorization", "").strip().lstrip("Bearer ")
+    access_token = request.headers.get("Authorization", "").strip()
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer ") :]
     auth_state = checker.check_token(access_token)
     return auth_state
 
@@ -117,27 +125,28 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
     # Handle unexpected Exceptions in a somewhat predictable way
     resp = {
         "code": ActionProviderError.__name__,
-        "description": f"Internal Server Error",
+        "description": "Internal Server Error",
     }
     return jsonify(resp), 500
 
 
 def validate_input(
-    request_json: Dict[str, Any], input_body_validator: ActionInputValidatorType
+    request_json: Any, input_body_validator: ActionInputValidatorType
 ) -> ActionRequest:
     """
-    Ensures the incoming request conforms to the ActionRequest schema and
-    the user-defined ActionProvider input schema.
+    Verify the incoming request is a JSON object that conforms to the required schemata.
+    This includes both the Action Request schema and the user-defined input schema.
     """
+
     try:
+        # Enforce that the request is a JSON object,
+        # then enforce that the object conforms to schema requirements.
+        request_json = RequestObject.parse_obj(request_json).__root__
         action_request = ActionRequest(**request_json)
     except ValidationError as ve:
         raise BadActionRequest(ve.errors())
 
-    try:
-        input_body_validator(action_request.body)
-    except BadActionRequest as err:
-        raise
+    input_body_validator(action_request.body)
 
     return action_request
 
@@ -151,7 +160,7 @@ def get_input_body_validator(
     validation function to use.
 
     If the input_schema is a str or dict, raw json_schema validation will
-    be used. An jsonschema DraftValidator is created and applied to
+    be used. A jsonschema Validator is created and applied to
     json_schema_input_validation creating a new partial which can be called by
     simply supplying the input to validate.
 
@@ -172,13 +181,14 @@ def get_input_body_validator(
             "Unable to determine input schema from ActionProviderDescription"
         )
 
-    return partial(
-        json_schema_input_validation, validator=Draft7Validator(input_schema)
-    )
+    validator_cls = jsonschema.validators.validator_for(input_schema)
+    validator = validator_cls(input_schema)
+
+    return partial(json_schema_input_validation, validator=validator)
 
 
 def json_schema_input_validation(
-    action_input: Dict[str, Any], validator: Draft7Validator
+    action_input: Dict[str, Any], validator: jsonschema.Validator
 ) -> None:
     """
     Use a created JSON Validator to verify the input body of an incoming
@@ -201,3 +211,35 @@ def pydantic_input_validation(
         validator(**action_input)
     except ValidationError as ve:
         raise BadActionRequest(ve.errors())
+
+
+try:
+    from flask.json.provider import DefaultJSONProvider
+except ImportError:
+    # Flask < 2.2: Use the deprecated JSON encoder interface.
+    json_provider_available = False
+    JsonProvider: Optional["DefaultJSONProvider"] = None
+else:
+    # Flask >= 2.2: Use the new JSON provider interface.
+    json_provider_available = True
+
+    class JsonProvider(DefaultJSONProvider):  # type: ignore[no-redef]
+        @staticmethod
+        def default(o: Any) -> Any:
+            return convert_to_json(o)
+
+
+def assign_json_provider(app_or_blueprint: flask.Flask | flask.Blueprint):
+    """Assign a JSON provider (or simply an encoder) to a Flask app or blueprint.
+
+    As of Flask 2.2.1, the `app.json_encoder` attribute is deprecated.
+    In its place, the new `app.json` attribute should be used instead.
+    This function will assign to the correct attribute
+    and avoid deprecation warnings.
+    """
+
+    if json_provider_available:
+        assert JsonProvider is not None
+        app_or_blueprint.json = JsonProvider(app_or_blueprint)
+    else:
+        app_or_blueprint.json_encoder = ActionProviderJsonEncoder

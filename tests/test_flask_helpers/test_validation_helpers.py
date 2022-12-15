@@ -4,10 +4,8 @@ This module tests some of the shared validation functions in the Flask helpers.
 import json
 
 import pytest
-from flask import Flask, request
 from jsonschema.validators import Draft7Validator
 
-from globus_action_provider_tools.data_types import ActionStatusValue
 from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
     BadActionRequest,
@@ -51,7 +49,7 @@ def test_exception_on_invalid_input_schema():
     ap_description.input_schema = None
 
     with pytest.raises(ActionProviderError):
-        validator = get_input_body_validator(ap_description)
+        get_input_body_validator(ap_description)
 
 
 def test_passing_json_schema_validation():
@@ -87,3 +85,22 @@ def test_validating_action_request():
     ap_description.input_schema = {}
     validator = get_input_body_validator(ap_description)
     validate_input({"request_id": 100, "body": {}}, validator)
+
+
+@pytest.mark.parametrize(
+    "document, type_, message",
+    (
+        ("wrong object type", "type_error.dict", "value is not a valid dict"),
+        ({1: "wrong key type"}, "type_error.str", "str type expected"),
+    ),
+)
+def test_validate_input_typeerror(document, type_, message):
+    """Verify that the `request_json` argument types are validated."""
+
+    ap_description.input_schema = json.dumps(action_provider_json_input_schema)
+    validator = get_input_body_validator(ap_description)
+    with pytest.raises(BadActionRequest) as catcher:
+        validate_input(document, validator)
+    assert catcher.value.get_response().status_code == 400
+    assert catcher.value.get_description()[0]["msg"] == message
+    assert catcher.value.get_description()[0]["type"] == type_

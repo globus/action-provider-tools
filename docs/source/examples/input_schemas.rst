@@ -28,14 +28,14 @@ A typical schema definition may look like:
         "required": [
             "input_string"
         ]
-    } 
+    }
 
 Best practice is to store this JSON file externally to the ActionProvider. On
 startup, the file is parsed as a Python object and loaded into the
 ActionProvider:
 
 .. code-block:: python
-    
+
     import json
 
     from globus_action_provider_tools.data import ActionProviderDescription
@@ -77,12 +77,12 @@ constraints:
             description="An input value to this ActionProvider to echo back in its response",
         )
 
-        # pydantic lets you display examples of passing input 
+        # pydantic lets you display examples of passing input
         class Config:
             schema_extra = {"example": {"echo_string": "hi there"}}
 
 With the model created, pass the **class itself** to the ActionProvider
-description and load that into the ActionProvider:  
+description and load that into the ActionProvider:
 
 .. code-block:: python
 
@@ -105,14 +105,14 @@ description and load that into the ActionProvider:
 
     The class, not an instance object, is passed as the value to
     ``input_schema``.
-    
+
 When performing input validation, the ActionProvider will now produce detailed
 error messages on what went wrong when attempting to parse the input:
 
 .. code-block:: python
 
     [{'loc': ['echo_string'], 'msg': 'field required', 'type': 'value_error.missing'}]
-    
+
 Pydantic_ provides extensive tools for defining input definition and input
 validation. For full and up-to-date documentation, see the official docs.
 

@@ -24,6 +24,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+docs/html/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -105,6 +106,11 @@ venv.bak/
 
 # whattimeisitrightnow example provider's database file
 whattimeisitrightnow.example.db
+whattimeisitrightnow.example.db.*
 
-# Emacs config
+# Editor config
 .dir-locals.el
+.idea/
+
+# Poetry
+poetry.lock

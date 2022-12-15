@@ -2,6 +2,7 @@ import logging
 from time import time
 from typing import FrozenSet, Iterable, List, Optional, Union, cast
 
+import globus_sdk
 from cachetools import TTLCache
 from globus_sdk import (
     AccessTokenAuthorizer,
@@ -9,12 +10,12 @@ from globus_sdk import (
     GlobusAPIError,
     GlobusError,
     GlobusHTTPResponse,
+    GroupsClient,
+    OAuthTokenResponse,
     RefreshTokenAuthorizer,
 )
-from globus_sdk.services.auth import OAuthTokenResponse
 
 from globus_action_provider_tools.errors import ConfigurationError
-from globus_action_provider_tools.groups_client import GROUPS_SCOPE, GroupsClient
 
 log = logging.getLogger(__name__)
 
@@ -137,7 +138,7 @@ class AuthState(object):
             return frozenset()
         else:
             try:
-                groups_token = getattr(groups_client.authorizer, "access_token")
+                groups_token = groups_client.authorizer.access_token
             except AttributeError as err:
                 log.error("Missing access token to use for groups service")
                 self.errors.append(err)
@@ -152,7 +153,7 @@ class AuthState(object):
 
         try:
             log.info(f"Querying groups for groups token ***{safe_groups_token}")
-            groups = groups_client.list_groups()
+            groups = groups_client.get_my_groups()
         except GlobusError as err:
             log.exception("Error getting groups", exc_info=True)
             self.errors.append(err)
@@ -238,7 +239,7 @@ class AuthState(object):
             dep_tkn_resp = self.get_dependent_tokens(
                 bypass_cache_lookup=bypass_dependent_token_cache
             ).by_scopes[scope]
-        except KeyError:
+        except (KeyError, globus_sdk.AuthAPIError):
             log.warning(
                 f"Unable to create GlobusAuthorizer for scope {scope}. Using 'None'",
                 exc_info=True,
@@ -299,9 +300,14 @@ class AuthState(object):
     def _get_groups_client(self) -> GroupsClient:
         if self._groups_client is not None:
             return self._groups_client
-        authorizer = self.get_authorizer_for_scope(GROUPS_SCOPE)
+        authorizer = self.get_authorizer_for_scope(
+            GroupsClient.scopes.view_my_groups_and_memberships
+        )
         if authorizer is None:
-            raise ValueError(f"Unable to get authorizor for {GROUPS_SCOPE}")
+            raise ValueError(
+                "Unable to get authorizer for "
+                + GroupsClient.scopes.view_my_groups_and_memberships
+            )
 
         self._groups_client = GroupsClient(authorizer=authorizer)
         return self._groups_client

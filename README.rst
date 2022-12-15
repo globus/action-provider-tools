@@ -45,7 +45,7 @@ and plug into other web frameworks.
     from flask import Flask
     from globus_action_provider_tools import ActionProviderDescription
 
-    description = ActionProviderDescription(              
+    description = ActionProviderDescription(
         globus_auth_scope="https://auth.globus.org/scopes/00000000-0000-0000-0000-000000000000/action_all",
         title="My Action Provider",
         admin_contact="support@example.org",
@@ -82,7 +82,7 @@ share your feedback.
 Testing, Development, and Contributing
 --------------------------------------
 
-Welcome and thank you for taking the time to contribute! 
+Welcome and thank you for taking the time to contribute!
 
 The ``globus_action_provider_tools`` package is developed using poetry so to get
 started you'll need to install `poetry <https://python-poetry.org/>`_. Once
@@ -115,7 +115,7 @@ Please follow the steps below when creating a new release of the toolkit:
     - git push --tags
 - Create a new GH release that references the recently created tag. Provide
   release notes with information on the changeset. Once the release is created,
-  there's a GH workflow that will build the toolkit and publish it to pypi. 
+  there's a GH workflow that will build the toolkit and publish it to pypi.
 
 Links
 -----

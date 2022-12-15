@@ -65,8 +65,8 @@ paths:
           description: Insufficient permissions for this resource.
         404:
           description: |
-            No provider description is present or visible on the requested URL. 
-            Visibility may be limited by the visible_to property of the 
+            No provider description is present or visible on the requested URL.
+            Visibility may be limited by the visible_to property of the
             Provider Description.
 
   /run:

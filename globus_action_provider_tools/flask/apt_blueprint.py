@@ -11,7 +11,6 @@ from globus_action_provider_tools.authorization import (
 )
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
-    ActionProviderJsonEncoder,
     ActionStatus,
     ActionStatusValue,
 )
@@ -23,6 +22,7 @@ from globus_action_provider_tools.flask.exceptions import (
 )
 from globus_action_provider_tools.flask.helpers import (
     action_status_return_to_view_return,
+    assign_json_provider,
     blueprint_error_handler,
     check_token,
     get_input_body_validator,
@@ -81,7 +81,7 @@ class ActionProviderBlueprint(Blueprint):
         self.globus_auth_client_name = globus_auth_client_name
         self.additional_scopes = additional_scopes
 
-        self.json_encoder = ActionProviderJsonEncoder
+        assign_json_provider(self)
         self.before_request(self._check_token)
         self.register_error_handler(Exception, blueprint_error_handler)
         self.record_once(self._create_token_checker)

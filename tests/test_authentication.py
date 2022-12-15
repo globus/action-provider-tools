@@ -1,8 +1,10 @@
-import typing
-from unittest.mock import MagicMock, Mock, patch
+from __future__ import annotations
 
+import typing as t
+
+import globus_sdk
 import pytest
-from globus_sdk import AccessTokenAuthorizer, AuthAPIError, GlobusHTTPResponse
+from globus_sdk._testing import load_response
 
 from globus_action_provider_tools.authentication import (
     AuthState,
@@ -10,40 +12,38 @@ from globus_action_provider_tools.authentication import (
     identity_principal,
 )
 from globus_action_provider_tools.errors import ConfigurationError
-from globus_action_provider_tools.groups_client import GROUPS_SCOPE, GroupsClient
-
-from .data import canned_responses
 
 
-def new_groups_client(auth_client, upstream_token):
-    resp = auth_client.oauth2_get_dependent_tokens(
-        upstream_token, {"access_type": "offline"}
-    ).by_scopes[GROUPS_SCOPE]
-    authz = AccessTokenAuthorizer(resp["access_token"])
-    return GroupsClient(authorizer=authz)
-
-
-@pytest.fixture
-def invalid_token(live_api, monkeypatch):
-    if live_api:
-        return
-    else:
-        fake_introspect = Mock(
-            return_value=GlobusHTTPResponse(canned_responses.resp({"active": False}))
-        )
-        monkeypatch.setattr(AuthState, "introspect_token", fake_introspect)
+def get_auth_state_instance(
+    expected_scopes: list[str],
+    expected_audience: str,
+) -> AuthState:
+    return AuthState(
+        auth_client=globus_sdk.ConfidentialAppAuthClient("bogus", "bogus"),
+        bearer_token="bogus",
+        expected_scopes=expected_scopes,
+        expected_audience=expected_audience,
+    )
 
 
 @pytest.fixture
-def bad_credentials_error(live_api, monkeypatch):
-    if live_api:
-        return
-    resp = canned_responses.resp({"error": "invalid_client"}, 401)
-    fake_introspect = Mock(side_effect=AuthAPIError(resp))
-    monkeypatch.setattr(AuthState, "introspect_token", fake_introspect)
+def auth_state(mocked_responses) -> t.Iterator[AuthState]:
+    """Create an AuthState instance.
+
+    AuthState compares its `expected_scopes` and `expected_audience` values
+    against the values present in an API request and will fail if they don't match.
+    Unfortunately, this currently means that these values are duplicated
+    in the API fixture .yaml files and here.
+    """
+
+    AuthState.dependent_tokens_cache.clear()
+    AuthState.group_membership_cache.clear()
+    AuthState.introspect_cache.clear()
+    yield get_auth_state_instance(["expected-scope"], "expected-audience")
 
 
 def test_token_checker_bad_credentials():
+    load_response("token-introspect", case="invalid-client")
     with pytest.raises(ConfigurationError):
         TokenChecker(
             client_id="bogus",
@@ -52,56 +52,68 @@ def test_token_checker_bad_credentials():
         )
 
 
-def test_get_identities(auth_state):
-    resp = canned_responses.introspect_response()()
-    assert len(auth_state.identities) == len(resp.get("identity_set"))
+def test_get_identities(auth_state, freeze_time):
+    response = freeze_time(load_response("token-introspect", case="success"))
+    assert len(auth_state.identities) == len(response.metadata["identities"])
     assert all(i.startswith("urn:globus:auth:identity") for i in auth_state.identities)
 
 
-def test_get_groups(auth_state):
-    expected_groups = canned_responses.groups_response()()
-    assert len(auth_state.groups) == len(expected_groups)
+def test_get_groups(auth_state, freeze_time):
+    load_response("token", case="success")
+    freeze_time(load_response("token-introspect", case="success"))
+    group_response = load_response("groups-my_groups", case="success")
+    assert len(auth_state.groups) == len(group_response.metadata["group-ids"])
     assert all(g.startswith("urn:globus:groups:id:") for g in auth_state.groups)
 
 
-def test_effective_identity(auth_state):
-    expected = canned_responses.mock_effective_identity()
-    expected = identity_principal(expected)
-    assert auth_state.effective_identity == expected
-
-
-def test_caching_identities(auth_state):
-    num_test_calls = 3
-    for i in range(num_test_calls):
-        auth_state.identities
-        auth_state.effective_identity
-
-    # As the cache is global, we may have cached state from a previous test run meaning
-    # that this test may never hit the actual (Mocked) Auth API call. We set the
-    # condition for success to anything less than the total number of calls made
-    assert auth_state.auth_client.oauth2_token_introspect.call_count < num_test_calls
-
-
-def test_caching_groups(auth_state):
-    num_test_calls = 3
-    for i in range(num_test_calls):
-        auth_state.groups
-
-    # See above in test_cachine_identities for a description of the test for this
-    # assertion
-    assert (
-        auth_state.auth_client.oauth2_get_dependent_tokens.call_count < num_test_calls
+def test_effective_identity(auth_state, freeze_time):
+    response = freeze_time(load_response("token-introspect", case="success"))
+    assert auth_state.effective_identity == identity_principal(
+        response.metadata["effective-id"]
     )
-    assert auth_state._groups_client.list_groups.call_count < num_test_calls
 
 
-# for some reason mypy thinks introspect is not a mock
-@typing.no_type_check
-def test_duplicate_auth_state(auth_state: AuthState, duplicate_auth_state: AuthState):
+def test_caching_identities(auth_state, freeze_time, mocked_responses):
+    response = freeze_time(load_response("token-introspect", case="success"))
+    num_test_calls = 10
+    for _ in range(num_test_calls):
+        assert len(auth_state.identities) == 6
+        assert auth_state.effective_identity == identity_principal(
+            response.metadata["effective-id"]
+        )
+
+    assert len(mocked_responses.calls) == 1
+
+
+def test_caching_groups(auth_state, freeze_time, mocked_responses):
+    load_response("token", case="success")
+    freeze_time(load_response("token-introspect", case="success"))
+    group_response = load_response("groups-my_groups", case="success")
+    num_test_calls = 10
+    for _ in range(num_test_calls):
+        assert len(auth_state.groups) == len(group_response.metadata["group-ids"])
+
+    assert len(mocked_responses.calls) == 3
+
+
+def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_responses):
+    response = freeze_time(load_response("token-introspect", case="success"))
+
+    duplicate_auth_state = get_auth_state_instance(
+        list(auth_state.expected_scopes),  # list(): satisfy type checking
+        auth_state.expected_audience,
+    )
     assert duplicate_auth_state is not auth_state
-    identities = auth_state.identities
-    introspect = duplicate_auth_state.auth_client.oauth2_token_introspect
-    pre_introspect_count = introspect.call_count
-    dup_identities = duplicate_auth_state.identities
-    post_introspect_count = introspect.call_count
-    assert pre_introspect_count == post_introspect_count
+
+    assert len(auth_state.identities) == len(response.metadata["identities"])
+    assert len(mocked_responses.calls) == 1
+    # The second instance should see the cached value,
+    # resulting in no additional HTTP calls.
+    assert len(duplicate_auth_state.identities) == len(response.metadata["identities"])
+    assert len(mocked_responses.calls) == 1
+
+
+def test_invalid_grant_exception(auth_state):
+    load_response("token-introspect", case="success")
+    load_response("token", case="invalid-grant")
+    assert auth_state.get_authorizer_for_scope("doesn't matter") is None

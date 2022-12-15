@@ -27,7 +27,7 @@ provided in the *examples/watchasay* directory. It is appropriate to use the
 example as a starting point for any new Action Providers which are developed.
 
 .. code-block:: python
-                
+
     from globus_action_provider_tools.data_types import (
         ActionProviderDescription,
         ActionRequest,
@@ -40,7 +40,7 @@ example as a starting point for any new Action Providers which are developed.
     )
 
     action_blueprint = Blueprint("action", __name__, url_prefix="/action")
-    
+
     provider_description = ActionProviderDescription(
         globus_auth_scope="<scope created in Globus Auth>",
         title="My Action Provider",

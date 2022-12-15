@@ -19,6 +19,7 @@ from globus_action_provider_tools.authorization import (
 )
 from globus_action_provider_tools.flask import add_action_routes_to_blueprint
 from globus_action_provider_tools.flask.exceptions import ActionConflict, ActionNotFound
+from globus_action_provider_tools.flask.helpers import assign_json_provider
 from globus_action_provider_tools.flask.types import ActionCallbackReturn
 
 # A simulated database mapping input user action requests identifiers to a previously
@@ -209,6 +210,7 @@ def action_release(action_id: str, auth: AuthState) -> ActionCallbackReturn:
 
 def create_app():
     app = Flask(__name__)
+    assign_json_provider(app)
     app.url_map.strict_slashes = False
 
     # Create and define a blueprint onto which the routes will be added

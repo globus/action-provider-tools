@@ -12,7 +12,7 @@ Auth developer portal and the Globus Auth API for configuring various access
 control states. To help with this process, we provide a step-by-step guide to
 using Globus Auth for this purpose
 
-.. note:: 
+.. note::
     In the examples below, we will use the command line tool ``curl`` to
     perform the HTTP operations as it is widely available. We also use the
     command line tool ``jq`` to format the ``curl`` command's json responses.
@@ -32,7 +32,7 @@ Once logged in, perform the following steps
         linked identities are permitted to administer the project. You will be
         required to login with this identity in future interactions with the Globus
         Developer Portal to manipulate the resource server.
-    
+
 - After filling in your new Project's details, select "Create Project"
 
 - | Find your new, empty project, and select the "Add" drop down and then click
@@ -45,7 +45,7 @@ Once logged in, perform the following steps
 
   - | When creating a resource server, the other fields on the app creation page
       are not used. On this menu, "Scopes" is not relevant and make no
-      difference, so this field should be left blank. The "Privacy Policy" and 
+      difference, so this field should be left blank. The "Privacy Policy" and
       "Terms and Conditions" may be displayed to users making use of your action
       provider, but they are not required.
 
@@ -56,11 +56,11 @@ Once logged in, perform the following steps
   expanded description of your app. This value will be used elsewhere in the
   creation of the service and is often referenced as ``client_id``.
 
-- In the section "Client Secrets" click "Generate New Client Secret" 
+- In the section "Client Secrets" click "Generate New Client Secret"
 
   - | Provide a Description which is meaningful to you. It will not be
       displayed to other users.
-      
+
 - Click "Generate Secret".
 
   - | Make note of the generated secret. Like the ``client_id`` this will be
@@ -72,7 +72,7 @@ Once logged in, perform the following steps
     along with the rest of this guide.
 
     .. code-block:: BASH
-        
+
         export CLIENT_ID=<client_id>
         export CLIENT_SECRET=<client_secret>
 
@@ -83,13 +83,13 @@ Step 2: Use the Globus Auth API to introspect your Action Provider Resource Serv
 - | Introspect your Globus Auth client to see the same settings you setup in
     the developer portal. Notice we exported the ``<client_id>`` and
     ``<client_secret>`` values generated during your registration on the Globus
-    Developer Portal into environment variables. 
-    
+    Developer Portal into environment variables.
+
     .. code-block:: BASH
 
-        curl -s --user $CLIENT_ID:$CLIENT_SECRET \ 
+        curl -s --user $CLIENT_ID:$CLIENT_SECRET \
             https://auth.globus.org/v2/api/clients/$CLIENT_ID | jq
-        
+
 - | A successful return from this command is a JSON representation of the
     Globus Auth client similar to:
 
@@ -131,11 +131,11 @@ Step 2: Use the Globus Auth API to introspect your Action Provider Resource Serv
 
 
 Step 3. Create your Action Provider's Scope
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - | Creation of a scope is required as the scope will be used in authenticating
     REST calls on the Action Provider.
-        
+
 - | Start by creating a "scope definition" JSON document in the
     following format replacing the ``name``, ``description`` and optionally
     the ``scope_suffix``.
@@ -153,7 +153,7 @@ Step 3. Create your Action Provider's Scope
                             "requires_refresh_token": true,
                             "scope": "73320ffe-4cb4-4b25-a0a3-83d53d59ce4f"
                         }
-                    ],             
+                    ],
                 "advertised": true,
                 "allow_refresh_tokens": true
             }
@@ -196,20 +196,20 @@ Step 3. Create your Action Provider's Scope
     <https://docs.globus.org/api/auth/>`_ for more information on creation
     and management of Scopes for more advanced scenarios such as other
     dependent Globus Auth based services such as Globus Transfer.
-            
+
     .. note::
         Scopes supplied in the dependent_scopes array must be identified by
         their UUID. The snippet below demonstrates how to look up a scope's UUID
         based on its uniquely idenfitfying FQDN
 
     .. code-block:: BASH
-    
+
         # Target FQDN is https://auth.globus.org/scopes/actions.globus.org/transfer/transfer
         export SCOPE_STRING=https://auth.globus.org/scopes/actions.globus.org/transfer/transfer
         curl -s -u "$CLIENT_ID:$CLIENT_SECRET" \
             "https://auth.globus.org/v2/api/scopes?scope_strings=$SCOPE_STRING" | jq ".scopes[0].id"
 
-        
+
 - | With the scope creation JSON document complete, use the following REST
     interaction to create the scope in Globus Auth via the ``curl`` command.
 
@@ -234,7 +234,7 @@ Step 3. Create your Action Provider's Scope
         ``scope_string`` will contain the FQDN value(s). The ``scope_string``
         values may be used interchangeably both by users requesting
         authentication to the Action Provider and in the ``globus_auth_scope``
-        value of the Action Provider Description. 
+        value of the Action Provider Description.
 
     .. code-block:: JSON
 
@@ -284,7 +284,7 @@ Step 3. Create your Action Provider's Scope
 Next Steps
 ^^^^^^^^^^
 Once you have obtained your own CLIENT_ID and created a CLIENT_SECRET and
-SCOPE, you have all the pieces required for creating an Action Provider. 
+SCOPE, you have all the pieces required for creating an Action Provider.
 
 For information on installing the toolkit read the :doc:`installation
 page<installation>`.

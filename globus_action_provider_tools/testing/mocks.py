@@ -1,7 +1,5 @@
 from unittest.mock import Mock
 
-from globus_sdk import ConfidentialAppAuthClient
-
 from globus_action_provider_tools.authentication import AuthState, TokenChecker
 
 

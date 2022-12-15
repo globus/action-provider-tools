@@ -44,7 +44,7 @@ ActionProvider complies with the ``run/`` endpoint specification.
     # Display the ActionRequest JSONSchema
     print(ActionRequest.schema())
 
-.. note:: 
+.. note::
     The pydantic validation only happens on instantiation. This means that
     accessing and modifying fields after instantiation is possible. There
     are no way to prevent a field from getting set to an incorrect value.
@@ -61,23 +61,23 @@ documents and output documents within the service as follows.
 
     from globus_action_provider_tools.validation import (
         request_validator,
-        response_validator,  
+        response_validator,
         ValidationRequest,
     )
-    
+
     # Validating a request
-    request = ValidationRequest(provider_doc_type='ActionRequest', 
+    request = ValidationRequest(provider_doc_type='ActionRequest',
         request_data={"input_data":""})
     result = request_validator.validate(request)
-    
+
     # Or a response:
-    response = ValidationRequest(provider_doc_type='ActionStatus', 
+    response = ValidationRequest(provider_doc_type='ActionStatus',
         request_data={"output_data":""})
     result = response_validator.validate(response)
-    
+
     # get list of errors
     errors = result.errors
-    
+
     # or get a single string summarizing all errors
     err = result.error_msg
 
@@ -87,7 +87,7 @@ structure which has the name of the document type to be validated against and
 the data to be validated. At present, the document types supported are
 ``ActionRequest`` and ``ActionStatus`` documents as defined above.
 
-.. note:: 
+.. note::
     There are additional validation helpers available for applications written
     using the Flask framework. Those are described below in the section
     describing the entire set of Flask helpers.

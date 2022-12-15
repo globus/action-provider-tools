@@ -1,13 +1,11 @@
 import json
 import logging
 import os
-import uuid
 from datetime import datetime, timedelta, timezone
 from random import randint
 from typing import Any, Dict, Tuple
 
 from flask import Flask, Response, jsonify, request
-from isodate import duration_isoformat
 
 from examples.whattimeisitrightnow.app import config
 from examples.whattimeisitrightnow.app import error as err
@@ -19,13 +17,14 @@ from globus_action_provider_tools.authorization import (
 )
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
-    ActionProviderJsonEncoder,
     ActionStatus,
     ActionStatusValue,
 )
 from globus_action_provider_tools.flask import flask_validate_request
+from globus_action_provider_tools.flask.helpers import assign_json_provider
 
 app = Flask(__name__)
+assign_json_provider(app)
 
 token_checker = TokenChecker(
     config.client_id, config.client_secret, [config.our_scope], config.token_audience
@@ -36,9 +35,6 @@ INCOMPLETE_STATES = (ActionStatusValue.ACTIVE, ActionStatusValue.INACTIVE)
 
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "schema.json")) as f:
     schema = json.load(f)
-
-
-app.json_encoder = ActionProviderJsonEncoder
 
 
 @app.errorhandler(err.ApiError)
@@ -103,7 +99,7 @@ def introspect() -> Tuple[Response, int]:
     if not request.auth.check_authorization(  # type: ignore
         description.visible_to, allow_all_authenticated_users=True
     ):
-        raise err.NotAuthorized(f"Not visible_to this access token.")
+        raise err.NotAuthorized("Not visible_to this access token.")
     return jsonify(description), 200
 
 
