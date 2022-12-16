@@ -10,6 +10,18 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.13.0b2:
+
+0.13.0b2 — 2022-12-16
+=====================
+
+Changes
+-------
+
+-   Remove an unused parameter from ``TokenChecker``: ``cache_config``.
+-   Remove a no-op call to Globus Auth during ``TokenChecker`` instantiation.
+-   Remove the ``ConfigurationError`` class.
+
 .. _changelog-0.13.0b1:
 
 0.13.0b1 — 2022-12-14
