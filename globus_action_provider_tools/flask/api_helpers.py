@@ -1,5 +1,4 @@
 import logging
-import warnings
 from typing import List, Optional
 
 import flask
@@ -41,15 +40,18 @@ from globus_action_provider_tools.validation import (
     request_validator,
 )
 
-warnings.warn(
-    (
-        "The globus_action_provider_tools.flask.api_helpers module is deprecated "
-        "and will be removed in 0.12.0. Please consider using the "
-        "globus_action_provider_tools.flask.apt_blueprint module instead."
-    ),
-    DeprecationWarning,
-    stacklevel=2,
-)
+# this deprecation warning was added in a past version, but never acted upon
+# remove the warning until we have clarity on the maintenance status of this module
+#
+# warnings.warn(
+#     (
+#         "The globus_action_provider_tools.flask.api_helpers module is deprecated "
+#         "and will be removed in 0.12.0. Please consider using the "
+#         "globus_action_provider_tools.flask.apt_blueprint module instead."
+#     ),
+#     DeprecationWarning,
+#     stacklevel=2,
+# )
 
 
 _request_schema_types = {"run": "ActionRequest"}
