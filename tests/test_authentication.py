@@ -6,12 +6,7 @@ import globus_sdk
 import pytest
 from globus_sdk._testing import load_response
 
-from globus_action_provider_tools.authentication import (
-    AuthState,
-    TokenChecker,
-    identity_principal,
-)
-from globus_action_provider_tools.errors import ConfigurationError
+from globus_action_provider_tools.authentication import AuthState, identity_principal
 
 
 def get_auth_state_instance(
@@ -40,16 +35,6 @@ def auth_state(mocked_responses) -> t.Iterator[AuthState]:
     AuthState.group_membership_cache.clear()
     AuthState.introspect_cache.clear()
     yield get_auth_state_instance(["expected-scope"], "expected-audience")
-
-
-def test_token_checker_bad_credentials():
-    load_response("token-introspect", case="invalid-client")
-    with pytest.raises(ConfigurationError):
-        TokenChecker(
-            client_id="bogus",
-            client_secret="bogus",
-            expected_scopes=("fakescope",),
-        )
 
 
 def test_get_identities(auth_state, freeze_time):

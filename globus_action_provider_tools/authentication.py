@@ -15,8 +15,6 @@ from globus_sdk import (
     RefreshTokenAuthorizer,
 )
 
-from globus_action_provider_tools.errors import ConfigurationError
-
 log = logging.getLogger(__name__)
 
 
@@ -356,7 +354,6 @@ class TokenChecker:
         client_secret: str,
         expected_scopes: Iterable[str],
         expected_audience: Optional[str] = None,
-        cache_config: Optional[dict] = None,
     ) -> None:
         self.auth_client = ConfidentialAppAuthClient(client_id, client_secret)
         self.default_expected_scopes = frozenset(expected_scopes)
@@ -365,13 +362,6 @@ class TokenChecker:
             self.expected_audience = client_id
         else:
             self.expected_audience = expected_audience
-
-        # Try to check a 'token' and fail fast here in case client_id/secret are bad:
-        try:
-            self.check_token("NotAToken").introspect_token()
-        except GlobusAPIError as err:
-            if err.http_status == 401:
-                raise ConfigurationError("Check client_id and client_secret", err)
 
     def check_token(
         self, access_token: str, expected_scopes: Iterable[str] = None
