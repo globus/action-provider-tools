@@ -8,9 +8,3 @@ class AuthenticationError(ActionProviderToolsError):
     """
     An Exception class for errors triggered due to Authentication.
     """
-
-
-class ConfigurationError(ActionProviderToolsError):
-    """
-    An Exception class for errors triggered by misconfiguration.
-    """
