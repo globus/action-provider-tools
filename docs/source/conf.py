@@ -14,7 +14,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "Action Provider Tools"
-copyright = "2022, University of Chicago"
+copyright = "2020-2023, University of Chicago"
 author = "Uriel Mandujano"
 
 # -- General configuration ---------------------------------------------------
