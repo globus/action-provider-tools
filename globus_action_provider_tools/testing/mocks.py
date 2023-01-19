@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from globus_action_provider_tools.authentication import AuthState, TokenChecker
+from globus_action_provider_tools.authentication import AuthState, AuthStateFactory
 
 
 def mock_authstate(*args, **kwargs):
@@ -13,11 +13,7 @@ def mock_authstate(*args, **kwargs):
     # auth_client = ConfidentialAppAuthClient(None, None)
     auth_state = Mock(spec=AuthState, name="MockedAPTAuthState")
 
-    # Spec wont create instance variables created in __init__, so manually
-    # create bearer_token
-    auth_state.bearer_token = "MOCK_BEARER_TOKEN"
-
-    # Set property mocks
+    auth_state.token = "MOCK_BEARER_TOKEN"
     auth_state.effective_identity = (
         "urn:globus:auth:identity:00000000-0000-0000-0000-000000000000"
     )
@@ -25,16 +21,15 @@ def mock_authstate(*args, **kwargs):
 
     # Mock other functions that get called
     auth_state.check_authorization.return_value = True
-    auth_state.introspect_token.return_value = None
 
     return auth_state
 
 
-def mock_tokenchecker(*args, **kwargs):
+def mock_auth_state_factory(*args, **kwargs):
     """
     Returns a dummy TokenChecker object with a mocked out check_token method.
     In turn, this mock can only produce mocked_authstates.
     """
-    tokenchecker = Mock(spec=TokenChecker, name="MockedAPTTokenChecker")
-    tokenchecker.check_token.return_value = mock_authstate()
-    return tokenchecker
+    factory = Mock(spec=AuthStateFactory, name="MockedAPAuthStateFactory")
+    factory.make_state.return_value = mock_authstate()
+    return factory

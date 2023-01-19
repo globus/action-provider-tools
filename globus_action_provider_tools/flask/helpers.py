@@ -11,7 +11,6 @@ import jsonschema
 from flask import Request, current_app, jsonify
 from pydantic import BaseModel, ValidationError
 
-from globus_action_provider_tools.authentication import AuthState, TokenChecker
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionProviderJsonEncoder,
@@ -97,17 +96,6 @@ def action_status_return_to_view_return(
     elif isinstance(status, tuple):
         status, status_code = status
     return jsonify(status), status_code
-
-
-def check_token(request: Request, checker: TokenChecker) -> AuthState:
-    """
-    Parses a Flask request to extract its bearer token.
-    """
-    access_token = request.headers.get("Authorization", "").strip()
-    if access_token.startswith("Bearer "):
-        access_token = access_token[len("Bearer ") :]
-    auth_state = checker.check_token(access_token)
-    return auth_state
 
 
 def blueprint_error_handler(exc: Exception) -> ViewReturn:

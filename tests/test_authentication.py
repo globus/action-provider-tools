@@ -9,15 +9,10 @@ from globus_sdk._testing import load_response
 from globus_action_provider_tools.authentication import AuthState, identity_principal
 
 
-def get_auth_state_instance(
-    expected_scopes: list[str],
-    expected_audience: str,
-) -> AuthState:
+def get_auth_state_instance() -> AuthState:
     return AuthState(
         auth_client=globus_sdk.ConfidentialAppAuthClient("bogus", "bogus"),
-        bearer_token="bogus",
-        expected_scopes=expected_scopes,
-        expected_audience=expected_audience,
+        token="bogus",
     )
 
 
@@ -30,11 +25,7 @@ def auth_state(mocked_responses) -> t.Iterator[AuthState]:
     Unfortunately, this currently means that these values are duplicated
     in the API fixture .yaml files and here.
     """
-
-    AuthState.dependent_tokens_cache.clear()
-    AuthState.group_membership_cache.clear()
-    AuthState.introspect_cache.clear()
-    yield get_auth_state_instance(["expected-scope"], "expected-audience")
+    yield get_auth_state_instance()
 
 
 def test_get_identities(auth_state, freeze_time):

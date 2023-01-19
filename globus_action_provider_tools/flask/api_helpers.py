@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import logging
-from typing import List, Optional
 
 import flask
-from flask import jsonify, request
-from pydantic import ValidationError
+import globus_sdk
+import pydantic
 
-from globus_action_provider_tools.authentication import TokenChecker
+from globus_action_provider_tools.authentication import AuthState, AuthStateFactory
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionStatusValue,
@@ -19,7 +20,6 @@ from globus_action_provider_tools.flask.helpers import (
     action_status_return_to_view_return,
     assign_json_provider,
     blueprint_error_handler,
-    check_token,
     get_input_body_validator,
     parse_query_args,
     query_args_to_enum,
@@ -105,14 +105,14 @@ def add_action_routes_to_blueprint(
     blueprint: flask.Blueprint,
     client_id: str,
     client_secret: str,
-    client_name: Optional[str],
+    client_name: str | None,
     provider_description: ActionProviderDescription,
     action_run_callback: ActionRunCallback,
     action_status_callback: ActionStatusCallback,
     action_cancel_callback: ActionCancelCallback,
     action_release_callback: ActionReleaseCallback,
-    action_log_callback: Optional[ActionLogCallback] = None,
-    additional_scopes: Optional[List[str]] = None,
+    action_log_callback: ActionLogCallback | None = None,
+    additional_scopes: list[str] | None = None,
     action_enumeration_callback: ActionEnumerationCallback = None,
 ) -> None:
     """
@@ -185,11 +185,13 @@ def add_action_routes_to_blueprint(
     else:
         all_accepted_scopes = [provider_description.globus_auth_scope]
 
-    checker = TokenChecker(
-        client_id=client_id,
-        client_secret=client_secret,
-        expected_scopes=all_accepted_scopes,
-        expected_audience=client_name,
+    class GeneratedAppAuthState(AuthState):
+        VALID_SCOPES = frozenset(all_accepted_scopes)
+        EXPECTED_AUDIENCE = client_name
+
+    auth_state_factory = AuthStateFactory(
+        auth_client=globus_sdk.ConfidentialAppAuthClient(client_id, client_secret),
+        state_class=GeneratedAppAuthState,
     )
 
     assign_json_provider(blueprint)
@@ -198,40 +200,44 @@ def add_action_routes_to_blueprint(
 
     @blueprint.route("/", methods=["GET"], strict_slashes=False)
     def action_introspect() -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = auth_state_factory.parse_authorization_header(
+            flask.request.headers
+        )
         if not auth_state.check_authorization(
-            provider_description.visible_to,
+            set(provider_description.visible_to),
             allow_public=True,
             allow_all_authenticated_users=True,
         ):
             raise ActionNotFound
-        return jsonify(provider_description), 200
+        return flask.jsonify(provider_description), 200
 
     @blueprint.route("/actions", methods=["POST"])
     @blueprint.route("/run", methods=["POST"])
     def action_run() -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = auth_state_factory.parse_authorization_header(
+            flask.request.headers
+        )
         if not auth_state.check_authorization(
-            provider_description.runnable_by, allow_all_authenticated_users=True
+            set(provider_description.runnable_by), allow_all_authenticated_users=True
         ):
-            log.info(f"Unauthorized call to action run, errors: {auth_state.errors}")
+            log.info("Unauthorized call to action run")
             raise UnauthorizedRequest
         if blueprint.url_prefix:
-            request.path = request.path.lstrip(blueprint.url_prefix)
-            if request.url_rule is not None:
-                request.url_rule.rule = request.url_rule.rule.lstrip(
+            flask.request.path = flask.request.path.lstrip(blueprint.url_prefix)
+            if flask.request.url_rule is not None:
+                flask.request.url_rule.rule = flask.request.url_rule.rule.lstrip(
                     blueprint.url_prefix
                 )
 
         action_request = validate_input(
-            request.get_json(force=True), input_body_validator
+            flask.request.get_json(force=True), input_body_validator
         )
 
         # It's possible the user will attempt to make a malformed ActionStatus -
         # pydantic won't like that. So log and handle the error with a 500
         try:
             status = action_run_callback(action_request, auth_state)
-        except ValidationError as ve:
+        except pydantic.ValidationError as ve:
             log.error(
                 f"ActionProvider attempted to create a non-conformant ActionStatus"
                 f" in {action_run_callback.__name__}: {ve.errors()}"
@@ -243,10 +249,12 @@ def add_action_routes_to_blueprint(
     @blueprint.route("/<string:action_id>/status", methods=["GET"])
     @blueprint.route("/actions/<string:action_id>", methods=["GET"])
     def action_status(action_id: str) -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = auth_state_factory.parse_authorization_header(
+            flask.request.headers
+        )
         try:
             status = action_status_callback(action_id, auth_state)  # type: ignore
-        except ValidationError as ve:
+        except pydantic.ValidationError as ve:
             log.error(
                 f"ActionProvider attempted to create a non-conformant ActionStatus"
                 f" in {action_status_callback.__name__}: {ve.errors()}"
@@ -257,10 +265,12 @@ def add_action_routes_to_blueprint(
     @blueprint.route("/<string:action_id>/cancel", methods=["POST"])
     @blueprint.route("/actions/<string:action_id>/cancel", methods=["POST"])
     def action_cancel(action_id: str) -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = auth_state_factory.parse_authorization_header(
+            flask.request.headers
+        )
         try:
             status = action_cancel_callback(action_id, auth_state)  # type: ignore
-        except ValidationError as ve:
+        except pydantic.ValidationError as ve:
             log.error(
                 f"ActionProvider attempted to create a non-conformant ActionStatus"
                 f" in {action_cancel_callback.__name__}: {ve.errors()}"
@@ -271,10 +281,12 @@ def add_action_routes_to_blueprint(
     @blueprint.route("/<string:action_id>/release", methods=["POST"])
     @blueprint.route("/actions/<string:action_id>", methods=["DELETE"])
     def action_release(action_id: str) -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = auth_state_factory.parse_authorization_header(
+            flask.request.headers
+        )
         try:
             status = action_release_callback(action_id, auth_state)  # type: ignore
-        except ValidationError as ve:
+        except pydantic.ValidationError as ve:
             log.error(
                 f"ActionProvider attempted to create a non-conformant ActionStatus"
                 f" in {action_release_callback.__name__}: {ve.errors()}"
@@ -287,28 +299,32 @@ def add_action_routes_to_blueprint(
         @blueprint.route("/actions/<string:action_id>/log", methods=["GET"])
         @blueprint.route("/<string:action_id>/log", methods=["GET"])
         def action_log(action_id: str) -> ViewReturn:
-            check_token(request, checker)
-            return jsonify({"log": "message"}), 200
+            return flask.jsonify({"log": "message"}), 200
 
     if action_enumeration_callback is not None:
 
         @blueprint.route("/actions", methods=["GET"])
         def action_enumeration():
-            auth_state = check_token(request, checker)
+            auth_state = auth_state_factory.parse_authorization_header(
+                flask.request.headers
+            )
 
             valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
             statuses = parse_query_args(
-                request,
+                flask.request,
                 arg_name="status",
                 default_value="active",
                 valid_vals=valid_statuses,
             )
             statuses = query_args_to_enum(statuses, ActionStatusValue)
             roles = parse_query_args(
-                request,
+                flask.request,
                 arg_name="roles",
                 default_value="creator_id",
                 valid_vals={"creator_id", "monitor_by", "manage_by"},
             )
             query_params = {"statuses": statuses, "roles": roles}
-            return jsonify(action_enumeration_callback(auth_state, query_params)), 200
+            return (
+                flask.jsonify(action_enumeration_callback(auth_state, query_params)),
+                200,
+            )

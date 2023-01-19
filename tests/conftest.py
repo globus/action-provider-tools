@@ -3,16 +3,19 @@ from __future__ import annotations
 import datetime
 import pathlib
 import typing as t
-from unittest.mock import patch
 
 import freezegun
 import globus_sdk
 import pytest
 import responses
 import yaml
-from globus_sdk._testing import RegisteredResponse, register_response_set
+from globus_sdk._testing import (
+    RegisteredResponse,
+    load_response_set,
+    register_response_set,
+)
 
-from globus_action_provider_tools.authentication import AuthState, TokenChecker
+from globus_action_provider_tools.authentication import AuthState, AuthStateFactory
 
 from .data import canned_responses
 
@@ -27,61 +30,41 @@ def config():
     )
 
 
-@pytest.fixture
-@patch("globus_action_provider_tools.authentication.ConfidentialAppAuthClient")
-def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
-    # Mock the introspection first because that gets called as soon as we create
-    # a TokenChecker
-    client = MockAuthClient.return_value
-    client.oauth2_token_introspect.return_value = (
-        canned_responses.introspect_response()()
-    )
-
-    # Mock the dependent_tokens and list_groups functions bc they get used when
-    # creating a GroupsClient
-    client.oauth2_get_dependent_tokens.return_value = (
-        canned_responses.dependent_token_response()()
-    )
-    monkeypatch.setattr(
-        globus_sdk.GroupsClient, "get_my_groups", canned_responses.groups_response()
-    )
-
-    # Create a TokenChecker to be used to create a mocked auth_state object
-    checker = TokenChecker(
-        client_id=config["client_id"],
-        client_secret=config["client_secret"],
-        expected_scopes=config["expected_scopes"],
-        expected_audience=config["expected_audience"],
-    )
-    auth_state = checker.check_token("NOT_A_TOKEN")
-
-    # Reset the call count because check_token implicitly calls oauth2_token_introspect
-    client.oauth2_token_introspect.call_count = 0
-
-    # Mock out this AuthState instance's GroupClient
-    # auth_state._groups_client = GroupsClient(authorizer=None)
-    # auth_state._groups_client.list_groups = canned_responses.groups_response()
-    return auth_state
-
-
 @pytest.fixture(scope="session", autouse=True)
 def register_api_fixtures():
+    canned_responses.register_responses()
     for yaml_file in (pathlib.Path(__file__).parent / "api-fixtures").rglob("*.yaml"):
         response_set = yaml.safe_load(yaml_file.read_text())
         register_response_set(yaml_file.stem, response_set)
 
 
 @pytest.fixture(autouse=True)
-def mocked_responses() -> responses.RequestsMock:
+def mocked_responses():
     """Mock all requests.
 
     The default `responses.mock` object is returned,
     which allows tests to access various properties of the mock.
     For example, they might check the number of intercepted `.calls`.
     """
+    responses.start()
 
-    with responses.mock:
-        yield responses.mock
+    yield
+
+    responses.stop()
+    responses.reset()
+
+
+@pytest.fixture
+def auth_state(mocked_responses, config, monkeypatch) -> AuthState:
+    load_response_set("ap-tools-canned-responses")
+
+    dummy_client = globus_sdk.ConfidentialAppAuthClient(
+        "foo_client_id", "bar_client_secret"
+    )
+    factory: AuthStateFactory[AuthState] = AuthStateFactory(auth_client=dummy_client)
+    auth_state = factory.make_state("DummyToken")
+
+    return auth_state
 
 
 @pytest.fixture

@@ -1,10 +1,11 @@
 import typing as t
 
+import globus_sdk
 from flask import Blueprint, blueprints, current_app, g, jsonify, request
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest as WerkzeugBadRequest
 
-from globus_action_provider_tools.authentication import TokenChecker
+from globus_action_provider_tools.authentication import AuthState, AuthStateFactory
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
@@ -24,7 +25,6 @@ from globus_action_provider_tools.flask.helpers import (
     action_status_return_to_view_return,
     assign_json_provider,
     blueprint_error_handler,
-    check_token,
     get_input_body_validator,
     parse_query_args,
     query_args_to_enum,
@@ -82,9 +82,9 @@ class ActionProviderBlueprint(Blueprint):
         self.additional_scopes = additional_scopes
 
         assign_json_provider(self)
-        self.before_request(self._check_token)
+        self.before_request(self.initialize_auth_state)
         self.register_error_handler(Exception, blueprint_error_handler)
-        self.record_once(self._create_token_checker)
+        self.record_once(self._create_auth_state_factory)
 
         self.add_url_rule(
             "/",
@@ -124,7 +124,7 @@ class ActionProviderBlueprint(Blueprint):
             methods=["POST"],
         )
 
-    def _create_token_checker(self, setup_state: blueprints.BlueprintSetupState):
+    def _create_auth_state_factory(self, setup_state: blueprints.BlueprintSetupState):
         app = setup_state.app
         provider_prefix = self.name.upper() + "_"
         client_id = app.config.get(provider_prefix + "CLIENT_ID")
@@ -134,18 +134,19 @@ class ActionProviderBlueprint(Blueprint):
             client_id = app.config.get("CLIENT_ID")
             client_secret = app.config.get("CLIENT_SECRET")
 
-        scopes = [self.provider_description.globus_auth_scope]
-        scopes.extend(self.additional_scopes)
+        class GeneratedAppAuthState(AuthState):
+            VALID_SCOPES = frozenset(
+                [self.provider_description.globus_auth_scope]
+                + list(self.additional_scopes)
+            )
+            EXPECTED_AUDIENCE = self.globus_auth_client_name or client_id
 
         app.logger.info(
-            f"Initializing TokenChecker for client {client_id} and secret "
-            f"***{client_secret[-5:]}"
+            f"Initializing AuthStateFactory for client {client_id} and secret ***"
         )
-        self.checker = TokenChecker(
-            client_id=client_id,
-            client_secret=client_secret,
-            expected_scopes=scopes,
-            expected_audience=self.globus_auth_client_name,
+        self.state_factory = AuthStateFactory(
+            auth_client=globus_sdk.ConfidentialAppAuthClient(client_id, client_secret),
+            state_class=GeneratedAppAuthState,
         )
 
     def _action_introspect(self):
@@ -487,13 +488,10 @@ class ActionProviderBlueprint(Blueprint):
             raise ActionProviderError
         repo.store(action)
 
-    def _check_token(self) -> None:
+    def initialize_auth_state(self) -> None:
         """
-        Parses a token from a request to generate an auth_state object which is
-        then made available as the second argument to decorated functions.
+        Parses a token from a request to generate an auth_state object.
         """
-        g.auth_state = check_token(request, self.checker)
-        if g.auth_state.effective_identity is None:
-            current_app.logger.info(
-                f"Request failed authentication due to: {g.auth_state.errors}"
-            )
+        g.auth_state = self.auth_state_factory.parse_authorization_header(
+            request.headers
+        )
