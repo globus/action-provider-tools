@@ -10,6 +10,11 @@ repos:
       - id: check-json
       - id: check-added-large-files
 
+  - repo: https://github.com/sirosen/alphabetize-codeowners
+    rev: 0.0.1
+    hooks:
+      - id: alphabetize-codeowners
+
   - repo: https://github.com/psf/black
     rev: 23.1.0
     hooks:
