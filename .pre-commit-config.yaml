@@ -1,4 +1,4 @@
-# Update the hook revs in this file by running `pre-commit autoupdate`.
+# pre-commit.ci routinely submits PRs to update hook versions.
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -20,19 +20,7 @@ repos:
     hooks:
       - id: black
 
-      # Allow tox to run black strictly as a linter.
-      - id: black
-        alias: black-check
-        stages: [manual]
-        args: [--check]
-
   - repo: https://github.com/timothycrosley/isort
     rev: 5.12.0
     hooks:
       - id: isort
-
-      # Allow tox to run isort strictly as a linter.
-      - id: isort
-        alias: isort-check
-        stages: [manual]
-        args: [--check]

@@ -53,12 +53,6 @@ jobs:
           .venv/bin/pip install --upgrade pip setuptools wheel
           .venv/bin/pip install tox
 
-      - name: "Run black"
-        run: ".venv/bin/tox -e black"
-
-      - name: "Run isort"
-        run: ".venv/bin/tox -e isort"
-
       - name: "Run mypy"
         run: ".venv/bin/tox -e mypy"
 
