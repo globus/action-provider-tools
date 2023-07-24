@@ -1,8 +1,3 @@
-.. globus_action_provider_tools documentation master file, created by
-   sphinx-quickstart on Thu Jun 11 13:16:19 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Globus Action Provider - Python SDK
 =====================================
 

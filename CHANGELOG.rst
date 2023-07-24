@@ -10,6 +10,45 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.13.0rc1:
+
+0.13.0rc1 — 2023-07-24
+======================
+
+Changes
+-------
+
+- The minimum pyyaml version is now 6.0
+
+Deprecations
+------------
+
+- Imports from ``globus_action_provider_tools.flask`` will no longer emit a
+  ``DeprecationWarning``
+
+Development
+-----------
+
+-   During local testing, build a shared wheel.
+
+    Previously, a shared ``.tar.gz`` file was created.
+    However, in each tox environment, pip would convert this to a wheel during installation.
+
+    This change decreases local test times from ~20 seconds to ~12 seconds.
+
+-   Support running tox test environments in parallel (run ``tox p``).
+
+    This change decreases local test times to only ~3 seconds.
+
+-   Overhaul CI.
+
+    -   Introduce caching of the ``.tox/`` and ``.venv/`` directories.
+
+        The cache is invalidated once each week (``date %U`` rolls the week on Sundays).
+
+    -   Build a shared wheel once as an artifact and re-use it across all test environments.
+    -   Consolidate standard testing and testing of minimum Flask versions.
+
 .. _changelog-0.13.0b2:
 
 0.13.0b2 — 2022-12-16

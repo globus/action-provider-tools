@@ -85,9 +85,9 @@ def mocked_responses() -> responses.RequestsMock:
 
 
 @pytest.fixture
-def freeze_time() -> t.Generator[
-    t.Callable[[RegisteredResponse], RegisteredResponse], None, None
-]:
+def freeze_time() -> (
+    t.Generator[t.Callable[[RegisteredResponse], RegisteredResponse], None, None]
+):
     """Inspect a Globus SDK RegisteredResponse object and freeze time if needed.
 
     Some responses may only be valid within a specific time range

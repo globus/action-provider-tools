@@ -104,10 +104,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# whattimeisitrightnow example provider's database file
-whattimeisitrightnow.example.db
-whattimeisitrightnow.example.db.*
-
 # Editor config
 .dir-locals.el
 .idea/

@@ -1,8 +1,8 @@
-# Update the hook revs in this file by running `pre-commit autoupdate`.
+# pre-commit.ci routinely submits PRs to update hook versions.
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v4.4.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -10,24 +10,17 @@ repos:
       - id: check-json
       - id: check-added-large-files
 
+  - repo: https://github.com/sirosen/alphabetize-codeowners
+    rev: 0.0.1
+    hooks:
+      - id: alphabetize-codeowners
+
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 23.7.0
     hooks:
       - id: black
 
-      # Allow tox to run black strictly as a linter.
-      - id: black
-        alias: black-check
-        stages: [manual]
-        args: [--check]
-
-  - repo: https://github.com/timothycrosley/isort
-    rev: 5.10.1
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
     hooks:
       - id: isort
-
-      # Allow tox to run isort strictly as a linter.
-      - id: isort
-        alias: isort-check
-        stages: [manual]
-        args: [--check]

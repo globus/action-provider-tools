@@ -14,8 +14,8 @@
 # -- Project information -----------------------------------------------------
 
 project = "Action Provider Tools"
-copyright = "2022, University of Chicago"
-author = "Uriel Mandujano"
+copyright = "2020-2023, University of Chicago"
+author = "Globus Automate Team"
 
 # -- General configuration ---------------------------------------------------
 

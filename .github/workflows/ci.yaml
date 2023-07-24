@@ -1,0 +1,196 @@
+name: "CI"
+on:
+  pull_request:
+  push:
+    branches:
+      - "main"
+      - "production"
+
+env:
+  PRE_COMMIT_HOME: ".tox/pre-commit-home"
+
+jobs:
+  lint:
+    name: "Lint"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout the repo"
+        uses: "actions/checkout@v3"
+
+      - name: "Identify the week number"
+        run: |
+          date +'%U' > week-number.txt
+          date +'week-number=%U' >> $GITHUB_ENV
+
+      - name: "Setup Python"
+        id: "setup-python"
+        uses: "actions/setup-python@v4"
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            .github/workflows/ci.yaml
+            pyproject.toml
+            tox.ini
+            week-number.txt
+
+      - name: "Restore the cache"
+        id: "restore-cache"
+        uses: "actions/cache@v3"
+        with:
+          path: |
+            .tox/
+            .venv/
+          key: >
+            lint
+            week=${{ env.week-number }}
+            python=${{ steps.setup-python.outputs.python-version }}
+            hash=${{ hashFiles('.github/workflows/ci.yaml', 'pyproject.toml', 'tox.ini') }}
+
+      - name: "Install Tox"
+        if: "steps.restore-cache.outputs.cache-hit == false"
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip setuptools wheel
+          .venv/bin/pip install tox
+
+      - name: "Run mypy"
+        run: ".venv/bin/tox -e mypy"
+
+  build:
+    name: "Build a shared wheel"
+    runs-on: "ubuntu-latest"
+    outputs:
+      wheel-filename: "${{ steps.build-wheel.outputs.wheel-filename }}"
+    steps:
+      - name: "Checkout the repo"
+        uses: "actions/checkout@v3"
+
+      - name: "Identify the week number"
+        run: |
+          date +'%U' > week-number.txt
+          date +'week-number=%U' >> $GITHUB_ENV
+
+      - name: "Setup Python"
+        id: "setup-python"
+        uses: "actions/setup-python@v4"
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            .github/workflows/ci.yaml
+            pyproject.toml
+            tox.ini
+            week-number.txt
+
+      - name: "Build the wheel"
+        id: "build-wheel"
+        run: |
+          pip wheel .
+          echo "wheel-filename=$(ls -1 globus_action_provider_tools-*.whl | head -n 1)" >> $GITHUB_OUTPUT
+
+      - name: "Upload the artifact"
+        uses: "actions/upload-artifact@v3"
+        with:
+          name: "globus_action_provider_tools-${{ github.sha }}.whl"
+          path: "${{ steps.build-wheel.outputs.wheel-filename }}"
+          retention-days: 1
+
+  test:
+    name: "Test ${{ matrix.python-version }}${{ matrix.tox-extras }} on ${{ matrix.os.name }}"
+    needs: ["build"]
+    runs-on: "${{ matrix.os.value }}"
+
+    strategy:
+      matrix:
+        # Broadly test supported Python versions on Linux.
+        os:
+          - name: "Linux"
+            value: "ubuntu-latest"
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        tox-extras: [""]
+
+        include:
+          # Test Windows.
+          - os:
+              name: "Windows"
+              value: "windows-latest"
+            python-version: "3.11"
+            tox-extras: ""
+
+          # Test Mac.
+          - os:
+              name: "Mac"
+              value: "macos-latest"
+            python-version: "3.11"
+            tox-extras: ""
+
+          # Test minimum dependencies.
+          - os:
+              name: "Linux"
+              value: "ubuntu-latest"
+            python-version: "3.7"
+            tox-extras: "-minimum_flask"
+          - os:
+              name: "Linux"
+              value: "ubuntu-latest"
+            python-version: "3.11"
+            tox-extras: "-minimum_flask"
+
+    steps:
+      - name: "Checkout the repo"
+        uses: "actions/checkout@v3"
+
+      - name: "Identify the week number"
+        shell: "bash"
+        run: |
+          date +'%U' > week-number.txt
+          date +'week-number=%U' >> $GITHUB_ENV
+
+      - name: "Setup Python"
+        id: "setup-python"
+        uses: "actions/setup-python@v4"
+        with:
+          python-version: "${{ matrix.python-version }}"
+          cache: "pip"
+          cache-dependency-path: |
+            .github/workflows/ci.yaml
+            pyproject.toml
+            tox.ini
+            week-number.txt
+
+      - name: "Restore cache"
+        id: "restore-cache"
+        uses: "actions/cache@v3"
+        with:
+          path: |
+            .tox/
+            .venv/
+          key: >
+            test
+            week=${{ env.week-number }}
+            os=${{ matrix.os.value }}
+            python=${{ steps.setup-python.outputs.python-version }}
+            hash=${{ hashFiles('.github/workflows/ci.yaml', 'pyproject.toml', 'tox.ini') }}
+
+      - name: "Identify virtual environment path"
+        shell: "bash"
+        run:  "echo 'venv-path=${{ runner.os == 'Windows' && '.venv/Scripts' || '.venv/bin' }}' >> $GITHUB_ENV"
+
+      - name: "Install tox"
+        if: "steps.restore-cache.outputs.cache-hit == false"
+        run: |
+          python -m venv .venv
+          ${{ env.venv-path }}/pip install --upgrade pip setuptools wheel
+          ${{ env.venv-path }}/pip install tox
+
+      - name: "Download the artifact"
+        uses: "actions/download-artifact@v3"
+        with:
+          name: "globus_action_provider_tools-${{ github.sha }}.whl"
+
+      - name: "Test"
+        run: >
+          ${{ env.venv-path }}/tox run
+          --installpkg="${{ needs.build.outputs.wheel-filename }}"
+          -e py${{ matrix.python-version}}${{ matrix.tox-extras }}
