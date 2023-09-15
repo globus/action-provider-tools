@@ -107,7 +107,11 @@ jobs:
         os:
           - name: "Linux"
             value: "ubuntu-latest"
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
         tox-extras: [""]
 
         include:
@@ -129,7 +133,7 @@ jobs:
           - os:
               name: "Linux"
               value: "ubuntu-latest"
-            python-version: "3.7"
+            python-version: "3.8"
             tox-extras: "-minimum_flask"
           - os:
               name: "Linux"

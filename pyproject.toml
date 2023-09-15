@@ -27,14 +27,14 @@ license = "Apache-2.0"
 whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.8"
 globus-sdk="^3.9.0"
 jsonschema = "^4.17"
 pyyaml = "^6"
 pybase62 = "^0.4.0"
 pydantic = "^1.7.3"
 isodate = "^0.6.0"
-cachetools = "^4.2.4"
+cachetools = "^5.0"
 flask = {version = "^2.1.0", optional = true}
 pytest = {version = "^7.2.0", optional = true}
 freezegun = {version = "^1.2.2", optional = true}
@@ -75,6 +75,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.scriv]
 categories = [
+    "Python support",
     "Features",
     "Bugfixes",
     "Changes",
@@ -95,4 +96,14 @@ source = [
 
 [tool.coverage.report]
 # When the test coverage increases, this bar should also raise.
-fail_under = 81
+fail_under = 82
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+
+    # Minimum Flask versions interact with werkzeug in a now-deprecated manner.
+    # Ignore this.
+    "ignore:'werkzeug.urls.url_parse' is deprecated:DeprecationWarning",
+    "ignore:'werkzeug.urls.URL' is deprecated:DeprecationWarning",
+]

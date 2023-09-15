@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import List, Optional
 
@@ -105,15 +107,15 @@ def add_action_routes_to_blueprint(
     blueprint: flask.Blueprint,
     client_id: str,
     client_secret: str,
-    client_name: Optional[str],
+    client_name: str | None,
     provider_description: ActionProviderDescription,
     action_run_callback: ActionRunCallback,
     action_status_callback: ActionStatusCallback,
     action_cancel_callback: ActionCancelCallback,
     action_release_callback: ActionReleaseCallback,
-    action_log_callback: Optional[ActionLogCallback] = None,
-    additional_scopes: Optional[List[str]] = None,
-    action_enumeration_callback: ActionEnumerationCallback = None,
+    action_log_callback: ActionLogCallback | None = None,
+    additional_scopes: list[str] | None = None,
+    action_enumeration_callback: ActionEnumerationCallback | None = None,
 ) -> None:
     """
     Add routes to a Flask Blueprint to implement the required operations of the Action
@@ -296,7 +298,7 @@ def add_action_routes_to_blueprint(
         def action_enumeration():
             auth_state = check_token(request, checker)
 
-            valid_statuses = set(e.name.casefold() for e in ActionStatusValue)
+            valid_statuses = {e.name.casefold() for e in ActionStatusValue}
             statuses = parse_query_args(
                 request,
                 arg_name="status",

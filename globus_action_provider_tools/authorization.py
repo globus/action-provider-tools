@@ -15,7 +15,7 @@ def authorize_action_access_or_404(status: ActionStatus, auth_state: AuthState) 
     AuthenticationError.
     """
     if status.monitor_by is None:
-        allowed_set = set([status.creator_id])
+        allowed_set = {status.creator_id}
     else:
         allowed_set = set(chain([status.creator_id], status.monitor_by))
 
@@ -40,7 +40,7 @@ def authorize_action_management_or_404(
     AuthenticationError.
     """
     if status.manage_by is None:
-        allowed_set = set([status.creator_id])
+        allowed_set = {status.creator_id}
     else:
         allowed_set = set(chain([status.creator_id], status.manage_by))
 

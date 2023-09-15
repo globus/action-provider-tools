@@ -38,8 +38,8 @@ def parse_query_args(
     *,
     arg_name: str,
     default_value: str = "",
-    valid_vals: Set[str] = None,
-) -> Set[str]:
+    valid_vals: set[str] | None = None,
+) -> set[str]:
     """
     Helper function to parse a query arg "arg_name" and return a validated
     (according to the values supplied in "valid_vals"), usable set of
@@ -188,7 +188,7 @@ def get_input_body_validator(
 
 
 def json_schema_input_validation(
-    action_input: Dict[str, Any], validator: jsonschema.Validator
+    action_input: dict[str, Any], validator: jsonschema.Validator
 ) -> None:
     """
     Use a created JSON Validator to verify the input body of an incoming
@@ -201,7 +201,7 @@ def json_schema_input_validation(
 
 
 def pydantic_input_validation(
-    action_input: Dict[str, Any], validator: Type[BaseModel]
+    action_input: dict[str, Any], validator: type[BaseModel]
 ) -> None:
     """
     Validate input using the pydantic model itself. Raises a BadActionRequest
@@ -218,7 +218,7 @@ try:
 except ImportError:
     # Flask < 2.2: Use the deprecated JSON encoder interface.
     json_provider_available = False
-    JsonProvider: Optional["DefaultJSONProvider"] = None
+    JsonProvider: DefaultJSONProvider | None = None
 else:
     # Flask >= 2.2: Use the new JSON provider interface.
     json_provider_available = True
