@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from time import time
 from typing import FrozenSet, Iterable, List, Optional, Union, cast
@@ -26,7 +28,7 @@ def identity_principal(id_: str) -> str:
     return f"urn:globus:auth:identity:{id_}"
 
 
-class AuthState(object):
+class AuthState:
     # Cache for introspection operations, max lifetime: 30 seconds
     introspect_cache: TTLCache = TTLCache(maxsize=100, ttl=30)
 
@@ -42,7 +44,7 @@ class AuthState(object):
         auth_client: ConfidentialAppAuthClient,
         bearer_token: str,
         expected_scopes: Iterable[str],
-        expected_audience: Optional[str] = None,
+        expected_audience: str | None = None,
     ) -> None:
         self.auth_client = auth_client
         self.bearer_token = bearer_token
@@ -56,10 +58,10 @@ class AuthState(object):
             self.expected_audience = auth_client.client_id
         else:
             self.expected_audience = expected_audience
-        self.errors: List[Exception] = []
-        self._groups_client: Optional[GroupsClient] = None
+        self.errors: list[Exception] = []
+        self._groups_client: GroupsClient | None = None
 
-    def introspect_token(self) -> Optional[GlobusHTTPResponse]:
+    def introspect_token(self) -> GlobusHTTPResponse | None:
         # There are cases where a null or empty string bearer token are present as a
         # placeholder
         if self.bearer_token is None:
@@ -103,7 +105,7 @@ class AuthState(object):
             return resp
 
     @property
-    def effective_identity(self) -> Optional[str]:
+    def effective_identity(self) -> str | None:
         tkn_details = self.introspect_token()
         if tkn_details is None:
             return None
@@ -111,18 +113,18 @@ class AuthState(object):
         return effective
 
     @property
-    def identities(self) -> FrozenSet[str]:
+    def identities(self) -> frozenset[str]:
         tkn_details = self.introspect_token()
         if tkn_details is None:
             return frozenset()
         return frozenset(map(identity_principal, tkn_details["identity_set"]))
 
     @property
-    def principals(self) -> FrozenSet[str]:
+    def principals(self) -> frozenset[str]:
         return self.identities.union(self.groups)
 
     @property  # type: ignore
-    def groups(self) -> FrozenSet[str]:
+    def groups(self) -> frozenset[str]:
         try:
             groups_client = self._get_groups_client()
         except (GlobusAPIError, KeyError, ValueError) as err:
@@ -163,7 +165,7 @@ class AuthState(object):
             return groups_set
 
     @property
-    def dependent_tokens_cache_id(self) -> Optional[str]:
+    def dependent_tokens_cache_id(self) -> str | None:
         tkn_details = self.introspect_token()
         if tkn_details is None:
             return None
@@ -200,7 +202,7 @@ class AuthState(object):
         scope: str,
         bypass_dependent_token_cache=False,
         required_authorizer_expiration_time: int = 60,
-    ) -> Optional[Union[RefreshTokenAuthorizer, AccessTokenAuthorizer]]:
+    ) -> RefreshTokenAuthorizer | AccessTokenAuthorizer | None:
         """Retrieve a Globus SDK authorizer for use in accessing a further Globus Auth registered
         service / "resource server". This authorizer can be passed to any Globus SDK
         Client class for use in accessing the Client's service.
@@ -353,7 +355,7 @@ class TokenChecker:
         client_id: str,
         client_secret: str,
         expected_scopes: Iterable[str],
-        expected_audience: Optional[str] = None,
+        expected_audience: str | None = None,
     ) -> None:
         self.auth_client = ConfidentialAppAuthClient(client_id, client_secret)
         self.default_expected_scopes = frozenset(expected_scopes)
@@ -364,7 +366,7 @@ class TokenChecker:
             self.expected_audience = expected_audience
 
     def check_token(
-        self, access_token: str, expected_scopes: Iterable[str] = None
+        self, access_token: str, expected_scopes: Iterable[str] | None = None
     ) -> AuthState:
         if expected_scopes is None:
             expected_scopes = self.default_expected_scopes
