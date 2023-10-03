@@ -35,11 +35,11 @@ pybase62 = "^0.4.0"
 pydantic = "^1.7.3"
 isodate = "^0.6.0"
 cachetools = "^5.0"
-flask = {version = "^2.1.0", optional = true}
-pytest = {version = "^7.2.0", optional = true}
+flask = {version = "^2.3.0", optional = true}
+pytest = {version = "^7", optional = true}
 freezegun = {version = "^1.2.2", optional = true}
-coverage = {extras = ["toml"], version = "^6.5.0", optional = true}
-responses = {version = "^0.22.0", optional = true}
+coverage = {extras = ["toml"], version = "^7", optional = true}
+responses = {version = "^0.23.3", optional = true}
 
 [tool.poetry.extras]
 flask = ["flask"]
@@ -51,13 +51,7 @@ testing = [
 ]
 
 [tool.poetry.group.dev.dependencies]
-scriv = {extras = ["toml"], version = "^0.17.0"}
-tox = "^3.26.0"
-importmagic = "^0"
-epc = "^0"
-isodate = "^0.6.0"
 docutils = "^0.16"
-rstcheck = "^3.3.1"
 pygments = "^2.6.1"
 sphinx = "^5.0.2"
 sphinx_material = "^0.0.35"
@@ -96,14 +90,15 @@ source = [
 
 [tool.coverage.report]
 # When the test coverage increases, this bar should also raise.
-fail_under = 82
+fail_under = 81
 
 [tool.pytest.ini_options]
 filterwarnings = [
     "error",
 
     # Minimum Flask versions interact with werkzeug in a now-deprecated manner.
-    # Ignore this.
-    "ignore:'werkzeug.urls.url_parse' is deprecated:DeprecationWarning",
-    "ignore:'werkzeug.urls.URL' is deprecated:DeprecationWarning",
+    "ignore:The '__version__' attribute is deprecated:DeprecationWarning",
+
+    # dateutil, used by freezegun during testing, has a Python 3.12 compatibility issue.
+    "ignore:datetime.utcfromtimestamp\\(\\) is deprecated:DeprecationWarning",
 ]

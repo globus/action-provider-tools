@@ -1,0 +1,16 @@
+Python support
+--------------
+
+-   Support Python 3.12.
+
+
+Development
+-----------
+
+-   Remove unused dependencies.
+
+
+Dependencies
+------------
+
+-   Raise the minimum Flask version to 2.3.0, which dropped support for Python 3.7.
