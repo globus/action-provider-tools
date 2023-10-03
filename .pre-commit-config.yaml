@@ -17,7 +17,7 @@ repos:
 
   # Enforce Python 3.8+ idioms.
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.13.0
+    rev: v3.14.0
     hooks:
       - id: pyupgrade
         args: [--py38-plus]
