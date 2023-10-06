@@ -10,6 +10,27 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.13.0rc2:
+
+0.13.0rc2 — 2023-10-06
+======================
+
+Python support
+--------------
+
+-   Support Python 3.12.
+-   Drop support for Python 3.7.
+
+Development
+-----------
+
+-   Remove unused dependencies.
+
+Dependencies
+------------
+
+-   Raise the minimum Flask version to 2.3.0, which dropped support for Python 3.7.
+
 .. _changelog-0.13.0rc1:
 
 0.13.0rc1 — 2023-07-24
