@@ -26,7 +26,7 @@ jobs:
         id: "setup-python"
         uses: "actions/setup-python@v4"
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: "pip"
           cache-dependency-path: |
             .github/workflows/ci.yaml
@@ -112,6 +112,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         tox-extras: [""]
 
         include:
@@ -119,14 +120,14 @@ jobs:
           - os:
               name: "Windows"
               value: "windows-latest"
-            python-version: "3.11"
+            python-version: "3.12"
             tox-extras: ""
 
           # Test Mac.
           - os:
               name: "Mac"
               value: "macos-latest"
-            python-version: "3.11"
+            python-version: "3.12"
             tox-extras: ""
 
           # Test minimum dependencies.
@@ -138,7 +139,7 @@ jobs:
           - os:
               name: "Linux"
               value: "ubuntu-latest"
-            python-version: "3.11"
+            python-version: "3.12"
             tox-extras: "-minimum_flask"
 
     steps:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "globus-action-provider-tools"
-version = "0.13.0rc1"
+version = "0.13.0rc2"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
     "Kurt McKee <kurt@globus.org>",
@@ -100,5 +100,5 @@ filterwarnings = [
     "ignore:The '__version__' attribute is deprecated:DeprecationWarning",
 
     # dateutil, used by freezegun during testing, has a Python 3.12 compatibility issue.
-    "ignore:datetime.utcfromtimestamp\\(\\) is deprecated:DeprecationWarning",
+    "ignore:datetime.datetime.utcfromtimestamp\\(\\) is deprecated:DeprecationWarning",
 ]
