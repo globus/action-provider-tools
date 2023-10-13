@@ -101,12 +101,12 @@ class CloudWatchMetricEMFLogger:
                 ("RequestLatency", request_latency_ms, "Milliseconds"),
             ],
         )
-        emf_log = json.dumps(emf_log)
+        emf_log_str = json.dumps(emf_log)
 
         if not self._log_level:
-            print(emf_log)
+            print(emf_log_str)
         else:
-            log.log(self._log_level, emf_log)
+            log.log(self._log_level, emf_log_str)
 
 
 # fmt: off
@@ -167,7 +167,7 @@ def _serialize_to_emf(
         {metric_name for metric_name, _, _ in metrics}, dimension_sets
     )
 
-    emf_obj = {}
+    emf_obj: t.Dict[str, t.Any] = {}
 
     emf_metrics = []
     for metric_name, value, unit in metrics:
@@ -221,7 +221,7 @@ def _verify_no_emf_root_collisions(
         )
 
     # Verify that no dimension names in different dimension sets conflict
-    dimension_values = {}
+    dimension_values: t.Dict[str, t.Set[str]] = {}
     for dimension_map in dimension_sets:
         for dimension_name, dimension_value in dimension_map.items():
             dimension_values.setdefault(dimension_name, set()).add(dimension_value)
