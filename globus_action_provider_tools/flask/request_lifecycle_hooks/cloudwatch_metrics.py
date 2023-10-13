@@ -61,8 +61,9 @@ class CloudWatchMetricEMFLogger:
 
     def after_request(self, response: Response):
         if hasattr(g, "route_type") and hasattr(g, "request_start_perf_counter_ms"):
-            request_latency_ms = time.perf_counter() * 1000 - \
-                g.request_start_perf_counter_ms
+            request_latency_ms = (
+                time.perf_counter() * 1000 - g.request_start_perf_counter_ms
+            )
             self.emit_route_metrics(
                 route_name=g.route_type,
                 request_latency_ms=request_latency_ms,
@@ -78,8 +79,9 @@ class CloudWatchMetricEMFLogger:
                 status_code = 500
                 if hasattr(error, "code"):
                     status_code = error.code
-                request_latency_ms = time.perf_counter() * 1000 - \
-                    g.request_start_perf_counter_ms
+                request_latency_ms = (
+                    time.perf_counter() * 1000 - g.request_start_perf_counter_ms
+                )
                 self.emit_route_metrics(
                     route_name=g.route_type,
                     request_latency_ms=request_latency_ms,
