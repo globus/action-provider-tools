@@ -7,13 +7,13 @@ from datetime import datetime, timedelta
 
 from flask import Response, g
 
-log = logging.getLogger("cloudwatch-emf-middleware")
+log = logging.getLogger("action-provider-tools-cloudwatch-emf")
 
 
 class CloudWatchMetricEMFLogger:
     """
-    Middleware to emit CloudWatch Metrics detailing action provider usage via
-      the CloudWatch EMF Format.
+    Flask RequestLifecycleHooks to emit CloudWatch Metrics detailing action provider
+      usage via the CloudWatch EMF Format.
     https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html
 
     Metric Structure

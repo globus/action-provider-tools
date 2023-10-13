@@ -51,7 +51,7 @@ class ActionProviderBlueprint(Blueprint):
         globus_auth_client_name: t.Optional[str] = None,
         additional_scopes: t.Iterable[str] = (),
         action_repository: t.Optional[AbstractActionRepository] = None,
-        middleware: t.Optional[t.List[t.Any]] = None,
+        request_lifecycle_hooks: t.Optional[t.List[t.Any]] = None,
         **kwarg,
     ):
         """Create a new ActionProviderBlueprint. All arguments not listed here are the
@@ -73,10 +73,10 @@ class ActionProviderBlueprint(Blueprint):
         needed if more than one scope has been allocated for the Action
         Provider's Globus Auth client_id.
 
-        :param middleware: A list of classes defining a before_request, after_request,
-        and/or teardown_request method. If these functions exist they will be registered
-        with the blueprint. Middleware classes are registered in the order they are
-        provided.
+        :param request_lifecycle_hooks: A list of classes defining a before_request,
+        after_request, and/or teardown_request method. If any of these functions exist
+        they  will be registered with the blueprint. RequestLifecycleHook classes are
+        registered and therefore executed in the order they are provided.
         """
 
         super().__init__(*args, **kwarg)
@@ -92,14 +92,14 @@ class ActionProviderBlueprint(Blueprint):
         self.register_error_handler(Exception, blueprint_error_handler)
         self.record_once(self._create_token_checker)
 
-        if middleware:
-            for m in middleware:
-                if hasattr(m, "before_request"):
-                    self.before_request(m.before_request)
-                if hasattr(m, "after_request"):
-                    self.after_request(m.after_request)
-                if hasattr(m, "teardown_request"):
-                    self.teardown_request(m.teardown_request)
+        if request_lifecycle_hooks:
+            for hooks in request_lifecycle_hooks:
+                if hasattr(hooks, "before_request"):
+                    self.before_request(hooks.before_request)
+                if hasattr(hooks, "after_request"):
+                    self.after_request(hooks.after_request)
+                if hasattr(hooks, "teardown_request"):
+                    self.teardown_request(hooks.teardown_request)
 
         self.add_url_rule(
             "/",

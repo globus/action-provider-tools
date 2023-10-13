@@ -12,7 +12,7 @@ from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
 )
 from globus_action_provider_tools.flask.helpers import assign_json_provider
-from globus_action_provider_tools.flask.middleware.cloudwatch_metrics import (
+from globus_action_provider_tools.flask.request_lifecycle_hooks import (
     CloudWatchMetricEMFLogger,
 )
 from tests.test_flask_helpers.app_utils import ap_description, mock_action_run_func
@@ -50,8 +50,11 @@ def test_routes_emit_emf_logs(
         import_name=__name__,
         url_prefix="/tracked",
         provider_description=ap_description,
-        middleware=[
-            CloudWatchMetricEMFLogger("ActionProviders", "TrackedActionProvider")
+        request_lifecycle_hooks=[
+            CloudWatchMetricEMFLogger(
+                namespace="ActionProviders",
+                action_provider_name="TrackedActionProvider",
+            )
         ],
     )
     aptb.action_run(run_view_func)
