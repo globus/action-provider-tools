@@ -149,7 +149,7 @@ def _serialize_to_emf(
         "MyCoolMetric": 37,
     }
     ```
-    Note how there are two additional top-level keys besides "_aws".
+    Note how there are three additional top-level keys besides "_aws".
     This is because Dimension Values & Metric Values must be referenced not passed
         explicitly
 
