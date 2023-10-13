@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 import typing as t
 from datetime import datetime, timedelta
 
@@ -56,13 +57,15 @@ class CloudWatchMetricEMFLogger:
         self._log_level = log_level
 
     def before_request(self):
-        g.request_start_time = datetime.now()
+        g.request_start_perf_counter_ms = time.perf_counter() * 1000
 
     def after_request(self, response: Response):
-        if hasattr(g, "route_type") and hasattr(g, "request_start_time"):
+        if hasattr(g, "route_type") and hasattr(g, "request_start_perf_counter_ms"):
+            request_latency_ms = time.perf_counter() * 1000 - \
+                g.request_start_perf_counter_ms
             self.emit_route_metrics(
                 route_name=g.route_type,
-                request_latency=datetime.now() - g.request_start_time,
+                request_latency_ms=request_latency_ms,
                 response_status=response.status_code,
             )
         return response
@@ -75,9 +78,11 @@ class CloudWatchMetricEMFLogger:
                 status_code = 500
                 if hasattr(error, "code"):
                     status_code = error.code
+                request_latency_ms = time.perf_counter() * 1000 - \
+                    g.request_start_perf_counter_ms
                 self.emit_route_metrics(
                     route_name=g.route_type,
-                    request_latency=datetime.now() - g.request_start_time,
+                    request_latency_ms=request_latency_ms,
                     response_status=status_code,
                 )
             raise error
@@ -85,10 +90,9 @@ class CloudWatchMetricEMFLogger:
     def emit_route_metrics(
         self,
         route_name: str,
-        request_latency: timedelta,
+        request_latency_ms: float,
         response_status: int,
     ):
-        request_latency_ms = request_latency.total_seconds() * 1000
         emf_log = _serialize_to_emf(
             namespace=self._namespace,
             dimension_sets=[

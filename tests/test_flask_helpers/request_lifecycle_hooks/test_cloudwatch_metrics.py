@@ -72,6 +72,6 @@ def test_routes_emit_emf_logs(
     assert emf_log.get("2XXs") == expected_2xxs
     assert emf_log.get("4XXs") == expected_4xxs
     assert emf_log.get("5XXs") == expected_5xxs
-    assert type(emf_log.get("RequestLatency")) == float
+    assert emf_log.get("RequestLatency") > 0
     assert emf_log.get("ActionProvider") == "TrackedActionProvider"
     assert emf_log.get("Route") == "run"
