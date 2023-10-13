@@ -20,12 +20,12 @@ from globus_action_provider_tools.testing.fixtures import (
 
 from .app_utils import (
     ap_description,
-    test_action_cancel,
-    test_action_enumeration,
-    test_action_log,
-    test_action_release,
-    test_action_run,
-    test_action_status,
+    mock_action_cancel_func,
+    mock_action_enumeration_func,
+    mock_action_log_func,
+    mock_action_release_func,
+    mock_action_run_func,
+    mock_action_status_func,
 )
 
 
@@ -44,12 +44,12 @@ def aptb_app(apt_blueprint_noauth, auth_state):
         url_prefix="/aptb",
         provider_description=ap_description,
     )
-    aptb.action_run(test_action_run)
-    aptb.action_status(test_action_status)
-    aptb.action_cancel(test_action_cancel)
-    aptb.action_release(test_action_release)
-    aptb.action_log(test_action_log)
-    aptb.action_enumerate(test_action_enumeration)
+    aptb.action_run(mock_action_run_func)
+    aptb.action_status(mock_action_status_func)
+    aptb.action_cancel(mock_action_cancel_func)
+    aptb.action_release(mock_action_release_func)
+    aptb.action_log(mock_action_log_func)
+    aptb.action_enumerate(mock_action_enumeration_func)
 
     apt_blueprint_noauth(aptb)
     app.register_blueprint(aptb)
@@ -71,12 +71,12 @@ def add_routes_app(flask_helpers_noauth, auth_state):
         client_secret="bogus",
         client_name=None,
         provider_description=ap_description,
-        action_run_callback=test_action_run,
-        action_status_callback=test_action_status,
-        action_cancel_callback=test_action_cancel,
-        action_release_callback=test_action_release,
-        action_log_callback=test_action_log,
-        action_enumeration_callback=test_action_enumeration,
+        action_run_callback=mock_action_run_func,
+        action_status_callback=mock_action_status_func,
+        action_cancel_callback=mock_action_cancel_func,
+        action_release_callback=mock_action_release_func,
+        action_log_callback=mock_action_log_func,
+        action_enumeration_callback=mock_action_enumeration_func,
         additional_scopes=[
             "https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/secondary_scope"
         ],

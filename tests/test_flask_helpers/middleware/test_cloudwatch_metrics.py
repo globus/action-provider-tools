@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 import pytest
@@ -13,7 +15,7 @@ from globus_action_provider_tools.flask.helpers import assign_json_provider
 from globus_action_provider_tools.flask.middleware.cloudwatch_metrics import (
     CloudWatchMetricEMFLogger,
 )
-from tests.test_flask_helpers.app_utils import ap_description, test_action_run
+from tests.test_flask_helpers.app_utils import ap_description, mock_action_run_func
 
 
 def erroring_4xx_run_route(action_request: ActionRequest, auth: AuthState):
@@ -27,7 +29,7 @@ def erroring_5xx_run_route(action_request: ActionRequest, auth: AuthState):
 @pytest.mark.parametrize(
     "run_view_func,expected_2xxs,expected_4xxs,expected_5xxs",
     [
-        (test_action_run, 1, 0, 0),
+        (mock_action_run_func, 1, 0, 0),
         (erroring_4xx_run_route, 0, 1, 0),
         (erroring_5xx_run_route, 0, 0, 1),
     ],
