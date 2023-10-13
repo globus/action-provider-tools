@@ -51,6 +51,7 @@ class ActionProviderBlueprint(Blueprint):
         globus_auth_client_name: t.Optional[str] = None,
         additional_scopes: t.Iterable[str] = (),
         action_repository: t.Optional[AbstractActionRepository] = None,
+        middleware: t.Optional[t.List[t.Any]] = None,
         **kwarg,
     ):
         """Create a new ActionProviderBlueprint. All arguments not listed here are the
@@ -71,6 +72,11 @@ class ActionProviderBlueprint(Blueprint):
         ``globus_auth_scope`` value of the input provider description. Only
         needed if more than one scope has been allocated for the Action
         Provider's Globus Auth client_id.
+
+        :param middleware: A list of classes defining a before_request, after_request,
+        and/or teardown_request method. If these functions exist they will be registered
+        with the blueprint. Middleware classes are registered in the order they are
+        provided.
         """
 
         super().__init__(*args, **kwarg)
@@ -85,6 +91,15 @@ class ActionProviderBlueprint(Blueprint):
         self.before_request(self._check_token)
         self.register_error_handler(Exception, blueprint_error_handler)
         self.record_once(self._create_token_checker)
+
+        if middleware:
+            for m in middleware:
+                if hasattr(m, "before_request"):
+                    self.before_request(m.before_request)
+                if hasattr(m, "after_request"):
+                    self.after_request(m.after_request)
+                if hasattr(m, "teardown_request"):
+                    self.teardown_request(m.teardown_request)
 
         self.add_url_rule(
             "/",
@@ -152,6 +167,7 @@ class ActionProviderBlueprint(Blueprint):
         """
         Runs as an Action Provider's introspection endpoint.
         """
+        self._register_route_type("introspect")
         if not g.auth_state.check_authorization(
             self.provider_description.visible_to,
             allow_public=True,
@@ -166,6 +182,7 @@ class ActionProviderBlueprint(Blueprint):
         return jsonify(self.provider_description), 200
 
     def _action_enumerate(self):
+        self._register_route_type("enumerate")
         if not g.auth_state.check_authorization(
             self.provider_description.runnable_by,
             allow_public=True,
@@ -206,6 +223,7 @@ class ActionProviderBlueprint(Blueprint):
         return func
 
     def _action_run(self):
+        self._register_route_type("run")
         if not g.auth_state.check_authorization(
             self.provider_description.runnable_by,
             allow_all_authenticated_users=True,
@@ -257,6 +275,7 @@ class ActionProviderBlueprint(Blueprint):
         return func
 
     def _action_resume(self, action_id: str):
+        self._register_route_type("resume")
         # Attempt to lookup the Action based on its action_id if there was an
         # Action Repo defined. If an action is found, verify access to it.
         action = None
@@ -307,6 +326,7 @@ class ActionProviderBlueprint(Blueprint):
         return func
 
     def _action_status(self, action_id: str):
+        self._register_route_type("status")
         """
         Attempts to load an action_status via its action_id using an
         action_loader. If an action is successfully loaded, view access by the
@@ -351,6 +371,7 @@ class ActionProviderBlueprint(Blueprint):
         return func
 
     def _action_cancel(self, action_id: str):
+        self._register_route_type("cancel")
         """
         Executes a user-defined function for cancelling an Action.
         """
@@ -405,6 +426,7 @@ class ActionProviderBlueprint(Blueprint):
         return func
 
     def _action_release(self, action_id: str):
+        self._register_route_type("release")
         """
         Decorates a function to be run as an Action Provider's release endpoint.
         """
@@ -446,6 +468,7 @@ class ActionProviderBlueprint(Blueprint):
         return func
 
     def _action_log(self, action_id: str):
+        self._register_route_type("log")
         # Attempt to use a user-defined function to lookup the Action based
         # on its action_id. If an action is found, authorize access to it
         action = None
@@ -455,6 +478,10 @@ class ActionProviderBlueprint(Blueprint):
 
         status = self.action_log_callback(action_id, g.auth_state)
         return jsonify(status), 200
+
+    def _register_route_type(self, route_type: str):
+        if not hasattr(g, "route_type"):
+            g.route_type = route_type
 
     def _load_action_by_id(
         self, repo: AbstractActionRepository, action_id: str
