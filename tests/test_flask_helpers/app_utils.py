@@ -67,7 +67,7 @@ ap_description = ActionProviderDescription(
 )
 
 
-def test_action_enumeration(
+def mock_action_enumeration_func(
     auth: AuthState, params: Dict[str, Set]
 ) -> List[ActionStatus]:
     statuses = params["statuses"]
@@ -95,7 +95,7 @@ def test_action_enumeration(
     return matches
 
 
-def test_action_run(
+def mock_action_run_func(
     action_request: ActionRequest, auth: AuthState
 ) -> ActionCallbackReturn:
     action_status = ActionStatus(
@@ -114,7 +114,7 @@ def test_action_run(
     return action_status
 
 
-def test_action_status(action_id: str, auth: AuthState) -> ActionCallbackReturn:
+def mock_action_status_func(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise ActionNotFound(f"No action with {action_id}")
@@ -122,7 +122,7 @@ def test_action_status(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     return action_status
 
 
-def test_action_cancel(action_id: str, auth: AuthState) -> ActionCallbackReturn:
+def mock_action_cancel_func(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise ActionNotFound(f"No action with {action_id}")
@@ -138,7 +138,7 @@ def test_action_cancel(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     return action_status
 
 
-def test_action_release(action_id: str, auth: AuthState) -> ActionCallbackReturn:
+def mock_action_release_func(action_id: str, auth: AuthState) -> ActionCallbackReturn:
     action_status = simple_backend.get(action_id)
     if action_status is None:
         raise ActionNotFound(f"No action with {action_id}")
@@ -152,7 +152,7 @@ def test_action_release(action_id: str, auth: AuthState) -> ActionCallbackReturn
     return action_status
 
 
-def test_action_log(action_id: str, auth: AuthState) -> ActionLogReturn:
+def mock_action_log_func(action_id: str, auth: AuthState) -> ActionLogReturn:
     pagination = request.args.get("pagination")
     filters = request.args.get("filters")
     return ActionLogReturn(
