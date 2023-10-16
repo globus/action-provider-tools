@@ -102,7 +102,7 @@ class CloudWatchMetricEMFLogger:
                 {"ActionProvider": self._action_provider_name, "Route": route_name},
             ],
             metrics=[
-                ("Count", 1, "Count"),
+                ("RequestCount", 1, "Count"),
                 ("2XXs", 1 if 200 <= response_status < 300 else 0, "Count"),
                 ("4XXs", 1 if 400 <= response_status < 500 else 0, "Count"),
                 ("5XXs", 1 if 500 <= response_status < 600 else 0, "Count"),

@@ -68,7 +68,7 @@ def test_routes_emit_emf_logs(
     emf_log = json.loads(out)
 
     assert "_aws" in emf_log
-    assert emf_log.get("Count") == 1
+    assert emf_log.get("RequestCount") == 1
     assert emf_log.get("2XXs") == expected_2xxs
     assert emf_log.get("4XXs") == expected_4xxs
     assert emf_log.get("5XXs") == expected_5xxs
