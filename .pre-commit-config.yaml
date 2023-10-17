@@ -31,3 +31,8 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
+
+  - repo: https://github.com/sirosen/slyp
+    rev: 0.1.1
+    hooks:
+      - id: slyp
