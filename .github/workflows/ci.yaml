@@ -15,7 +15,7 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: "Checkout the repo"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608" # v4.1.0
 
       - name: "Identify the week number"
         run: |
@@ -24,7 +24,7 @@ jobs:
 
       - name: "Setup Python"
         id: "setup-python"
-        uses: "actions/setup-python@v4"
+        uses: "actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236" # v4.7.1
         with:
           python-version: "3.12"
           cache: "pip"
@@ -36,7 +36,7 @@ jobs:
 
       - name: "Restore the cache"
         id: "restore-cache"
-        uses: "actions/cache@v3"
+        uses: "actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84" # v3.3.2
         with:
           path: |
             .tox/
@@ -64,7 +64,7 @@ jobs:
       wheel-filename: "${{ steps.build-wheel.outputs.wheel-filename }}"
     steps:
       - name: "Checkout the repo"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608" # v4.1.0
 
       - name: "Identify the week number"
         run: |
@@ -73,7 +73,7 @@ jobs:
 
       - name: "Setup Python"
         id: "setup-python"
-        uses: "actions/setup-python@v4"
+        uses: "actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236" # v4.7.1
         with:
           python-version: "3.11"
           cache: "pip"
@@ -90,7 +90,7 @@ jobs:
           echo "wheel-filename=$(ls -1 globus_action_provider_tools-*.whl | head -n 1)" >> $GITHUB_OUTPUT
 
       - name: "Upload the artifact"
-        uses: "actions/upload-artifact@v3"
+        uses: "actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32" # v3.1.3
         with:
           name: "globus_action_provider_tools-${{ github.sha }}.whl"
           path: "${{ steps.build-wheel.outputs.wheel-filename }}"
@@ -144,7 +144,7 @@ jobs:
 
     steps:
       - name: "Checkout the repo"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608" # v4.1.0
 
       - name: "Identify the week number"
         shell: "bash"
@@ -154,7 +154,7 @@ jobs:
 
       - name: "Setup Python"
         id: "setup-python"
-        uses: "actions/setup-python@v4"
+        uses: "actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236" # v4.7.1
         with:
           python-version: "${{ matrix.python-version }}"
           cache: "pip"
@@ -166,7 +166,7 @@ jobs:
 
       - name: "Restore cache"
         id: "restore-cache"
-        uses: "actions/cache@v3"
+        uses: "actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84" # v3.3.2
         with:
           path: |
             .tox/
@@ -190,7 +190,7 @@ jobs:
           ${{ env.venv-path }}/pip install tox
 
       - name: "Download the artifact"
-        uses: "actions/download-artifact@v3"
+        uses: "actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a" # v3.0.2
         with:
           name: "globus_action_provider_tools-${{ github.sha }}.whl"
 
