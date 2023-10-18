@@ -1,4 +1,5 @@
-# pre-commit.ci routinely submits PRs to update hook versions.
+ci:
+  autoupdate_schedule: "monthly"
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
