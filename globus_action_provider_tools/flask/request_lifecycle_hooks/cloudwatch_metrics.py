@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from flask import Response, g
 
-log = logging.getLogger("action-provider-tools-cloudwatch-emf")
+log = logging.getLogger("globus_action_provider_tools.cloudwatch_metric_emf_logger")
 
 
 class CloudWatchMetricEMFLogger:
@@ -95,7 +95,7 @@ class CloudWatchMetricEMFLogger:
         request_latency_ms: float,
         response_status: int,
     ):
-        emf_log = _serialize_to_emf(
+        emf_obj = _to_emf(
             namespace=self._namespace,
             dimension_sets=[
                 {"ActionProvider": self._action_provider_name},
@@ -109,12 +109,12 @@ class CloudWatchMetricEMFLogger:
                 ("RequestLatency", request_latency_ms, "Milliseconds"),
             ],
         )
-        emf_log_str = json.dumps(emf_log)
 
+        serialized_emf = json.dumps(emf_obj)
         if not self._log_level:
-            print(emf_log_str)
+            print(serialized_emf)
         else:
-            log.log(self._log_level, emf_log_str)
+            log.log(self._log_level, serialized_emf)
 
 
 # fmt: off
@@ -129,14 +129,14 @@ CloudWatchUnit = t.Literal[
 # fmt: on
 
 
-def _serialize_to_emf(
+def _to_emf(
     namespace: str,
     dimension_sets: list[dict[str, str]],
     metrics: list[tuple[str, str | int | float, CloudWatchUnit | None]],
     timestamp: datetime | None = None,
 ) -> dict[str, t.Any]:
     """
-    Serializes a list of metrics into CloudWatch Embedded Metric Format
+    Mutates a list of metrics into CloudWatch Embedded Metric Format
     https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html
 
     This results in an object like
