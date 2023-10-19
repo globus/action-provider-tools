@@ -10,6 +10,23 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.14.0:
+
+0.14.0 — 2023-10-19
+===================
+
+Features
+--------
+
+- Added a CloudWatchEMFLogger ``RequestLifecycleHook`` class.
+  When attached to an ``ActionProviderBlueprint``, it will emit request count, latency,
+  and response category (2xxs, 4xxs, 5xxs) count metrics through CloudWatch EMF. Metrics
+  are emitted both for the aggregate AP dimension set and the individual route dimension
+  set.
+
+  - Classes may be provided at Blueprint instantiation time to register before, after,
+    and/or teardown functionality wrapping route invocation.
+
 .. _changelog-0.13.0rc2:
 
 0.13.0rc2 — 2023-10-06

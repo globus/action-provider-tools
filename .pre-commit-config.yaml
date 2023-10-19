@@ -1,8 +1,9 @@
-# pre-commit.ci routinely submits PRs to update hook versions.
+ci:
+  autoupdate_schedule: "monthly"
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -17,7 +18,7 @@ repos:
 
   # Enforce Python 3.8+ idioms.
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.14.0
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         args: [--py38-plus]
@@ -31,3 +32,8 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
+
+  - repo: https://github.com/sirosen/slyp
+    rev: 0.1.1
+    hooks:
+      - id: slyp
