@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 from time import time
 from typing import FrozenSet, Iterable, List, Optional, Union, cast
@@ -18,6 +19,11 @@ from globus_sdk import (
 )
 
 log = logging.getLogger(__name__)
+
+
+def _hash_token(token: str) -> str:
+    """Return a hash of the token, suitable for use as a cache key"""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def group_principal(id_: str) -> str:
@@ -164,24 +170,20 @@ class AuthState:
             AuthState.group_membership_cache[groups_token] = groups_set
             return groups_set
 
-    @property
-    def dependent_tokens_cache_id(self) -> str | None:
-        tkn_details = self.introspect_token()
-        if tkn_details is None:
-            return None
-        return tkn_details.get("dependent_tokens_cache_id")
-
     def get_dependent_tokens(self, bypass_cache_lookup=False) -> OAuthTokenResponse:
         """
         Returns OAuthTokenResponse representing the dependent tokens associated
         with a particular access token.
         """
-        dependent_tokens_cache_id = self.dependent_tokens_cache_id
-        if dependent_tokens_cache_id is not None and not bypass_cache_lookup:
-            resp = AuthState.dependent_tokens_cache.get(dependent_tokens_cache_id)
+        # Caching is done based on a hash of the token string, **not** the
+        # dependent_tokens_cache_id. This is intentional.
+        token_cache_key = f"dependent_tokens:{_hash_token(self.bearer_token)}"
+
+        if token_cache_key is not None and not bypass_cache_lookup:
+            resp = AuthState.dependent_tokens_cache.get(token_cache_key)
             if resp is not None:
                 log.info(
-                    f"Using cached dependent token response with cache ID {dependent_tokens_cache_id} "
+                    f"Using cached dependent token response (key={token_cache_key}) "
                     f"for token ***{self.sanitized_token}"
                 )
                 return resp
@@ -190,11 +192,10 @@ class AuthState:
         resp = self.auth_client.oauth2_get_dependent_tokens(
             self.bearer_token, additional_params={"access_type": "offline"}
         )
-        if resp is not None and dependent_tokens_cache_id is not None:
-            log.info(
-                f"Caching dependent token response for token ***{self.sanitized_token}"
-            )
-            AuthState.dependent_tokens_cache[dependent_tokens_cache_id] = resp
+        log.info(
+            f"Caching dependent token response for token ***{self.sanitized_token}"
+        )
+        AuthState.dependent_tokens_cache[token_cache_key] = resp
         return resp
 
     def get_authorizer_for_scope(
