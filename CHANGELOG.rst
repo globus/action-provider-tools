@@ -10,6 +10,17 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.14.1:
+
+0.14.1 — 2023-10-27
+===================
+
+Changes
+-------
+
+- Change the way that dependent token caching computes cache keys to improve
+  upstream cache busting
+
 .. _changelog-0.14.0:
 
 0.14.0 — 2023-10-19
