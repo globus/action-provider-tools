@@ -176,7 +176,9 @@ class AuthState:
         with a particular access token.
         """
         # Caching is done based on a hash of the token string, **not** the
-        # dependent_tokens_cache_id. This is intentional.
+        # dependent_tokens_cache_id.
+        # This guarantees that we get a new access token for any upstream service
+        # calls if we get a new token, which is helpful for cache busting.
         token_cache_key = f"dependent_tokens:{_hash_token(self.bearer_token)}"
 
         if not bypass_cache_lookup:
