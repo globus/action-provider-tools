@@ -78,7 +78,7 @@ def test_caching_groups(auth_state, freeze_time, mocked_responses):
     for _ in range(num_test_calls):
         assert len(auth_state.groups) == len(group_response.metadata["group-ids"])
 
-    assert len(mocked_responses.calls) == 3
+    assert len(mocked_responses.calls) == 2
 
 
 def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_responses):
