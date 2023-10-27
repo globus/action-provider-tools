@@ -179,7 +179,7 @@ class AuthState:
         # dependent_tokens_cache_id. This is intentional.
         token_cache_key = f"dependent_tokens:{_hash_token(self.bearer_token)}"
 
-        if token_cache_key is not None and not bypass_cache_lookup:
+        if not bypass_cache_lookup:
             resp = AuthState.dependent_tokens_cache.get(token_cache_key)
             if resp is not None:
                 log.info(
