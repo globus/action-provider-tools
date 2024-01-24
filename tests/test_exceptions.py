@@ -7,6 +7,7 @@ from globus_action_provider_tools.flask.exceptions import (
     ActionNotFound,
     ActionProviderError,
     BadActionRequest,
+    RequestValidationError,
     UnauthorizedRequest,
 )
 
@@ -18,6 +19,7 @@ from globus_action_provider_tools.flask.exceptions import (
         ActionNotFound,
         ActionProviderError,
         BadActionRequest,
+        RequestValidationError,
         UnauthorizedRequest,
     ],
 )
