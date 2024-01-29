@@ -96,27 +96,6 @@ are no breaking changes introduced. Both these steps must be run for us to
 accept incoming changes. Once you feel your work is ready to be submitted, feel
 free to create a PR.
 
-PyPi Releases
--------------
-
-Please follow the steps below when creating a new release of the toolkit:
-
-- Create a new release branch
-    - git checkout -b release/X.Y.Z
-- Update the project's dependencies
-    - poetry update
-- Update the project version (follow semantic versioning) in pyproject.toml
-    - poetry version patch|minor|major
-- Update the project version in `globus_action_provider_tools/__init__.py`
-- Create a pull request into the main branch, wait for CI tests to complete
-- Merge the passing pull request
-- Create and publish a git tag for the new release
-    - git tag v$(poetry version -s)
-    - git push --tags
-- Create a new GH release that references the recently created tag. Provide
-  release notes with information on the changeset. Once the release is created,
-  there's a GH workflow that will build the toolkit and publish it to pypi.
-
 Links
 -----
 | Full Documentation: https://action-provider-tools.readthedocs.io

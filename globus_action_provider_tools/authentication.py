@@ -331,25 +331,23 @@ class AuthState:
         allow_public: bool = False,
         allow_all_authenticated_users: bool = False,
     ) -> bool:
-        allowed_set = frozenset(allowed_principals)
+        allowed_set = set(allowed_principals)
         all_principals = self.identities
         # We only need to merge in the groups values to the principals list if there are
         # group principals in the list. Can save a round trip to the Groups service if
         # there's no need to check for group membership.
         if AuthState.group_in_principal_list(allowed_set):
-            allowed_principals = set(allowed_principals).union(self.groups)
-        if (
+            allowed_set = allowed_set.union(self.groups)
+
+        return (
             (allow_public and "public" in allowed_set)
-            or (allowed_set.intersection(all_principals))
+            or bool(allowed_set.intersection(all_principals))
             or (
                 allow_all_authenticated_users
                 and "all_authenticated_users" in allowed_set
                 and len(self.identities) > 0
             )
-        ):
-            return True
-        else:
-            return False
+        )
 
 
 class TokenChecker:

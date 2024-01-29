@@ -10,6 +10,24 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.15.0:
+
+0.15.0 — 2024-01-26
+===================
+
+Bugfixes
+--------
+
+- Groups were not being properly considered in authorization checks.
+
+Changes
+-------
+
+- Error descriptions in responses are now always strings (previously they could also
+  be lists of strings or lists of dictionaries).
+- Input validation errors now use an HTTP response status code of 422.
+- Validation errors no longer return input data in their description.
+
 .. _changelog-0.14.1:
 
 0.14.1 — 2023-10-27

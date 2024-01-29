@@ -24,7 +24,7 @@ from globus_action_provider_tools.errors import AuthenticationError
 from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
     ActionProviderToolsException,
-    BadActionRequest,
+    RequestValidationError,
     UnauthorizedRequest,
 )
 from globus_action_provider_tools.flask.types import ActionCallbackReturn, ViewReturn
@@ -144,7 +144,8 @@ def validate_input(
         request_json = RequestObject.parse_obj(request_json).__root__
         action_request = ActionRequest(**request_json)
     except ValidationError as ve:
-        raise BadActionRequest(ve.errors())
+        messages = [f"Field '{'.'.join(e['loc'])}': {e['msg']}" for e in ve.errors()]
+        raise RequestValidationError("; ".join(messages))
 
     input_body_validator(action_request.body)
 
@@ -197,7 +198,7 @@ def json_schema_input_validation(
     """
     result = validate_data(action_input, validator)
     if result.errors:
-        raise BadActionRequest(result.errors)
+        raise RequestValidationError(result.error_msg)
 
 
 def pydantic_input_validation(
@@ -210,7 +211,8 @@ def pydantic_input_validation(
     try:
         validator(**action_input)
     except ValidationError as ve:
-        raise BadActionRequest(ve.errors())
+        messages = [f"Field '{'.'.join(e['loc'])}': {e['msg']}" for e in ve.errors()]
+        raise RequestValidationError("; ".join(messages))
 
 
 try:

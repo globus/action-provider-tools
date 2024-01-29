@@ -20,19 +20,13 @@ from werkzeug.exceptions import (
     InternalServerError,
     NotFound,
     Unauthorized,
+    UnprocessableEntity,
 )
 
 JSONType = t.Union[str, int, float, bool, None, t.Dict[str, t.Any], t.List[t.Any]]
 
 
 class ActionProviderToolsException(HTTPException):
-    # This is only required to update allow mypy to recognize the description
-    # can be any JSON-able structure
-    def __init__(self, description: t.Optional[JSONType] = None, *args, **kwargs):
-        if description is not None:
-            description = json.dumps(description)
-        super().__init__(description, *args, **kwargs)
-
     @property
     def name(self):
         return type(self).__name__
@@ -41,18 +35,12 @@ class ActionProviderToolsException(HTTPException):
         return json.dumps(
             {
                 "code": self.name,
-                "description": self.get_description(),
+                "description": self.description,
             }
         )
 
     def get_headers(self, *args):
         return [("Content-Type", "application/json")]
-
-    def get_description(self, *args):
-        try:
-            return json.loads(self.description)
-        except json.decoder.JSONDecodeError:
-            return self.description
 
 
 class ActionNotFound(ActionProviderToolsException, NotFound):
@@ -60,6 +48,13 @@ class ActionNotFound(ActionProviderToolsException, NotFound):
 
 
 class BadActionRequest(BadRequest, ActionProviderToolsException):
+    pass
+
+
+class RequestValidationError(UnprocessableEntity, BadActionRequest):
+    # TODO: This inherits from BadActionRequest to avoid breaking
+    # downstream code that expects to catch BadActionRequest when an error occurs
+    # during validation. Remove this inheritance in a future release.
     pass
 
 
