@@ -36,7 +36,7 @@ jobs:
 
       - name: "Restore the cache"
         id: "restore-cache"
-        uses: "actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84" # v3.3.2
+        uses: "actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2" # v4.0.0
         with:
           path: |
             .tox/
@@ -90,7 +90,7 @@ jobs:
           echo "wheel-filename=$(ls -1 globus_action_provider_tools-*.whl | head -n 1)" >> $GITHUB_OUTPUT
 
       - name: "Upload the artifact"
-        uses: "actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392" # v4.0.0
+        uses: "actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8" # v4.3.0
         with:
           name: "globus_action_provider_tools-${{ github.sha }}.whl"
           path: "${{ steps.build-wheel.outputs.wheel-filename }}"
@@ -166,7 +166,7 @@ jobs:
 
       - name: "Restore cache"
         id: "restore-cache"
-        uses: "actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84" # v3.3.2
+        uses: "actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2" # v4.0.0
         with:
           path: |
             .tox/
@@ -190,7 +190,7 @@ jobs:
           ${{ env.venv-path }}/pip install tox
 
       - name: "Download the artifact"
-        uses: "actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110" # v4.1.0
+        uses: "actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935" # v4.1.1
         with:
           name: "globus_action_provider_tools-${{ github.sha }}.whl"
 
