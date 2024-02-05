@@ -4,7 +4,6 @@ helpers with authentication mocked out. Each fixture creates an identical app,
 the only difference being in the helper that is used to create the app.
 """
 
-
 import pytest
 from flask import Blueprint, Flask
 

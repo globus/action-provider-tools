@@ -46,8 +46,7 @@ def test_action_status_jsonable(kwargs):
 
 
 def test_pydantic_models_jsonable():
-    class PydanticModel(BaseModel):
-        ...
+    class PydanticModel(BaseModel): ...
 
     try:
         json.dumps(PydanticModel, cls=ActionProviderJsonEncoder)
