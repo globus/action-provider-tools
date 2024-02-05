@@ -1,6 +1,7 @@
 """
 This module tests some of the shared validation functions in the Flask helpers.
 """
+
 import json
 
 import pytest
