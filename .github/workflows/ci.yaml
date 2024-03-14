@@ -20,7 +20,7 @@ jobs:
       - name: "Identify the week number"
         run: |
           date +'%U' > week-number.txt
-          date +'week-number=%U' >> $GITHUB_ENV
+          date +'week-number=%U' >> "$GITHUB_ENV"
 
       - name: "Setup Python"
         id: "setup-python"
@@ -69,7 +69,7 @@ jobs:
       - name: "Identify the week number"
         run: |
           date +'%U' > week-number.txt
-          date +'week-number=%U' >> $GITHUB_ENV
+          date +'week-number=%U' >> "$GITHUB_ENV"
 
       - name: "Setup Python"
         id: "setup-python"
@@ -87,7 +87,7 @@ jobs:
         id: "build-wheel"
         run: |
           pip wheel .
-          echo "wheel-filename=$(ls -1 globus_action_provider_tools-*.whl | head -n 1)" >> $GITHUB_OUTPUT
+          echo "wheel-filename=$(find globus_action_provider_tools-*.whl | head -n 1)" >> "$GITHUB_OUTPUT"
 
       - name: "Upload the artifact"
         uses: "actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3" # v4.3.1
@@ -150,7 +150,7 @@ jobs:
         shell: "bash"
         run: |
           date +'%U' > week-number.txt
-          date +'week-number=%U' >> $GITHUB_ENV
+          date +'week-number=%U' >> "$GITHUB_ENV"
 
       - name: "Setup Python"
         id: "setup-python"
@@ -180,7 +180,8 @@ jobs:
 
       - name: "Identify virtual environment path"
         shell: "bash"
-        run:  "echo 'venv-path=${{ runner.os == 'Windows' && '.venv/Scripts' || '.venv/bin' }}' >> $GITHUB_ENV"
+        run:  |
+          echo 'venv-path=${{ runner.os == 'Windows' && '.venv/Scripts' || '.venv/bin' }}' >> "$GITHUB_ENV"
 
       - name: "Install tox"
         if: "steps.restore-cache.outputs.cache-hit == false"

@@ -37,3 +37,8 @@ repos:
     rev: 0.3.0
     hooks:
       - id: slyp
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.6.27
+    hooks:
+      - id: actionlint
