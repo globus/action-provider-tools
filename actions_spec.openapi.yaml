@@ -4,7 +4,7 @@ info:
   description: |
     This is the Globus Actions API description. Implementation of this API
     renders a service compatible for use in the Globus Automate service.
-  version: 2020-02-05.1
+  version: 2024-03-14.1
   contact:
     name: Globus Support
     url: "https://support.globus.org/hc/en-us/requests/new"

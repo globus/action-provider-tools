@@ -64,7 +64,7 @@ html_theme_options = {
     "repo_type": "github",
     "master_doc": True,
 }
-pygments_style = "stata"
+pygments_style = "stata-light"
 
 html_sidebars = {
     "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
