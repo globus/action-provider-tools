@@ -42,3 +42,8 @@ repos:
     rev: v1.6.27
     hooks:
       - id: actionlint
+
+  - repo: https://github.com/kurtmckee/pre-commit-hooks
+    rev: v0.1.0
+    hooks:
+      - id: verify-consistent-pyproject-toml-python-requirements
