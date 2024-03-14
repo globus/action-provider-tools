@@ -4,7 +4,7 @@ import json
 import logging
 import time
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from flask import Response, g
 

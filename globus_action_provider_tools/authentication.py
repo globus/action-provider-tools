@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from time import time
-from typing import FrozenSet, Iterable, List, Optional, Union, cast
+from typing import Iterable, cast
 
 import globus_sdk
 from cachetools import TTLCache

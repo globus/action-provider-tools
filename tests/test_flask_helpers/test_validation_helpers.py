@@ -10,7 +10,6 @@ from jsonschema.validators import Draft7Validator
 from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
     BadActionRequest,
-    RequestValidationError,
 )
 from globus_action_provider_tools.flask.helpers import (
     get_input_body_validator,
