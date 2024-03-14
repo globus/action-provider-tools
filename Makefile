@@ -1,6 +1,6 @@
 VIRTUAL_ENV ?= .venv
 
-.PHONY: help install docs redoc clean test poetry.lock requirements.txt
+.PHONY: help install docs redoc clean test
 
 define HELPTEXT
 Please use "make <target>" where <target> is one of:
@@ -21,17 +21,8 @@ Please use "make <target>" where <target> is one of:
     test:
         Run the full suite of tests
 
-    test-toolkit:
-        Run the toolkit's source code tests
-
-    test-examples:
-        Run the example Action Providers' tests
-
     poetry.lock:
         Generate this project's poetry.lock file
-
-    requirements.txt:
-        Generate this project's requirements.txt file
 
 endef
 export HELPTEXT
@@ -43,29 +34,24 @@ install:
 	poetry install
 
 docs:
-	poetry run make --directory=docs html
+	tox run -e docs
 
 redoc:
 	npx redoc-cli bundle --output index.html actions_spec.openapi.yaml
 
 clean:
 	rm -rf $(VIRTUAL_ENV)
-	rm -rf .make_install_flag
 	find . -name "*.pyc" -delete
-	rm -rf *.egg-info
-	rm -f *.tar.gz
-	rm -rf tar-source
-	rm -rf dist
-	rm -rf .coverage
-	rm -rf .mypy_cache
-	rm -rf .pytest_cache
-	rm -rf docs/build/*
+	rm -rf *.egg-info/
+	rm -rf dist/
+	rm -f .coverage
+	rm -rf .mypy_cache/
+	rm -rf .pytest_cache/
+	rm -rf .slyp_cache/
+	rm -rf docs/build/
 
 test:
-	poetry run tox
+	tox run-parallel
 
 poetry.lock:
 	poetry lock
-
-requirements.txt:
-	poetry export --format requirements.txt -o requirements.txt
