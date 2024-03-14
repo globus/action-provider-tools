@@ -1,7 +1,15 @@
 ci:
-  autoupdate_schedule: "monthly"
+  autoupdate_schedule: "quarterly"
+
+default_language_version:
+  python: "python3.12"
 
 repos:
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
