@@ -37,7 +37,7 @@ docs:
 	tox run -e docs
 
 redoc:
-	npx redoc-cli bundle --output index.html actions_spec.openapi.yaml
+	npx @redocly/cli build-docs --output index.html actions_spec.openapi.yaml
 
 clean:
 	rm -rf $(VIRTUAL_ENV)
