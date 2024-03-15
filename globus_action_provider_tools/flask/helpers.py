@@ -4,7 +4,7 @@ import inspect
 import json
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, Optional, Set, Type
+from typing import Any, Callable, Dict, Iterable
 
 import flask
 import jsonschema

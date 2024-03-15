@@ -12,7 +12,7 @@ from globus_action_provider_tools.flask import (
     add_action_routes_to_blueprint,
 )
 from globus_action_provider_tools.flask.helpers import assign_json_provider
-from globus_action_provider_tools.testing.fixtures import (
+from globus_action_provider_tools.testing.fixtures import (  # noqa: F401 unused import
     apt_blueprint_noauth,
     flask_helpers_noauth,
 )
@@ -29,7 +29,7 @@ from .app_utils import (
 
 
 @pytest.fixture()
-def aptb_app(apt_blueprint_noauth, auth_state):
+def aptb_app(apt_blueprint_noauth, auth_state):  # noqa: F811 redefinition
     """
     This fixture creates a Flask app using the ActionProviderBlueprint
     helper. The function form of the decorators are used to register each
@@ -56,7 +56,7 @@ def aptb_app(apt_blueprint_noauth, auth_state):
 
 
 @pytest.fixture()
-def add_routes_app(flask_helpers_noauth, auth_state):
+def add_routes_app(flask_helpers_noauth, auth_state):  # noqa: F811 redefinition
     """
     This fixture creates a Flask app with routes loaded via the
     add_action_routes_to_blueprint Flask helper.
