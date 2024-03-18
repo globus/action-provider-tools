@@ -7,8 +7,8 @@ Dependency management
 
 Dependencies are separated by purpose:
 
-*   Direct project dependencies are managed in ``/pyproject.toml``.
-*   Development dependencies (like "test" or "docs" dependencies)
+*   Core project dependencies are managed in ``/pyproject.toml``.
+*   Isolated closure dependencies (i.e. "test" or "docs")
     are managed in ``pyproject.toml`` files in ``/requirements/`` subdirectories.
 
 This isolates resolution of project and development dependency versions.
