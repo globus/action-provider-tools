@@ -46,8 +46,8 @@ install:
 	source $(VIRTUAL_ENV)/bin/activate && pre-commit install
 
 docs:
-	source $(VIRTUAL_ENV)/bin/activate
-	tox run -e docs
+	# Run tox, whether it's installed globally or locally in the virtual environment.
+	source $(VIRTUAL_ENV)/bin/activate && tox run -e docs
 
 
 redoc:
@@ -65,5 +65,5 @@ clean:
 	rm -rf docs/build/
 
 test:
-	source $(VIRTUAL_ENV)/bin/activate
-	tox run-parallel
+	# Run tox, whether it's installed globally or locally in the virtual environment.
+	source $(VIRTUAL_ENV)/bin/activate && tox run-parallel
