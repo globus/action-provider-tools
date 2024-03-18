@@ -1,4 +1,5 @@
 VIRTUAL_ENV ?= .venv
+SHELL := /bin/bash
 
 .PHONY: help install docs redoc clean test
 
@@ -6,8 +7,7 @@ define HELPTEXT
 Please use "make <target>" where <target> is one of:
 
     install:
-        Install this project and its dependencies into a virtual
-        environment at $(VIRTUAL_ENV)
+        Install this project and its dependencies into a virtual environment at $(VIRTUAL_ENV)
 
     docs:
         Build this project's documentation locally in docs/build
@@ -31,10 +31,24 @@ help:
 	@echo "$$HELPTEXT"
 
 install:
-	poetry install
+	python -m venv $(VIRTUAL_ENV)
+	$(VIRTUAL_ENV)/bin/python -m pip install --upgrade pip setuptools wheel
+	$(VIRTUAL_ENV)/bin/python -m pip install --upgrade -rrequirements/test/requirements.txt
+	$(VIRTUAL_ENV)/bin/python -m pip install --editable .[flask]
+
+	# Ensure that pre-commit and tox are available.
+	# The "source && <command> --version" syntax allows commands
+	# to be installed either globally or locally.
+	source $(VIRTUAL_ENV)/bin/activate && pre-commit --version || $(VIRTUAL_ENV)/bin/python -m pip install pre-commit
+	source $(VIRTUAL_ENV)/bin/activate && tox --version || $(VIRTUAL_ENV)/bin/python -m pip install tox
+
+	# Install pre-commit as a git hook.
+	source $(VIRTUAL_ENV)/bin/activate && pre-commit install
 
 docs:
-	tox run -e docs
+	# Run tox, whether it's installed globally or locally in the virtual environment.
+	source $(VIRTUAL_ENV)/bin/activate && tox run -e docs
+
 
 redoc:
 	npx @redocly/cli build-docs --output index.html actions_spec.openapi.yaml
@@ -51,7 +65,5 @@ clean:
 	rm -rf docs/build/
 
 test:
-	tox run-parallel
-
-poetry.lock:
-	poetry lock
+	# Run tox, whether it's installed globally or locally in the virtual environment.
+	source $(VIRTUAL_ENV)/bin/activate && tox run-parallel

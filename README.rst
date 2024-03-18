@@ -62,19 +62,20 @@ share your feedback.
 Testing, Development, and Contributing
 --------------------------------------
 
-Welcome and thank you for taking the time to contribute!
+Welcome, and thank you for taking the time to contribute!
 
-The ``globus_action_provider_tools`` package is developed using poetry so to get
-started you'll need to install `poetry <https://python-poetry.org/>`_. Once
-installed, clone the repository and run ``make install`` to install the package
-and its dependencies locally in a virtual environment (typically ``.venv``).
+To get started, you'll need to clone the repository and run ``make install``
+to install the package and its dependencies locally in a virtual environment (``.venv/``).
 
-And that's it, you're ready to dive in and make code changes. Once you're
-satisfied with your changes, be sure to run ``make autoformat`` to run the
-project's autoformatters on your changes and ``make test`` to validate there
-are no breaking changes introduced. Both these steps must be run for us to
-accept incoming changes. Once you feel your work is ready to be submitted, feel
-free to create a PR.
+Next, activate the virtual environment:
+
+..  code-block:: console
+
+    $ source .venv/bin/activate
+
+And that's it, you're ready to dive in and make code changes.
+Run ``make test`` to validate there are no breaking changes introduced.
+Once you feel your work is ready to be submitted, feel free to create a PR.
 
 Links
 -----
