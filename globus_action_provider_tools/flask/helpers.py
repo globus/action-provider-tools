@@ -211,7 +211,16 @@ def pydantic_input_validation(
     try:
         validator(**action_input)
     except ValidationError as ve:
-        messages = [f"Field '{'.'.join(e['loc'])}': {e['msg']}" for e in ve.errors()]
+        messages = []
+        for error in ve.errors():
+            path = []
+            for location in error["loc"]:
+                if isinstance(location, str):
+                    path.append(f".{location}")
+                else:
+                    path.append(f"[{location}]")
+            field = "".join(path)[1:]  # Remove the leading period.
+            messages.append(f"Field '{field}': {error['msg']}")
         raise RequestValidationError("; ".join(messages))
 
 
