@@ -3,7 +3,9 @@ This module tests some of the shared validation functions in the Flask helpers.
 """
 
 import json
+import typing as t
 
+import pydantic
 import pytest
 from jsonschema.validators import Draft7Validator
 
@@ -23,6 +25,12 @@ from .app_utils import (
     action_provider_json_input_schema,
     ap_description,
 )
+
+
+class InputSchema(pydantic.BaseModel):
+    # Use a list and a dict to ensure the pydantic error location
+    # contains both strings (dict keys) and integers (list indexes).
+    data: t.List[t.Dict[str, int]]
 
 
 def test_can_get_validator_for_str_input_schema():
@@ -71,8 +79,18 @@ def test_passing_pydantic_validation():
 
 
 def test_failing_pydantic_validation():
-    with pytest.raises(BadActionRequest):
-        pydantic_input_validation({}, ActionProviderPydanticInputSchema)
+    """Verify pydantic error messages can be converted correctly."""
+
+    input_body = {
+        "data": [
+            {"a": 1},
+            {"b": 2},
+            {"c": "not-a-number"},
+        ],
+    }
+    with pytest.raises(BadActionRequest) as error:
+        pydantic_input_validation(input_body, InputSchema)
+    assert error.value.description == "Field 'data[2].c': value is not a valid integer"
 
 
 def test_validating_malformed_action_request():
