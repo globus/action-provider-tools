@@ -32,11 +32,11 @@ class ValidationResult(NamedTuple):
 
 
 def request_validator(request: ValidationRequest) -> ValidationResult:
-    schema = _validator_map.get(request.provider_doc_type)
-    if schema is None:
-        log.warn(f"Unable to validate document of type {request.provider_doc_type}")
+    schema_ = _validator_map.get(request.provider_doc_type)
+    if schema_ is None:
+        log.warning(f"Unable to validate document of type {request.provider_doc_type}")
         return ValidationResult(errors=[], error_msg=None)
-    return validate_data(request.request_data, schema)
+    return validate_data(request.request_data, schema_)
 
 
 response_validator = request_validator
