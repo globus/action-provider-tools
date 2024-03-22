@@ -54,7 +54,7 @@ def parse_query_args(
     if param_val == "":
         param_val = default_value
 
-    # Split in case there's a comma seperated query param value
+    # Split in case there's a comma separated query param value
     param_vals = set(param_val.split(","))
 
     # Remove invalid data from query params

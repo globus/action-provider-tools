@@ -23,7 +23,7 @@ Blueprint with a Flask application.
 Flask API Helpers
 ^^^^^^^^^^^^^^^^^
 
-Another `Flask <https://flask.palletsprojects.com/>`__ targetted helper, this
+Another `Flask <https://flask.palletsprojects.com/>`__ targeted helper, this
 part of the toolkit provides a different way of creating an Action Provider
 which also implements most of the authentication and validation required. Users
 of this helper need only implement callback functions that will be used as the

@@ -46,7 +46,7 @@ def load_schema():
 
 def action_enumerate(auth: AuthState, params: Dict[str, Set]):
     """
-    This is an optional endpoint, useful for allowing requestors to enumerate
+    This is an optional endpoint, useful for allowing requesters to enumerate
     actions filtered by ActionStatus and role.
 
     The params argument will always be a dict containing the incoming request's
@@ -107,7 +107,7 @@ def action_run(request: ActionRequest, auth: AuthState) -> ActionCallbackReturn:
         # requests and return the Action's status
         if prev_request[0] == request:
             return action_status(prev_request[1], auth)
-        # If a pre-existing ActionRequest with different paramters has been
+        # If a pre-existing ActionRequest with different parameters has been
         # found, throw an error as we can't modify an already running Action
         else:
             raise ActionConflict(

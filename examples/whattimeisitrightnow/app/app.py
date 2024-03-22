@@ -51,10 +51,10 @@ def before_request() -> None:
     ever makes it to our ActionProvider. We also attach authentication
     information to the request to make it easier to inspect.
 
-    flask_validate_request ensurse that we are receiving a valid request
+    flask_validate_request ensures that we are receiving a valid request
     body from the user.
 
-    token_checker.check_token ensure that the requestor provided a valid,
+    token_checker.check_token ensure that the requester provided a valid,
     Globus recognized token for interacting with the Provider.
     """
     validation_result = flask_validate_request(request)
@@ -124,7 +124,7 @@ def run() -> Tuple[Response, int]:
     else:
         action_status = run_action(req)
         # Remove any private data from the ActionStatus before
-        # returning it to the requestor
+        # returning it to the requester
         action_status = _filter_private_fields(action_status)
         return jsonify(action_status), 202
 
@@ -166,7 +166,7 @@ def _filter_private_fields(action_status: ActionStatus) -> ActionStatus:
     """
     Helper function to demonstrate how an ActionStatus object can
     hold private data in its details field and how to filter this
-    data before returning an ActionStatus to the requestor
+    data before returning an ActionStatus to the requester
     """
     if action_status.details is not None:
         assert isinstance(action_status.details, dict)
@@ -233,7 +233,7 @@ def status(action_id) -> Tuple[Response, int]:
     action_status = _reconcile_action_status(action_status)
 
     # Remove any private data from the ActionStatus before
-    # returning it to the requestor
+    # returning it to the requester
     action_status = _filter_private_fields(action_status)
     return jsonify(action_status), 200
 
@@ -258,8 +258,8 @@ def _reconcile_action_status(action_status: ActionStatus) -> ActionStatus:
     Helper function to determine if an Action should have completed, and to
     update its status if necessary. If the Action is already in a completed
     state, its record is returned. If the action is still not scheduled to
-    complete, its record is returned umodified. If the record was scheduled
-    to complete, its status is updated, stored and returned.
+    complete, its record is returned unmodified. If the record was scheduled
+    to complete, its status is updated, stored, and returned.
     """
     # If status is in a completion state, return
     if action_status.status in COMPLETE_STATES:
@@ -320,7 +320,7 @@ def cancel(action_id: str) -> Tuple[Response, int]:
 
 def _cancel_job(action_status) -> ActionStatus:
     """
-    Helper function used to set an action's status fields to cancelled.
+    Helper function used to set an action's status fields to cancel.
     Once cancelled, updates are persisted to the database.
     """
     action_status.status = ActionStatusValue.FAILED

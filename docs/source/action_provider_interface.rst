@@ -126,7 +126,7 @@ the following fields:
     for the ``body`` property.
 
 .. code-block:: JSON
-   :caption: Action Request Document for running the Hellow World Action Provider
+   :caption: Action Request Document for running the Hello World Action Provider
 
     {
         "request_id": "0112358132134",
@@ -309,12 +309,12 @@ type of ActionStatuses to return.
 
 The supported query parameters are ``roles`` and ``status``, where roles can
 be any one or more of ``creator_id``, ``monitor_by``, ``manage_by``.
-Using the ``roles`` filter will only retrieve Actions where the requestor's
+Using the ``roles`` filter will only retrieve Actions where the requester's
 identity is listed in the selected Action's field. If unset, this parameter
 defaults to ``creator_id``.
 
 The ``status`` query can be any one or more of ``active``, ``inactive``,
-``failed``, ``succeded``, which corresponds exactly to all possible Action
+``failed``, ``succeeded``, which corresponds exactly to all possible Action
 states.  If multiple statuses are queried for, the set of Actions returned will
 each have a status that was in the query set. If unset, this parameter defaults
 to ``active``. This field is case insensitive.
@@ -323,7 +323,7 @@ When both of these filters are used together, the resulting set of Actions will
 contain the result of applying a logical AND between the results of the two
 filters. That is, the Actions in the returned set will contain actions with a
 status listed in the ``status`` filter and the returned actions will also list
-the requestor as an identity in the queried ``roles``. The query takes the form
+the requester as an identity in the queried ``roles``. The query takes the form
 of ``GET /actions?roles=role1,role2,role3&status=status_1,status2``.
 
 .. note::

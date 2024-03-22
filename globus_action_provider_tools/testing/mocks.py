@@ -13,7 +13,7 @@ def mock_authstate(*args, **kwargs):
     # auth_client = ConfidentialAppAuthClient(None, None)
     auth_state = Mock(spec=AuthState, name="MockedAPTAuthState")
 
-    # Spec wont create instance variables created in __init__, so manually
+    # Spec won't create instance variables created in __init__, so manually
     # create bearer_token
     auth_state.bearer_token = "MOCK_BEARER_TOKEN"
 

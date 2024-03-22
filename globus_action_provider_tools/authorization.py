@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 def authorize_action_access_or_404(status: ActionStatus, auth_state: AuthState) -> None:
     """
-    Determines whether or not a principal is allowed to view an ActionStatus.
+    Determines whether a principal is allowed to view an ActionStatus.
     If not allowed to view the ActionStatus, this function will raise an
     AuthenticationError.
     """
@@ -35,7 +35,7 @@ def authorize_action_management_or_404(
     status: ActionStatus, auth_state: AuthState
 ) -> None:
     """
-    Determines whether or not a principal is allowed to manage an ActionStatus.
+    Determines whether a principal is allowed to manage an ActionStatus.
     If not allowed to view the ActionStatus, this function will raise an
     AuthenticationError.
     """

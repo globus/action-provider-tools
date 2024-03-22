@@ -3,7 +3,7 @@ Testing
 
 An Action Provider is closely integrated with Globus Auth (see
 :ref:`globus_auth_setup`). This integration makes it easy to validate incoming
-requests and ensures that the requestor is authorized to execute actions against
+requests and ensures that the requester is authorized to execute actions against
 an Action Provider. However, the integration can make it difficult to run tests
 against an Action Provider to validate that its endpoints behave correctly.
 During a CI/CD pipeline, it may be a requirement to start your Action Provider
@@ -142,14 +142,14 @@ non-Flask framework or if you've decided not to use the built in Flask helpers.
 Mock AuthState
 --------------
 
-An *AuthState* represents a requestor's authentication status and Globus Auth
+An *AuthState* represents a requester's authentication status and Globus Auth
 information. Every request should have its token validated via the
 *TokenChecker*'s :code:`check_token` method, which in turns generates an
 *AuthState* object.
 
 During testing, it is convenient to not provide valid tokens with every request.
 Use the :code:`mock_authstate` mock to generate a stubbed out *AuthState* object
-that won't validate requestor properties against Globus Auth. This is most
+that won't validate requester properties against Globus Auth. This is most
 useful when used in a patch as the return value for the *TokenChecker*'s
 :code:`check_token` method:
 
