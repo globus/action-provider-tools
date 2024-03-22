@@ -7,8 +7,9 @@ Action Provider API. These tests validate that the supported AP API versions
 are in fact implemented.
 """
 
+import flask
+import flask.testing
 import pytest
-from flask import Flask
 from globus_sdk._testing import load_response
 
 from .app_utils import (
@@ -24,7 +25,7 @@ def test_routes_conform_to_api(
     freeze_time, request, app_fixture: str, api_version: str, use_pydantic_schema: bool
 ):
     freeze_time(load_response("token-introspect", case="success"))
-    app: Flask = request.getfixturevalue(app_fixture)
+    app: flask.Flask = request.getfixturevalue(app_fixture)
     client = app.test_client()
     _, bp = list(app.blueprints.items())[0]
 
@@ -60,6 +61,31 @@ def test_routes_conform_to_api(
 
     release_resp = ap_release(client, bp.url_prefix, action_id, api_version=api_version)
     assert release_resp.status_code == 200, release_resp.json
+
+
+@pytest.mark.parametrize("app_fixture", ["aptb_app", "add_routes_app"])
+def test_introspect_cors_requests(request, app_fixture):
+    """Verify that CORS requests are allowed on introspect routes."""
+
+    app: flask.Flask = request.getfixturevalue(app_fixture)
+    client: flask.testing.FlaskClient = app.test_client()
+    _, bp = list(app.blueprints.items())[0]
+
+    introspection_cors_response = client.options(bp.url_prefix)
+    assert introspection_cors_response.status_code == 200
+
+    # Only allow one of each header.
+    assert len(introspection_cors_response.access_control_allow_methods) == 2
+    assert len(introspection_cors_response.access_control_allow_origin) == 1
+    assert len(introspection_cors_response.access_control_expose_headers) == 1
+
+    # Verify the values of each header.
+    assert list(introspection_cors_response.access_control_allow_methods) == [
+        "GET",
+        "OPTIONS",
+    ]
+    assert introspection_cors_response.access_control_allow_origin[0] == "*"
+    assert introspection_cors_response.access_control_expose_headers[0] == "*"
 
 
 def ap_introspection(client, url_prefix: str):

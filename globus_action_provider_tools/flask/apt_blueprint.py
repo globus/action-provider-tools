@@ -1,5 +1,6 @@
 import typing as t
 
+import flask
 from flask import Blueprint, blueprints, current_app, g, jsonify, request
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest as WerkzeugBadRequest
@@ -105,7 +106,7 @@ class ActionProviderBlueprint(Blueprint):
             "/",
             "action_introspect",
             self._action_introspect,
-            methods=["GET"],
+            methods=["GET", "OPTIONS"],  # OPTIONS allows CORS requests to work
             strict_slashes=False,
         )
 
@@ -168,6 +169,15 @@ class ActionProviderBlueprint(Blueprint):
         Runs as an Action Provider's introspection endpoint.
         """
         self._register_route_type("introspect")
+
+        # Short-circuit CORS requests.
+        if request.method == "OPTIONS":
+            response = flask.make_response("")
+            response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Expose-Headers"] = "*"
+            return response, 200
+
         if not g.auth_state.check_authorization(
             self.provider_description.visible_to,
             allow_public=True,

@@ -197,8 +197,16 @@ def add_action_routes_to_blueprint(
     input_body_validator = get_input_body_validator(provider_description)
     blueprint.register_error_handler(Exception, blueprint_error_handler)
 
-    @blueprint.route("/", methods=["GET"], strict_slashes=False)
+    @blueprint.route("/", methods=["GET", "OPTIONS"], strict_slashes=False)
     def action_introspect() -> ViewReturn:
+        # Short-circuit CORS requests.
+        if request.method == "OPTIONS":
+            response = flask.make_response("")
+            response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Expose-Headers"] = "*"
+            return response, 200
+
         auth_state = check_token(request, checker)
         if not auth_state.check_authorization(
             provider_description.visible_to,
