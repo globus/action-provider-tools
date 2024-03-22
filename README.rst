@@ -33,7 +33,7 @@ and plug into other web frameworks.
         input_schema={
             "$id": "whattimeisitnow.provider.input.schema.json",
             "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "Exmaple Action Provider",
+            "title": "Example Action Provider",
             "type": "object",
             "properties": {"message": {"type": "string"}},
             "required": ["message"],

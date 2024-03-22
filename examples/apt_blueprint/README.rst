@@ -25,7 +25,7 @@ streamlined development experience. The ActionProviderBlueprint will:
 - Validate that incoming requests to your ActionProvider adhere to your
   ActionProvider's defined input-schema
 - Automatically create routes implementing the Action Provider Interface
-- Enforce that only expected users can acccess your ActionProvider's
+- Enforce that only expected users can access your ActionProvider's
   *introspection* and *run* endpoints.
 - Return valid views to callers.
 
@@ -81,10 +81,10 @@ register functions which implement your ActionProvider's logic:
 
 .. note::
     It's required that your decorated functions accept two positional arguments
-    with the correct types. For the `action_run` function, the argument types
+    with the correct types. For the ``action_run`` function, the argument types
     need to be an ``ActionRequest`` and an ``AuthState``. The rest of the
     functions will have argument types of ``str`` and ``AuthState``. Within
-    your function, you will have access to the requestors Globus Authentication
+    your function, you will have access to the requester's Globus Authentication
     information.
 
 

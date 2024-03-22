@@ -113,7 +113,7 @@ Development
 
         The cache is invalidated once each week (``date %U`` rolls the week on Sundays).
 
-    -   Build a shared wheel once as an artifact and re-use it across all test environments.
+    -   Build a shared wheel once as an artifact and reuse it across all test environments.
     -   Consolidate standard testing and testing of minimum Flask versions.
 
 .. _changelog-0.13.0b2:
