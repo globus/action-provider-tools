@@ -72,20 +72,15 @@ def test_introspect_cors_requests(request, app_fixture):
     _, bp = list(app.blueprints.items())[0]
 
     introspection_cors_response = client.options(bp.url_prefix)
-    assert introspection_cors_response.status_code == 200
-
-    # Only allow one of each header.
-    assert len(introspection_cors_response.access_control_allow_methods) == 2
-    assert len(introspection_cors_response.access_control_allow_origin) == 1
-    assert len(introspection_cors_response.access_control_expose_headers) == 1
+    assert introspection_cors_response.status_code == 204
 
     # Verify the values of each header.
     assert list(introspection_cors_response.access_control_allow_methods) == [
         "GET",
         "OPTIONS",
     ]
-    assert introspection_cors_response.access_control_allow_origin[0] == "*"
-    assert introspection_cors_response.access_control_expose_headers[0] == "*"
+    assert list(introspection_cors_response.access_control_allow_origin) == ["*"]
+    assert list(introspection_cors_response.access_control_expose_headers) == ["*"]
 
 
 def ap_introspection(client, url_prefix: str):

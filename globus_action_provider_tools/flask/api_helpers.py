@@ -205,7 +205,7 @@ def add_action_routes_to_blueprint(
             response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Expose-Headers"] = "*"
-            return response, 200
+            return response, 204
 
         auth_state = check_token(request, checker)
         if not auth_state.check_authorization(

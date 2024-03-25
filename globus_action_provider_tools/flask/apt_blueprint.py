@@ -176,7 +176,7 @@ class ActionProviderBlueprint(Blueprint):
             response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Expose-Headers"] = "*"
-            return response, 200
+            return response, 204
 
         if not g.auth_state.check_authorization(
             self.provider_description.visible_to,
