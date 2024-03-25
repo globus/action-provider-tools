@@ -189,7 +189,9 @@ class ActionProviderBlueprint(Blueprint):
             )
             raise UnauthorizedRequest
 
-        return jsonify(self.provider_description), 200
+        response = flask.make_response(jsonify(self.provider_description))
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response, 200
 
     def _action_enumerate(self):
         self._register_route_type("enumerate")

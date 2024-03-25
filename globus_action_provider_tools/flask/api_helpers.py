@@ -214,7 +214,9 @@ def add_action_routes_to_blueprint(
             allow_all_authenticated_users=True,
         ):
             raise ActionNotFound
-        return jsonify(provider_description), 200
+        response = flask.make_response(jsonify(provider_description))
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response, 200
 
     @blueprint.route("/actions", methods=["POST"])
     @blueprint.route("/run", methods=["POST"])

@@ -37,6 +37,9 @@ def test_routes_conform_to_api(
     introspection_resp = ap_introspection(client, bp.url_prefix)
     assert introspection_resp.status_code == 200, introspection_resp.json
 
+    # Verify CORS response
+    assert list(introspection_resp.access_control_allow_origin) == ["*"]
+
     trailing_slash_introspection_resp = ap_introspection(client, bp.url_prefix + "/")
     assert (
         trailing_slash_introspection_resp.status_code == 200
