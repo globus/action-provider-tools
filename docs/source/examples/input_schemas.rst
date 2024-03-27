@@ -1,8 +1,8 @@
 Action Provider Input Schemas
 =============================
 
-We support user-written JSONSchema and Pydantic_ based schema defintions. In
-this document we demonstrate how either defintion can be created and loaded into
+We support user-written JSONSchema and Pydantic_ based schema definitions. In
+this document we demonstrate how either definition can be created and loaded into
 an ActionProvider to provide input documentation and validation. In many cases,
 it's easier to work with Pydantic models to define JSON input.
 

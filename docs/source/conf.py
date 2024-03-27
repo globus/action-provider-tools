@@ -14,7 +14,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "Action Provider Tools"
-copyright = "2020-2023, University of Chicago"
+copyright = "2020-2024, University of Chicago"
 author = "Globus Automate Team"
 
 # -- General configuration ---------------------------------------------------
@@ -64,7 +64,7 @@ html_theme_options = {
     "repo_type": "github",
     "master_doc": True,
 }
-pygments_style = "stata"
+pygments_style = "stata-light"
 
 html_sidebars = {
     "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]

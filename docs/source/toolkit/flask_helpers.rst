@@ -15,7 +15,7 @@ To use the helpers, you must define functions corresponding to the various
 methods of the Action Provider interface (``run``, ``status``, ``release``,
 ``cancel``), and must provide the Action Provider introspection information in
 an instance of the ``ActionProviderDescription`` dataclass defined in
-the tookit's ``data_types`` package. The application must also provide a Flask
+the toolkit's ``data_types`` package. The application must also provide a Flask
 ``blueprint`` object to which the toolkit can attach the new routes. It is
 recommended that the ``blueprint`` be created with a ``url_prefix`` so that the
 Action Provider Interface routes are rooted at a distinct root path in the

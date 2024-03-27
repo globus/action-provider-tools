@@ -10,6 +10,44 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.16.0:
+
+0.16.0 — 2024-03-27
+===================
+
+Features
+--------
+
+*   Support CORS requests to introspection routes.
+
+Bugfixes
+--------
+
+*   Prevent ``TypeError``\s from occurring during pydantic error formatting.
+
+    This was caused by integer list indexes in pydantic error locations.
+
+Documentation
+-------------
+
+*   Fix failing documentation builds (locally, and in Read the Docs).
+*   Enforce reproducible documentation builds using full dependency locking.
+*   Bump the OpenAPI documentation version and build the documentation.
+
+Development
+-----------
+
+*   Test documentation builds in GitHub CI.
+
+*   Update ``make install`` so it can get developers up and running.
+*   Document that ``make install`` can get developers up and running.
+
+Dependencies
+------------
+
+*   Manage test, mypy, and doc dependencies using a consistent framework.
+*   Introduce a standard command, ``tox run -m update``, that can update dependencies.
+
 .. _changelog-0.15.0:
 
 0.15.0 — 2024-01-26
@@ -113,7 +151,7 @@ Development
 
         The cache is invalidated once each week (``date %U`` rolls the week on Sundays).
 
-    -   Build a shared wheel once as an artifact and re-use it across all test environments.
+    -   Build a shared wheel once as an artifact and reuse it across all test environments.
     -   Consolidate standard testing and testing of minimum Flask versions.
 
 .. _changelog-0.13.0b2:

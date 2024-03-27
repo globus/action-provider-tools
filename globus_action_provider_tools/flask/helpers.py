@@ -4,7 +4,7 @@ import inspect
 import json
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, Optional, Set, Type
+from typing import Any, Callable, Dict, Iterable
 
 import flask
 import jsonschema
@@ -54,7 +54,7 @@ def parse_query_args(
     if param_val == "":
         param_val = default_value
 
-    # Split in case there's a comma seperated query param value
+    # Split in case there's a comma separated query param value
     param_vals = set(param_val.split(","))
 
     # Remove invalid data from query params
@@ -211,7 +211,16 @@ def pydantic_input_validation(
     try:
         validator(**action_input)
     except ValidationError as ve:
-        messages = [f"Field '{'.'.join(e['loc'])}': {e['msg']}" for e in ve.errors()]
+        messages = []
+        for error in ve.errors():
+            path = []
+            for location in error["loc"]:
+                if isinstance(location, str):
+                    path.append(f".{location}")
+                else:
+                    path.append(f"[{location}]")
+            field = "".join(path)[1:]  # Remove the leading period.
+            messages.append(f"Field '{field}': {error['msg']}")
         raise RequestValidationError("; ".join(messages))
 
 

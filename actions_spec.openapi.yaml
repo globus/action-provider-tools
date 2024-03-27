@@ -4,7 +4,7 @@ info:
   description: |
     This is the Globus Actions API description. Implementation of this API
     renders a service compatible for use in the Globus Automate service.
-  version: 2020-02-05.1
+  version: 2024-03-14.1
   contact:
     name: Globus Support
     url: "https://support.globus.org/hc/en-us/requests/new"
@@ -138,7 +138,7 @@ paths:
           description: Authorization header missing or invalid.
         403:
           description: |
-            Not authorized. The requestor is not in the action's monitor_by
+            Not authorized. The requester is not in the action's monitor_by
             list.
         404:
           description: |

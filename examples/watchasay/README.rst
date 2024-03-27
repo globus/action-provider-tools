@@ -76,7 +76,7 @@ But how to get the token? The recommended route to retrieve a token is to use
 the globus-automate-client CLI tool. Conveniently, the globus-automate-client
 CLI tool removes the need to create curl requests and the need to manually
 format Action request bodies. See the doc on downloading the CLI tool. Once
-downloaded, issue a command simliar to to the one below.  The first time you
+downloaded, issue a command similar to to the one below.  The first time you
 run the command, you will need to follow a flow to request the necessary grants
 for your Action Provider's scopes.  Later attempts to use the
 globus-automate-client tool will use locally cached tokens and transparently

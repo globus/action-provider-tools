@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from time import time
-from typing import FrozenSet, Iterable, List, Optional, Union, cast
+from typing import Iterable, cast
 
 import globus_sdk
 from cachetools import TTLCache
@@ -317,7 +317,7 @@ class AuthState:
 
     @staticmethod
     def group_in_principal_list(principal_list: Iterable[str]) -> bool:
-        """Check a list of principals to determine if any of the are group based
+        """Check a list of principals to determine if any of them are group-based
         principals. Determined by looking for the urn:globus:groups:id prefix on any of
         the values.
         """

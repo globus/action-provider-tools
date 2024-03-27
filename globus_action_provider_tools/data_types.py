@@ -164,8 +164,8 @@ class ExtensibleCodeDescription(BaseModel, SubscriptableObject):
     class Config:
         extra = "allow"
 
-    code: str = Field(..., description=(""))
-    description: str = Field(..., description=(""))
+    code: str = Field(..., description="")
+    description: str = Field(..., description="")
 
 
 class ActionFailedDetails(ExtensibleCodeDescription):
@@ -179,7 +179,7 @@ class PaginationWrapper(BaseModel):
 
 
 class ActionLogEntry(ExtensibleCodeDescription):
-    details: Optional[Dict[str, Any]] = Field(None, description=(""))
+    details: Optional[Dict[str, Any]] = Field(None, description="")
 
 
 class ActionLogReturn(PaginationWrapper):
@@ -187,8 +187,8 @@ class ActionLogReturn(PaginationWrapper):
 
 
 class ActionInactiveDetails(ExtensibleCodeDescription):
-    required_scope: Optional[str] = Field(None, description=(""))
-    resolution_url: Optional[str] = Field(None, description=(""))
+    required_scope: Optional[str] = Field(None, description="")
+    resolution_url: Optional[str] = Field(None, description="")
 
 
 class ActionStatus(BaseModel):

@@ -61,7 +61,7 @@ aptb = ActionProviderBlueprint(
 @aptb.action_enumerate
 def action_enumeration(auth: AuthState, params: Dict[str, Set]) -> List[ActionStatus]:
     """
-    This is an optional endpoint, useful for allowing requestors to enumerate
+    This is an optional endpoint, useful for allowing requesters to enumerate
     actions filtered by ActionStatus and role.
 
     The params argument will always be a dict containing the incoming request's
@@ -188,7 +188,7 @@ def my_action_log(action_id: str, auth: AuthState) -> ActionLogReturn:
     Action Providers can optionally support a logging endpoint to return
     detailed information on an Action's execution history. Pagination and
     filters are supported as query parameters and can be used to control what
-    details are returned to the requestor.
+    details are returned to the requester.
     """
     pagination = request.args.get("pagination")
     filters = request.args.get("filters")

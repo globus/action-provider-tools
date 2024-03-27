@@ -1,26 +1,6 @@
 Action Provider Tools Introduction
 ==================================
 
-.. image:: https://github.com/globus/action-provider-tools/workflows/Action%20Provider%20Tools%20CI/badge.svg
-   :target: https://github.com/globus/action-provider-tools/workflows/Action%20Provider%20Tools%20CI/badge.svg
-   :alt: CI Status
-
-.. image:: https://readthedocs.org/projects/action-provider-tools/badge/?version=latest
-   :target: https://action-provider-tools.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
-
-.. image:: https://badge.fury.io/py/globus-action-provider-tools.svg
-    :target: https://badge.fury.io/py/globus-action-provider-tools
-    :alt: PyPi Package
-
-.. image:: https://img.shields.io/pypi/pyversions/globus-action-provider-tools
-    :target: https://pypi.org/project/globus-action-provider-tools/
-    :alt: Compatible Python Versions
-
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/globus/action-provider-tools/workflows/Action%20Provider%20Tools%20CI/badge.svg
-    :alt: Code Style
-
 This is an experimental toolkit to help developers build Action Providers for
 use in Globus Automate including for invocation via Globus Flows.
 
@@ -53,7 +33,7 @@ and plug into other web frameworks.
         input_schema={
             "$id": "whattimeisitnow.provider.input.schema.json",
             "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "Exmaple Action Provider",
+            "title": "Example Action Provider",
             "type": "object",
             "properties": {"message": {"type": "string"}},
             "required": ["message"],
@@ -82,19 +62,20 @@ share your feedback.
 Testing, Development, and Contributing
 --------------------------------------
 
-Welcome and thank you for taking the time to contribute!
+Welcome, and thank you for taking the time to contribute!
 
-The ``globus_action_provider_tools`` package is developed using poetry so to get
-started you'll need to install `poetry <https://python-poetry.org/>`_. Once
-installed, clone the repository and run ``make install`` to install the package
-and its dependencies locally in a virtual environment (typically ``.venv``).
+To get started, you'll need to clone the repository and run ``make install``
+to install the package and its dependencies locally in a virtual environment (``.venv/``).
 
-And that's it, you're ready to dive in and make code changes. Once you're
-satisfied with your changes, be sure to run ``make autoformat`` to run the
-project's autoformatters on your changes and ``make test`` to validate there
-are no breaking changes introduced. Both these steps must be run for us to
-accept incoming changes. Once you feel your work is ready to be submitted, feel
-free to create a PR.
+Next, activate the virtual environment:
+
+..  code-block:: console
+
+    $ source .venv/bin/activate
+
+And that's it, you're ready to dive in and make code changes.
+Run ``make test`` to validate there are no breaking changes introduced.
+Once you feel your work is ready to be submitted, feel free to create a PR.
 
 Links
 -----
