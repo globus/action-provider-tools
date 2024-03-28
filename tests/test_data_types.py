@@ -1,5 +1,6 @@
 import datetime
 import json
+import uuid
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -10,11 +11,9 @@ from globus_action_provider_tools.data_types import (
     ActionStatusValue,
 )
 
-from .utils import random_creator_id
-
 ACTION_STATUS_ARGS = dict(
     status=ActionStatusValue.SUCCEEDED,
-    creator_id=random_creator_id(),
+    creator_id=f"urn:globus:auth:identity:{uuid.uuid4()}",
     monitor_by=set(),
     manage_by=set(),
     completion_time=str(datetime.datetime.now().isoformat()),
