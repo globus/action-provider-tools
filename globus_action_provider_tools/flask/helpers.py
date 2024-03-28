@@ -250,7 +250,7 @@ def assign_json_provider(app_or_blueprint: flask.Flask | flask.Blueprint):
     """
 
     if json_provider_available:
-        assert JsonProvider is not None
+        assert JsonProvider is not None  # mypy hack
         app_or_blueprint.json = JsonProvider(app_or_blueprint)
     else:
         app_or_blueprint.json_encoder = ActionProviderJsonEncoder

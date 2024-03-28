@@ -87,20 +87,26 @@ class AuthState:
         now = time()
 
         try:
-            assert resp.get("active", False) is True, "Invalid token."
-            assert resp.get("nbf", now + 4) < (
-                time() + 3
-            ), "Token not yet valid -- check system clock?"
-            assert resp.get("exp", 0) > (time() - 3), "Token expired."
+            if resp.get("active", False) is not True:
+                raise AssertionError("Invalid token.")
+            if not resp.get("nbf", now + 4) < (time() + 3):
+                raise AssertionError("Token not yet valid -- check system clock?")
+            if not resp.get("exp", 0) > (time() - 3):
+                raise AssertionError("Token expired.")
             scopes = frozenset(resp.get("scope", "").split())
-            assert scopes.intersection(
-                set(self.expected_scopes)
-            ), f"Token invalid scopes. Expected one of: {self.expected_scopes}, got: {scopes}"
+            if not scopes & set(self.expected_scopes):
+                raise AssertionError(
+                    "Token invalid scopes. "
+                    f"Expected one of: {self.expected_scopes}, got: {scopes}"
+                )
             aud = resp.get("aud", [])
-            assert (
-                self.expected_audience in aud
-            ), f"Token not intended for us: audience={aud}, expected={self.expected_audience}"
-            assert "identity_set" in resp, "Missing identity_set"
+            if self.expected_audience not in aud:
+                raise AssertionError(
+                    "Token not intended for us: "
+                    f"audience={aud}, expected={self.expected_audience}"
+                )
+            if "identity_set" not in resp:
+                raise AssertionError("Missing identity_set")
         except AssertionError as err:
             self.errors.append(err)
             log.info(err)
