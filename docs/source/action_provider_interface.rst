@@ -106,8 +106,8 @@ the following fields:
     the request in case it cannot be determined if a request was successfully
     initiated for example due to network failure.
 
-* | ``manage_by`` and ``monitor_by``: Each of these is a **list** of principal
-    values in `URN format <https://docs.globus.org/api/search/#principal_urns>`_,
+* | ``manage_by`` and ``monitor_by``: Each of these is a **list** of principal values
+    in `URN format <https://docs.globus.org/api/search/overview/#principal_urns>`_,
     and they allow the user invoking the Action to delegate some capability over the
     Action to other principals. ``manage_by`` defines the principals who are allowed
     to attempt to change the execution of the Action (see operations ``/cancel`` and
