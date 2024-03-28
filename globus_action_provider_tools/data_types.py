@@ -1,7 +1,8 @@
 import datetime
+import enum
 import inspect
 import json
-from enum import Enum
+import sys
 from typing import AbstractSet, Any, Dict, List, Optional, Set, Type, Union
 
 import isodate
@@ -13,24 +14,27 @@ from globus_action_provider_tools.utils import (
     shortish_id,
 )
 
+if sys.version_info >= (3, 11):
+    StrEnum = enum.StrEnum
+else:
+    # Maintain compatibility with Python 3.10 and below.
+    class StrEnum(str, enum.Enum):
+        """
+        A pythonic Enum class implementation that removes the need to access a
+        "value" attribute to get an Enum's representation.
+        http://www.cosmicpython.com/blog/2020-10-27-i-hate-enums.html
+        """
 
-class AutomateBaseEnum(str, Enum):
-    """
-    A pythonic Enum class implementation that removes the need to access a
-    "value" attribute to get an Enum's representation.
-    http://www.cosmicpython.com/blog/2020-10-27-i-hate-enums.html
-    """
-
-    def __str__(self) -> str:
-        return str.__str__(self)
+        def __str__(self) -> str:
+            return str.__str__(self)
 
 
-class ProviderType(AutomateBaseEnum):
+class ProviderType(StrEnum):
     Action = "ACTION"
     Event = "EVENT"
 
 
-class EventType(AutomateBaseEnum):
+class EventType(StrEnum):
     STARTED = "STARTED"
     STATUS_UPDATE = "STATUS_UPDATE"
     LOG_UPDATE = "LOG_UPDATE"
@@ -38,7 +42,7 @@ class EventType(AutomateBaseEnum):
     FAILED = "FAILED"
 
 
-class ActionStatusValue(AutomateBaseEnum):
+class ActionStatusValue(StrEnum):
     SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"
     ACTIVE = "ACTIVE"
