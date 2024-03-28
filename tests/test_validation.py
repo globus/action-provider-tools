@@ -1,17 +1,4 @@
-from typing import Dict
-
 from globus_action_provider_tools.validation import ValidationRequest, request_validator
-
-
-def craft_validation_request(payload: Dict, doc_type: str):
-    """
-    Helper method to create requests for validation where the payload parameter is
-    the payload for the request.
-
-    doc_type needs to be either 'ActionRequest' or 'ActionStatus' and controls
-    which type of document to validate against
-    """
-    return ValidationRequest(request_data=payload, provider_doc_type=doc_type)
 
 
 def test_valid_action_request():
@@ -31,8 +18,8 @@ def test_valid_action_request():
         "deadline": "2019-06-21T17:01:55.806781+00:00",
         "release_after": "P30D",
     }
-    valid_request = craft_validation_request(
-        payload=valid_payload, doc_type="ActionRequest"
+    valid_request = ValidationRequest(
+        request_data=valid_payload, provider_doc_type="ActionRequest"
     )
     result = request_validator(valid_request)
     assert not result.errors, result.error_msg
@@ -41,8 +28,8 @@ def test_valid_action_request():
 def test_invalid_action_request():
     # invalid_payload is missing the request_id
     invalid_payload = {"body": {"custom": "anything goes here", "value": False}}
-    invalid_request = craft_validation_request(
-        payload=invalid_payload, doc_type="ActionRequest"
+    invalid_request = ValidationRequest(
+        request_data=invalid_payload, provider_doc_type="ActionRequest"
     )
     result = request_validator(invalid_request)
     assert result.errors, result.error_msg
@@ -58,8 +45,8 @@ def test_invalid_action_response():
         "start_time": "1985-10-17 09:04:42+00:00",
         "release_after": "P30D",
     }
-    invalid_request = craft_validation_request(
-        payload=invalid_payload, doc_type="ActionStatus"
+    invalid_request = ValidationRequest(
+        request_data=invalid_payload, provider_doc_type="ActionStatus"
     )
     result = request_validator(invalid_request)
     assert result.errors, result.error_msg
@@ -85,8 +72,8 @@ def test_valid_action_response():
         "display_status": "OK",
         "details": {"estimated_complete": "2019-06-21T17:15:04.805868+00:00"},
     }
-    valid_request = craft_validation_request(
-        payload=valid_payload, doc_type="ActionStatus"
+    valid_request = ValidationRequest(
+        request_data=valid_payload, provider_doc_type="ActionStatus"
     )
     result = request_validator(valid_request)
     assert not result.errors, result.error_msg
