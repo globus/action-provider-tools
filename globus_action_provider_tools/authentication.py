@@ -337,23 +337,31 @@ class AuthState:
         allow_public: bool = False,
         allow_all_authenticated_users: bool = False,
     ) -> bool:
-        allowed_set = set(allowed_principals)
-        all_principals = self.identities
-        # We only need to merge in the groups values to the principals list if there are
-        # group principals in the list. Can save a round trip to the Groups service if
-        # there's no need to check for group membership.
-        if AuthState.group_in_principal_list(allowed_set):
-            allowed_set = allowed_set.union(self.groups)
+        """Check whether an incoming request is authorized."""
 
-        return (
-            (allow_public and "public" in allowed_set)
-            or bool(allowed_set.intersection(all_principals))
-            or (
-                allow_all_authenticated_users
-                and "all_authenticated_users" in allowed_set
-                and len(self.identities) > 0
-            )
-        )
+        # Note: These conditions are ordered to reduce I/O with Globus Auth.
+
+        # If the action provider is publicly available, the request is authorized.
+        allowed_set = set(allowed_principals)
+        if allow_public and "public" in allowed_set:
+            return True
+
+        # If the action provider is available to all authenticated users,
+        # any successful token introspection will be sufficient authorization.
+        all_principals = self.identities  # I/O call, possibly cached
+        if (
+            allow_all_authenticated_users
+            and "all_authenticated_users" in allowed_set
+            and all_principals
+        ):
+            return True
+
+        # If the action provider's access list includes group principals,
+        # an additional call to Globus Auth is needed to get the user's groups.
+        if AuthState.group_in_principal_list(allowed_set):
+            all_principals |= self.groups  # I/O call, possibly cached
+
+        return bool(allowed_set & all_principals)
 
 
 class TokenChecker:
