@@ -41,7 +41,7 @@ Once logged in, perform the following steps
   - | Provide a name for the specific app within the project. This will be a
       common name displayed to users when they make use of the Action Provider.
       "Redirects" is not used, but a value must be provided. You can use a
-      URL associated with your service or a placeholder value like "https://localhost".
+      URL associated with your service or a placeholder value like ``"https://localhost"``.
 
   - | When creating a resource server, the other fields on the app creation page
       are not used. On this menu, "Scopes" is not relevant and make no
