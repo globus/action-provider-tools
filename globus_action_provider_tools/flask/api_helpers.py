@@ -207,13 +207,16 @@ def add_action_routes_to_blueprint(
             response.headers["Access-Control-Expose-Headers"] = "*"
             return response, 204
 
-        auth_state = check_token(request, checker)
-        if not auth_state.check_authorization(
-            provider_description.visible_to,
-            allow_public=True,
-            allow_all_authenticated_users=True,
-        ):
-            raise ActionNotFound
+        # Check tokens if "public" is not in the *visible_to* list.
+        if "public" not in provider_description.visible_to:
+            auth_state = check_token(request, checker)
+            if not auth_state.check_authorization(
+                provider_description.visible_to,
+                allow_public=True,
+                allow_all_authenticated_users=True,
+            ):
+                raise ActionNotFound
+
         response = flask.make_response(jsonify(provider_description))
         response.headers["Access-Control-Allow-Origin"] = "*"
         return response, 200

@@ -178,16 +178,18 @@ class ActionProviderBlueprint(Blueprint):
             response.headers["Access-Control-Expose-Headers"] = "*"
             return response, 204
 
-        if not g.auth_state.check_authorization(
-            self.provider_description.visible_to,
-            allow_public=True,
-            allow_all_authenticated_users=True,
-        ):
-            current_app.logger.info(
-                f"{g.auth_state.effective_identity} is unauthorized to introspect Action "
-                f"Provider due {g.auth_state.errors}"
-            )
-            raise UnauthorizedRequest
+        # Check tokens if "public" is not in *visible_to*.
+        if "public" not in self.provider_description.visible_to:
+            if not g.auth_state.check_authorization(
+                self.provider_description.visible_to,
+                allow_public=True,
+                allow_all_authenticated_users=True,
+            ):
+                current_app.logger.info(
+                    f"{g.auth_state.effective_identity} is unauthorized to introspect "
+                    f"Action Provider due {g.auth_state.errors}"
+                )
+                raise UnauthorizedRequest
 
         response = flask.make_response(jsonify(self.provider_description))
         response.headers["Access-Control-Allow-Origin"] = "*"
@@ -531,6 +533,15 @@ class ActionProviderBlueprint(Blueprint):
         Parses a token from a request to generate an auth_state object which is
         then made available as the second argument to decorated functions.
         """
+
+        # Don't check tokens if the introspection route is called
+        # and the action provider is publicly available.
+        if (
+            request.url_rule.endpoint.endswith(".action_introspect")
+            and "public" in self.provider_description.visible_to
+        ):
+            return
+
         g.auth_state = check_token(request, self.checker)
         if g.auth_state.effective_identity is None:
             current_app.logger.info(

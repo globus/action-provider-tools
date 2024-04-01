@@ -20,7 +20,10 @@ from globus_action_provider_tools.data_types import (
     RequestObject,
     convert_to_json,
 )
-from globus_action_provider_tools.errors import AuthenticationError
+from globus_action_provider_tools.errors import (
+    AuthenticationError,
+    UnverifiedAuthenticationError,
+)
 from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
     ActionProviderToolsException,
@@ -100,12 +103,16 @@ def action_status_return_to_view_return(
 
 
 def check_token(request: Request, checker: TokenChecker) -> AuthState:
-    """
-    Parses a Flask request to extract its bearer token.
-    """
-    access_token = request.headers.get("Authorization", "").strip()
-    if access_token.startswith("Bearer "):
-        access_token = access_token[len("Bearer ") :]
+    """Extract and validate a bearer token and return an AuthState instance."""
+
+    access_token = request.headers.get("Authorization")
+    if access_token is None:
+        raise UnverifiedAuthenticationError("No Authorization header received")
+    if not access_token.startswith("Bearer "):
+        raise UnverifiedAuthenticationError("No Bearer token in Authorization header")
+    access_token = access_token[len("Bearer ") :].strip()
+    if not 10 <= len(access_token) <= 2048:
+        raise UnverifiedAuthenticationError("Bearer token length is unexpected")
     auth_state = checker.check_token(access_token)
     return auth_state
 
@@ -250,7 +257,7 @@ def assign_json_provider(app_or_blueprint: flask.Flask | flask.Blueprint):
     """
 
     if json_provider_available:
-        assert JsonProvider is not None
+        assert JsonProvider is not None  # mypy hack
         app_or_blueprint.json = JsonProvider(app_or_blueprint)
     else:
         app_or_blueprint.json_encoder = ActionProviderJsonEncoder

@@ -63,7 +63,10 @@ class ActionConflict(ActionProviderToolsException, Conflict):
 
 
 class UnauthorizedRequest(ActionProviderToolsException, Unauthorized):
-    pass
+    description = (
+        "The server could not verify that you are authorized "
+        "to access the URL requested."
+    )
 
 
 class ActionProviderError(ActionProviderToolsException, InternalServerError):
