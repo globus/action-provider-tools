@@ -10,7 +10,7 @@ from globus_action_provider_tools.authentication import AuthState, identity_prin
 
 
 def get_auth_state_instance(
-    expected_scopes: list[str],
+    expected_scopes: t.Iterable[str],
     expected_audience: str,
 ) -> AuthState:
     return AuthState(
@@ -22,7 +22,7 @@ def get_auth_state_instance(
 
 
 @pytest.fixture
-def auth_state(mocked_responses) -> t.Iterator[AuthState]:
+def auth_state(mocked_responses) -> AuthState:
     """Create an AuthState instance.
 
     AuthState compares its `expected_scopes` and `expected_audience` values
@@ -34,7 +34,7 @@ def auth_state(mocked_responses) -> t.Iterator[AuthState]:
     AuthState.dependent_tokens_cache.clear()
     AuthState.group_membership_cache.clear()
     AuthState.introspect_cache.clear()
-    yield get_auth_state_instance(["expected-scope"], "expected-audience")
+    return get_auth_state_instance(["expected-scope"], "expected-audience")
 
 
 def test_get_identities(auth_state, freeze_time):
@@ -85,7 +85,7 @@ def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_res
     response = freeze_time(load_response("token-introspect", case="success"))
 
     duplicate_auth_state = get_auth_state_instance(
-        list(auth_state.expected_scopes),  # list(): satisfy type checking
+        auth_state.expected_scopes,
         auth_state.expected_audience,
     )
     assert duplicate_auth_state is not auth_state

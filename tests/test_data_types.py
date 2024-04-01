@@ -1,8 +1,9 @@
 import datetime
 import json
+import uuid
 
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from globus_action_provider_tools.data_types import (
     ActionProviderJsonEncoder,
@@ -10,11 +11,9 @@ from globus_action_provider_tools.data_types import (
     ActionStatusValue,
 )
 
-from .utils import random_creator_id
-
 ACTION_STATUS_ARGS = dict(
     status=ActionStatusValue.SUCCEEDED,
-    creator_id=random_creator_id(),
+    creator_id=f"urn:globus:auth:identity:{uuid.uuid4()}",
     monitor_by=set(),
     manage_by=set(),
     completion_time=str(datetime.datetime.now().isoformat()),
@@ -33,30 +32,19 @@ ACTION_STATUS_ARGS = dict(
 )
 def test_action_status_jsonable(kwargs):
     action_status = ActionStatus(**kwargs)
-    try:
-        # This will fail if ActionProviderJsonEncoder cannot json dump an
-        # ActionStatus or if the dumped ActionStatus cannot be parsed as a valid
-        # ActionStatus
-        action_str = json.dumps(action_status, cls=ActionProviderJsonEncoder)
-        ActionStatus.parse_raw(action_str)
-    except TypeError as e:
-        pytest.fail(f"Unexpected JSON encoding error: {e}")
-    except ValidationError as e:
-        pytest.fail(f"Unexpected validation error creating ActionStatus from str: {e}")
+    # This will fail if ActionProviderJsonEncoder cannot json dump an
+    # ActionStatus or if the dumped ActionStatus cannot be parsed as a valid
+    # ActionStatus
+    action_str = ActionProviderJsonEncoder().encode(action_status)
+    ActionStatus.parse_raw(action_str)
 
 
 def test_pydantic_models_jsonable():
     class PydanticModel(BaseModel): ...
 
-    try:
-        json.dumps(PydanticModel, cls=ActionProviderJsonEncoder)
-        json.dumps(PydanticModel(), cls=ActionProviderJsonEncoder)
-    except TypeError as e:
-        pytest.fail(f"Unexpected JSON encoding error: {e}")
+    ActionProviderJsonEncoder().encode(PydanticModel)
+    ActionProviderJsonEncoder().encode(PydanticModel())
 
 
 def test_enums_jsonable():
-    try:
-        json.dumps(ActionStatusValue.SUCCEEDED)
-    except TypeError as e:
-        pytest.fail(f"Unexpected JSON encoding error: {e}")
+    assert json.dumps(ActionStatusValue.SUCCEEDED) == '"SUCCEEDED"'
