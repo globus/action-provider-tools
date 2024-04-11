@@ -10,6 +10,31 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.17.0:
+
+0.17.0 — 2024-04-11
+===================
+
+Bugfixes
+--------
+
+-   Allow package consumers to run with Python optimizations enabled.
+
+    This is supported by replacing ``assert`` statements with ``raise AssertionError``.
+
+Changes
+-------
+
+-   Remove references to web browsers from HTTP 401 Unauthorized responses.
+
+-   Reduce I/O with Globus Auth when possible.
+
+    *   If the action provider is visible to ``"public"``,
+        introspection requests are allowed without checking tokens.
+    *   If the bearer token is missing, malformed, or is too short or long,
+        the incoming request is summarily rejected with HTTP 401
+        without introspecting the token.
+
 .. _changelog-0.16.0:
 
 0.16.0 — 2024-03-27
