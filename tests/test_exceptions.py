@@ -27,11 +27,7 @@ def test_exceptions(exc):
     # Validate that all exceptions are JSON-able and contain status_code, error,
     # and description fields
 
-    with pytest.raises(exc) as exc_info:
-        raise exc
-
-    data = exc_info.value.get_response().get_data()
-    data = json.loads(data)
+    data = json.loads(exc().get_body())
 
     assert "code" in data
     assert data["code"] == exc.__name__

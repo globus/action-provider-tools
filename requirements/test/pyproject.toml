@@ -1,8 +1,5 @@
 [tool.poetry]
-name = "test requirements"
-version = "0"
-description = ""
-authors = []
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.8"
@@ -10,7 +7,3 @@ coverage = "*"
 freezegun = "*"
 pytest = "*"
 responses = "*"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

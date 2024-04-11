@@ -63,7 +63,11 @@ def test_routes_emit_emf_logs(
     app.register_blueprint(aptb)
 
     req = {"request_id": "0", "body": {"echo_string": "This is a test"}}
-    app.test_client().post("/tracked/run", json=req)
+    app.test_client().post(
+        "/tracked/run",
+        json=req,
+        headers=[("Authorization", "Bearer AAAAAAAAAA")],
+    )
     out, _ = capsys.readouterr()
     emf_log = json.loads(out)
 

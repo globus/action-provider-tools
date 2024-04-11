@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 import pytest
 
@@ -8,8 +9,6 @@ from globus_action_provider_tools.authorization import (
 )
 from globus_action_provider_tools.data_types import ActionStatus, ActionStatusValue
 from globus_action_provider_tools.errors import AuthenticationError
-
-from .utils import random_creator_id
 
 
 def test_creator_can_access(auth_state):
@@ -44,7 +43,7 @@ def test_monitor_by_can_access(auth_state):
 def test_unauthorized_access(auth_state):
     status = ActionStatus(
         status=ActionStatusValue.SUCCEEDED,
-        creator_id=random_creator_id(),
+        creator_id=f"urn:globus:auth:identity:{uuid.uuid4()}",
         start_time=str(datetime.datetime.now().isoformat()),
         completion_time=str(datetime.datetime.now().isoformat()),
         release_after="P30D",
@@ -73,7 +72,7 @@ def test_creator_can_manage(auth_state):
 def test_manage_by_can_access(auth_state):
     status = ActionStatus(
         status=ActionStatusValue.SUCCEEDED,
-        creator_id=random_creator_id(),
+        creator_id=f"urn:globus:auth:identity:{uuid.uuid4()}",
         manage_by={auth_state.effective_identity},
         start_time=str(datetime.datetime.now().isoformat()),
         completion_time=str(datetime.datetime.now().isoformat()),
@@ -88,7 +87,7 @@ def test_manage_by_can_access(auth_state):
 def test_unauthorized_management(auth_state):
     status = ActionStatus(
         status=ActionStatusValue.SUCCEEDED,
-        creator_id=random_creator_id(),
+        creator_id=f"urn:globus:auth:identity:{uuid.uuid4()}",
         start_time=str(datetime.datetime.now().isoformat()),
         completion_time=str(datetime.datetime.now().isoformat()),
         release_after="P30D",

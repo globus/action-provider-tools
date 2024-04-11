@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "globus-action-provider-tools"
-version = "0.16.0"
+version = "0.17.0"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
     "Globus Team <support@globus.org>",
@@ -74,7 +74,7 @@ source = [
 
 [tool.coverage.report]
 # When the test coverage increases, this bar should also raise.
-fail_under = 81
+fail_under = 83
 
 [tool.pytest.ini_options]
 filterwarnings = [

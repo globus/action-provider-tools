@@ -87,20 +87,26 @@ class AuthState:
         now = time()
 
         try:
-            assert resp.get("active", False) is True, "Invalid token."
-            assert resp.get("nbf", now + 4) < (
-                time() + 3
-            ), "Token not yet valid -- check system clock?"
-            assert resp.get("exp", 0) > (time() - 3), "Token expired."
+            if resp.get("active", False) is not True:
+                raise AssertionError("Invalid token.")
+            if not resp.get("nbf", now + 4) < (time() + 3):
+                raise AssertionError("Token not yet valid -- check system clock?")
+            if not resp.get("exp", 0) > (time() - 3):
+                raise AssertionError("Token expired.")
             scopes = frozenset(resp.get("scope", "").split())
-            assert scopes.intersection(
-                set(self.expected_scopes)
-            ), f"Token invalid scopes. Expected one of: {self.expected_scopes}, got: {scopes}"
+            if not scopes & set(self.expected_scopes):
+                raise AssertionError(
+                    "Token invalid scopes. "
+                    f"Expected one of: {self.expected_scopes}, got: {scopes}"
+                )
             aud = resp.get("aud", [])
-            assert (
-                self.expected_audience in aud
-            ), f"Token not intended for us: audience={aud}, expected={self.expected_audience}"
-            assert "identity_set" in resp, "Missing identity_set"
+            if self.expected_audience not in aud:
+                raise AssertionError(
+                    "Token not intended for us: "
+                    f"audience={aud}, expected={self.expected_audience}"
+                )
+            if "identity_set" not in resp:
+                raise AssertionError("Missing identity_set")
         except AssertionError as err:
             self.errors.append(err)
             log.info(err)
@@ -331,23 +337,31 @@ class AuthState:
         allow_public: bool = False,
         allow_all_authenticated_users: bool = False,
     ) -> bool:
-        allowed_set = set(allowed_principals)
-        all_principals = self.identities
-        # We only need to merge in the groups values to the principals list if there are
-        # group principals in the list. Can save a round trip to the Groups service if
-        # there's no need to check for group membership.
-        if AuthState.group_in_principal_list(allowed_set):
-            allowed_set = allowed_set.union(self.groups)
+        """Check whether an incoming request is authorized."""
 
-        return (
-            (allow_public and "public" in allowed_set)
-            or bool(allowed_set.intersection(all_principals))
-            or (
-                allow_all_authenticated_users
-                and "all_authenticated_users" in allowed_set
-                and len(self.identities) > 0
-            )
-        )
+        # Note: These conditions are ordered to reduce I/O with Globus Auth.
+
+        # If the action provider is publicly available, the request is authorized.
+        allowed_set = set(allowed_principals)
+        if allow_public and "public" in allowed_set:
+            return True
+
+        # If the action provider is available to all authenticated users,
+        # any successful token introspection will be sufficient authorization.
+        all_principals = self.identities  # I/O call, possibly cached
+        if (
+            allow_all_authenticated_users
+            and "all_authenticated_users" in allowed_set
+            and all_principals
+        ):
+            return True
+
+        # If the action provider's access list includes group principals,
+        # an additional call to Globus Auth is needed to get the user's groups.
+        if AuthState.group_in_principal_list(allowed_set):
+            all_principals |= self.groups  # I/O call, possibly cached
+
+        return bool(allowed_set & all_principals)
 
 
 class TokenChecker:
