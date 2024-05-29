@@ -1,18 +1,8 @@
 import datetime
-from os import urandom
-
-from base62 import encodebytes as base62
 
 
 def now_isoformat():
     return str(datetime.datetime.now(datetime.timezone.utc).isoformat())
-
-
-def shortish_id() -> str:
-    """Generate a random relatively short string of URL safe alphanumeric characters. Value
-    space is sufficiently large that the odds of collision are extremely low.
-    """
-    return base62(urandom(9))
 
 
 uuid_regex = (
