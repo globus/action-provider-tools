@@ -1,0 +1,10 @@
+Changes
+-------
+
+- Use UUIDs as action IDs.
+
+
+Dependencies
+------------
+
+- Remove ``pybase62`` as a project dependency.
