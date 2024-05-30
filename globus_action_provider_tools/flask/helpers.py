@@ -24,6 +24,10 @@ from globus_action_provider_tools.errors import (
     AuthenticationError,
     UnverifiedAuthenticationError,
 )
+from globus_action_provider_tools.flask.config import (
+    DEFAULT_CONFIG,
+    ActionProviderConfig,
+)
 from globus_action_provider_tools.flask.exceptions import (
     ActionProviderError,
     ActionProviderToolsException,
@@ -161,6 +165,7 @@ def validate_input(
 
 def get_input_body_validator(
     provider_description: ActionProviderDescription,
+    config: ActionProviderConfig = DEFAULT_CONFIG,
 ) -> ActionInputValidatorType:
     """
     Inspects the value of the provider_description's input_schema to
@@ -192,18 +197,24 @@ def get_input_body_validator(
     validator_cls = jsonschema.validators.validator_for(input_schema)
     validator = validator_cls(input_schema)
 
-    return partial(json_schema_input_validation, validator=validator)
+    return partial(
+        json_schema_input_validation,
+        validator=validator,
+        validation_error_obscuring=config.validation_error_obscuring,
+    )
 
 
 def json_schema_input_validation(
-    action_input: dict[str, Any], validator: jsonschema.Validator
+    action_input: dict[str, Any],
+    validator: jsonschema.Validator,
+    validation_error_obscuring: bool = True,
 ) -> None:
     """
     Use a created JSON Validator to verify the input body of an incoming
     request conforms to the defined JSON schema. In the event that the
     validation reports any errors, a BadActionRequest exception gets raised.
     """
-    result = validate_data(action_input, validator)
+    result = validate_data(action_input, validator, validation_error_obscuring)
     if result.errors:
         raise RequestValidationError(result.error_msg)
 

@@ -15,6 +15,10 @@ from globus_action_provider_tools.data_types import (
     ActionStatus,
     ActionStatusValue,
 )
+from globus_action_provider_tools.flask.config import (
+    DEFAULT_CONFIG,
+    ActionProviderConfig,
+)
 from globus_action_provider_tools.flask.exceptions import (
     ActionNotFound,
     ActionProviderError,
@@ -53,6 +57,7 @@ class ActionProviderBlueprint(Blueprint):
         additional_scopes: t.Iterable[str] = (),
         action_repository: t.Optional[AbstractActionRepository] = None,
         request_lifecycle_hooks: t.Optional[t.List[t.Any]] = None,
+        config: ActionProviderConfig = DEFAULT_CONFIG,
         **kwarg,
     ):
         """Create a new ActionProviderBlueprint. All arguments not listed here are the
@@ -84,9 +89,13 @@ class ActionProviderBlueprint(Blueprint):
 
         self.action_repo = action_repository
         self.provider_description = provider_description
-        self.input_body_validator = get_input_body_validator(provider_description)
+        self.input_body_validator = get_input_body_validator(
+            provider_description,
+            config=config,
+        )
         self.globus_auth_client_name = globus_auth_client_name
         self.additional_scopes = additional_scopes
+        self.config = config
 
         assign_json_provider(self)
         self.before_request(self._check_token)

@@ -16,6 +16,8 @@ from globus_action_provider_tools.authentication import AuthState, TokenChecker
 
 from .data import canned_responses
 
+pytest_plugins = ("globus_action_provider_tools.testing.fixtures",)
+
 
 @pytest.fixture
 def config():

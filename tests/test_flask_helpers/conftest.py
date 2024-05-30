@@ -12,10 +12,6 @@ from globus_action_provider_tools.flask import (
     add_action_routes_to_blueprint,
 )
 from globus_action_provider_tools.flask.helpers import assign_json_provider
-from globus_action_provider_tools.testing.fixtures import (  # noqa: F401 unused import
-    apt_blueprint_noauth,
-    flask_helpers_noauth,
-)
 
 from .app_utils import (
     ap_description,
@@ -28,35 +24,43 @@ from .app_utils import (
 )
 
 
-@pytest.fixture()
-def aptb_app(apt_blueprint_noauth, auth_state):  # noqa: F811 redefinition
+@pytest.fixture
+def aptb_app(create_app_from_blueprint):
     """
     This fixture creates a Flask app using the ActionProviderBlueprint
     helper. The function form of the decorators are used to register each
     endpoint's functions.
     """
-    app = Flask(__name__)
-    assign_json_provider(app)
-    aptb = ActionProviderBlueprint(
+    blueprint = ActionProviderBlueprint(
         name="aptb",
         import_name=__name__,
         url_prefix="/aptb",
         provider_description=ap_description,
     )
-    aptb.action_run(mock_action_run_func)
-    aptb.action_status(mock_action_status_func)
-    aptb.action_cancel(mock_action_cancel_func)
-    aptb.action_release(mock_action_release_func)
-    aptb.action_log(mock_action_log_func)
-    aptb.action_enumerate(mock_action_enumeration_func)
+    return create_app_from_blueprint(blueprint)
 
-    apt_blueprint_noauth(aptb)
-    app.register_blueprint(aptb)
-    return app
+
+@pytest.fixture
+def create_app_from_blueprint(apt_blueprint_noauth, auth_state):
+    def _create_app_from_blueprint(blueprint: ActionProviderBlueprint) -> Flask:
+        app = Flask(__name__)
+        assign_json_provider(app)
+        blueprint.action_run(mock_action_run_func)
+        blueprint.action_status(mock_action_status_func)
+        blueprint.action_cancel(mock_action_cancel_func)
+        blueprint.action_release(mock_action_release_func)
+        blueprint.action_log(mock_action_log_func)
+        blueprint.action_enumerate(mock_action_enumeration_func)
+
+        apt_blueprint_noauth(blueprint)
+        app.register_blueprint(blueprint)
+        return app
+
+    return _create_app_from_blueprint
 
 
 @pytest.fixture()
-def add_routes_app(flask_helpers_noauth, auth_state):  # noqa: F811 redefinition
+def add_routes_app(flask_helpers_noauth, auth_state):
     """
     This fixture creates a Flask app with routes loaded via the
     add_action_routes_to_blueprint Flask helper.

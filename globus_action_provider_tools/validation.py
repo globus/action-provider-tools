@@ -43,14 +43,42 @@ response_validator = request_validator
 
 
 def validate_data(
+    data: Dict[str, Any],
+    validator: jsonschema.protocols.Validator,
+    validation_error_obscuring: bool = True,
+) -> ValidationResult:
+    if validation_error_obscuring:
+        return _validate_data_omitting_request_data(data, validator)
+    else:
+        return _validate_data_allowing_request_data(data, validator)
+
+
+def _validate_data_allowing_request_data(
+    data: Dict[str, Any], validator: jsonschema.protocols.Validator
+) -> ValidationResult:
+
+    error_messages = []
+    for error in validator.iter_errors(data):
+        if error.path:
+            # Elements of the error path may be integers or other non-string types,
+            # but we need strings for use with join()
+            error_path_for_message = ".".join([str(x) for x in error.path])
+            error_message = f"'{error_path_for_message}' invalid due to {error.message}"
+        else:
+            error_message = error.message
+        error_messages.append(error_message)
+
+    error_msg = "; ".join(error_messages) if error_messages else None
+    return ValidationResult(errors=error_messages, error_msg=error_msg)
+
+
+def _validate_data_omitting_request_data(
     data: Dict[str, Any], validator: jsonschema.protocols.Validator
 ) -> ValidationResult:
     # TODO: If python-jsonschema introduces a means of returning error messages that
-    # do not include input data, modify this to return more specific error information.
+    #  do not include input data, modify this to return more specific error information.
     if not validator.is_valid(data):
         message = "Input failed schema validation"
-        result = ValidationResult(errors=[message], error_msg=message)
+        return ValidationResult(errors=[message], error_msg=message)
     else:
-        result = ValidationResult(errors=[], error_msg=None)
-
-    return result
+        return ValidationResult(errors=[], error_msg=None)
