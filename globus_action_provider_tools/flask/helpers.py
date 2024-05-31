@@ -208,21 +208,21 @@ def get_input_body_validator(
     return partial(
         json_schema_input_validation,
         validator=validator,
-        scrubbed_validation_errors=config.scrubbed_validation_errors,
+        scrub_validation_errors=config.scrub_validation_errors,
     )
 
 
 def json_schema_input_validation(
     action_input: dict[str, Any],
     validator: jsonschema.Validator,
-    scrubbed_validation_errors: bool = True,
+    scrub_validation_errors: bool = True,
 ) -> None:
     """
     Use a created JSON Validator to verify the input body of an incoming
     request conforms to the defined JSON schema. In the event that the
     validation reports any errors, a BadActionRequest exception gets raised.
     """
-    result = validate_data(action_input, validator, scrubbed_validation_errors)
+    result = validate_data(action_input, validator, scrub_validation_errors)
     if result.errors:
         raise RequestValidationError(result.error_msg)
 

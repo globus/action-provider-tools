@@ -88,7 +88,7 @@ def test_validation_errors__WHEN_scrubbing_is_disabled(create_app_from_blueprint
         import_name=__name__,
         url_prefix="/my_cool_ap",
         provider_description=mutable_ap_description,
-        config=ActionProviderConfig(scrubbed_validation_errors=False),
+        config=ActionProviderConfig(scrub_validation_errors=False),
     )
     app = create_app_from_blueprint(blueprint)
     client = ActionProviderClient(app.test_client(), blueprint.url_prefix)

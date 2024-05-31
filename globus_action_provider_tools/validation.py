@@ -49,7 +49,7 @@ response_validator = request_validator
 def validate_data(
     data: dict[str, t.Any],
     validator: Validator,
-    scrub_user_data: bool = True,
+    scrub_validation_errors: bool = True,
 ) -> ValidationResult:
     """
     :param data: A Dictionary of data to validate
@@ -58,7 +58,7 @@ def validate_data(
     :return: A ValidationResult object
     """
     error_messages = [
-        _format_jsonschema_error(err, scrub_user_data)
+        _format_jsonschema_error(err, scrub_validation_errors)
         for err in validator.iter_errors(data)
     ]
     error_msg = "; ".join(error_messages) if error_messages else None
@@ -66,8 +66,10 @@ def validate_data(
     return ValidationResult(errors=error_messages, error_msg=error_msg)
 
 
-def _format_jsonschema_error(error: ValidationError, scrub_user_data: bool) -> str:
-    error_message = None if scrub_user_data else error.message
+def _format_jsonschema_error(
+    error: ValidationError, scrub_validation_errors: bool
+) -> str:
+    error_message = None if scrub_validation_errors else error.message
     category = str(error.validator)
 
     return format_validation_error(error.json_path, category, error_message)

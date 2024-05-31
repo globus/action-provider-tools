@@ -3,7 +3,7 @@ Features
 --------
 
 - Added a new configuration class ``ActionProviderConfig`` with the initial option to
-  ``scrubbed_validation_errors`` (default: enabled).
+  ``scrub_validation_errors`` (default: True).
 
   - If disabled, user-provided data may be included in library raised validation errors.
 
