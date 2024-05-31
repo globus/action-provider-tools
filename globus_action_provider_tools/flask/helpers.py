@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import typing as t
 from enum import Enum
 from functools import partial
 from typing import Any, Callable, Dict, Iterable
@@ -35,7 +36,14 @@ from globus_action_provider_tools.flask.exceptions import (
     UnauthorizedRequest,
 )
 from globus_action_provider_tools.flask.types import ActionCallbackReturn, ViewReturn
-from globus_action_provider_tools.validation import validate_data
+from globus_action_provider_tools.validation import (
+    format_validation_error,
+    validate_data,
+)
+
+if t.TYPE_CHECKING:
+    from pydantic.error_wrappers import Loc
+
 
 ActionInputValidatorType = Callable[[Dict[str, Any]], None]
 
@@ -200,21 +208,21 @@ def get_input_body_validator(
     return partial(
         json_schema_input_validation,
         validator=validator,
-        validation_error_obscuring=config.validation_error_obscuring,
+        scrubbed_validation_errors=config.scrubbed_validation_errors,
     )
 
 
 def json_schema_input_validation(
     action_input: dict[str, Any],
     validator: jsonschema.Validator,
-    validation_error_obscuring: bool = True,
+    scrubbed_validation_errors: bool = True,
 ) -> None:
     """
     Use a created JSON Validator to verify the input body of an incoming
     request conforms to the defined JSON schema. In the event that the
     validation reports any errors, a BadActionRequest exception gets raised.
     """
-    result = validate_data(action_input, validator, validation_error_obscuring)
+    result = validate_data(action_input, validator, scrubbed_validation_errors)
     if result.errors:
         raise RequestValidationError(result.error_msg)
 
@@ -231,15 +239,24 @@ def pydantic_input_validation(
     except ValidationError as ve:
         messages = []
         for error in ve.errors():
-            path = []
-            for location in error["loc"]:
-                if isinstance(location, str):
-                    path.append(f".{location}")
-                else:
-                    path.append(f"[{location}]")
-            field = "".join(path)[1:]  # Remove the leading period.
-            messages.append(f"Field '{field}': {error['msg']}")
+            field = _loc_to_json_path(error["loc"])
+            messages.append(format_validation_error(field, error["type"], error["msg"]))
         raise RequestValidationError("; ".join(messages))
+
+
+def _loc_to_json_path(loc: Loc) -> str:
+    """
+    Transforms a pydantic loc into a JSONPath.
+
+    Sample Transformations:
+        ('foo', 0, 'bar') -> '$.foo[0].bar'
+        (0, 'foo') -> '$[0].foo'
+        (,) -> '$'
+    """
+    parts_str = "".join(
+        f".{part}" if isinstance(part, str) else f"[{part}]" for part in loc
+    )
+    return f"${parts_str}"
 
 
 try:

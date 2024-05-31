@@ -26,12 +26,13 @@ class ActionProviderClient:
 
     def run(
         self,
-        payload: t.Dict[str, t.Any] | None = None,
+        request_id: int | str = 0,
+        body: t.Dict[str, t.Any] | None = None,
         assert_status: int | list[int] = 202,
         **kwargs,
     ) -> Response:
-        if payload is None:
-            payload = {"request_id": "0", "body": {"echo_string": "This is a test"}}
+        body = body if body is not None else {"echo_string": "This is a test"}
+        payload = {"request_id": request_id, "body": body}
 
         route = "/actions" if self._api_version == "1.1" else "/run"
         return self.post(route, assert_status=assert_status, json=payload, **kwargs)

@@ -90,7 +90,10 @@ def test_failing_pydantic_validation():
     }
     with pytest.raises(BadActionRequest) as error:
         pydantic_input_validation(input_body, InputSchema)
-    assert error.value.description == "Field 'data[2].c': value is not a valid integer"
+    assert error.value.description == (
+        "Field '$.data[2].c' (category: 'type_error.integer'): value is not a valid "
+        "integer"
+    )
 
 
 def test_validating_malformed_action_request():
