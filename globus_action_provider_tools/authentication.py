@@ -67,12 +67,7 @@ class AuthState:
         self.errors: list[Exception] = []
         self._groups_client: GroupsClient | None = None
 
-    def introspect_token(self) -> GlobusHTTPResponse | None:
-        # There are cases where a null or empty string bearer token are present as a
-        # placeholder
-        if self.bearer_token is None:
-            return None
-
+    def introspect_token(self) -> GlobusHTTPResponse:
         resp = AuthState.introspect_cache.get(self.bearer_token)
         if resp is not None:
             log.info(
@@ -84,51 +79,20 @@ class AuthState:
         resp = self.auth_client.oauth2_token_introspect(
             self.bearer_token, include="identity_set"
         )
-        now = time()
 
-        try:
-            if resp.get("active", False) is not True:
-                raise AssertionError("Invalid token.")
-            if not resp.get("nbf", now + 4) < (time() + 3):
-                raise AssertionError("Token not yet valid -- check system clock?")
-            if not resp.get("exp", 0) > (time() - 3):
-                raise AssertionError("Token expired.")
-            scopes = frozenset(resp.get("scope", "").split())
-            if not scopes & set(self.expected_scopes):
-                raise AssertionError(
-                    "Token invalid scopes. "
-                    f"Expected one of: {self.expected_scopes}, got: {scopes}"
-                )
-            aud = resp.get("aud", [])
-            if self.expected_audience not in aud:
-                raise AssertionError(
-                    "Token not intended for us: "
-                    f"audience={aud}, expected={self.expected_audience}"
-                )
-            if "identity_set" not in resp:
-                raise AssertionError("Missing identity_set")
-        except AssertionError as err:
-            self.errors.append(err)
-            log.info(err)
-            return None
-        else:
-            log.info(f"Caching token response for token ***{self.sanitized_token}")
-            AuthState.introspect_cache[self.bearer_token] = resp
-            return resp
+        log.info(f"Caching token response for token ***{self.sanitized_token}")
+        AuthState.introspect_cache[self.bearer_token] = resp
+        return resp
 
     @property
-    def effective_identity(self) -> str | None:
+    def effective_identity(self) -> str:
         tkn_details = self.introspect_token()
-        if tkn_details is None:
-            return None
         effective = identity_principal(tkn_details["sub"])
         return effective
 
     @property
     def identities(self) -> frozenset[str]:
         tkn_details = self.introspect_token()
-        if tkn_details is None:
-            return frozenset()
         return frozenset(map(identity_principal, tkn_details["identity_set"]))
 
     @property
@@ -211,7 +175,7 @@ class AuthState:
         scope: str,
         bypass_dependent_token_cache=False,
         required_authorizer_expiration_time: int = 60,
-    ) -> RefreshTokenAuthorizer | AccessTokenAuthorizer | None:
+    ) -> RefreshTokenAuthorizer | AccessTokenAuthorizer:
         """Retrieve a Globus SDK authorizer for use in accessing a further Globus Auth registered
         service / "resource server". This authorizer can be passed to any Globus SDK
         Client class for use in accessing the Client's service.
@@ -253,7 +217,7 @@ class AuthState:
                 f"Unable to create GlobusAuthorizer for scope {scope}. Using 'None'",
                 exc_info=True,
             )
-            return None
+            raise ValueError("Unable to create GlobusAuthorizer")
 
         refresh_token = cast(str, dep_tkn_resp.get("refresh_token"))
         access_token = cast(str, dep_tkn_resp.get("access_token"))
@@ -304,7 +268,7 @@ class AuthState:
         log.warning(
             f"Unable to create GlobusAuthorizer for scope {scope}. Using 'None'"
         )
-        return None
+        raise ValueError("Unable to create GlobusAuthorizer")
 
     def _get_groups_client(self) -> GroupsClient:
         if self._groups_client is not None:
@@ -312,12 +276,6 @@ class AuthState:
         authorizer = self.get_authorizer_for_scope(
             GroupsClient.scopes.view_my_groups_and_memberships
         )
-        if authorizer is None:
-            raise ValueError(
-                "Unable to get authorizer for "
-                + GroupsClient.scopes.view_my_groups_and_memberships
-            )
-
         self._groups_client = GroupsClient(authorizer=authorizer)
         return self._groups_client
 

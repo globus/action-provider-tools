@@ -101,4 +101,5 @@ def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_res
 def test_invalid_grant_exception(auth_state):
     load_response("token-introspect", case="success")
     load_response("token", case="invalid-grant")
-    assert auth_state.get_authorizer_for_scope("doesn't matter") is None
+    with pytest.raises(ValueError):
+        auth_state.get_authorizer_for_scope("doesn't matter")
