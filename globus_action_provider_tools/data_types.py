@@ -3,16 +3,13 @@ import enum
 import inspect
 import json
 import sys
+import uuid
 from typing import AbstractSet, Any, Dict, List, Optional, Set, Type, Union
 
 import isodate
 from pydantic import BaseModel, Field, StrictStr
 
-from globus_action_provider_tools.utils import (
-    now_isoformat,
-    principal_urn_regex,
-    shortish_id,
-)
+from globus_action_provider_tools.utils import now_isoformat, principal_urn_regex
 
 if sys.version_info >= (3, 11):
     StrEnum = enum.StrEnum
@@ -208,7 +205,8 @@ class ActionStatus(BaseModel):
         regex=principal_urn_regex,
     )
     action_id: str = Field(
-        default_factory=shortish_id, description="The id of the Action itself"
+        default_factory=lambda: str(uuid.uuid4()),
+        description="The ID of the Action itself",
     )
     start_time: str = Field(default_factory=now_isoformat)
     label: Optional[str] = Field(

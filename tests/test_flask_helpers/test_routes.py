@@ -12,6 +12,7 @@ import flask.testing
 import pytest
 from globus_sdk._testing import load_response
 
+from .ap_client import ActionProviderClient
 from .app_utils import (
     ActionProviderPydanticInputSchema,
     action_provider_json_input_schema,
@@ -26,44 +27,24 @@ def test_routes_conform_to_api(
 ):
     freeze_time(load_response("token-introspect", case="success"))
     app: flask.Flask = request.getfixturevalue(app_fixture)
-    client = app.test_client()
     _, bp = list(app.blueprints.items())[0]
-
     if use_pydantic_schema:
         bp.input_schema = ActionProviderPydanticInputSchema
     else:
         bp.input_schema = action_provider_json_input_schema
 
-    introspection_resp = ap_introspection(client, bp.url_prefix)
-    assert introspection_resp.status_code == 200, introspection_resp.json
+    client = ActionProviderClient(
+        app.test_client(), bp.url_prefix, api_version=api_version
+    )
 
-    # Verify CORS response
-    assert list(introspection_resp.access_control_allow_origin) == ["*"]
-
-    trailing_slash_introspection_resp = ap_introspection(client, bp.url_prefix + "/")
-    assert (
-        trailing_slash_introspection_resp.status_code == 200
-    ), trailing_slash_introspection_resp.json
-
-    if api_version == "1.1":
-        enumeration_resp = ap_enumeration(client, bp.url_prefix)
-        assert enumeration_resp.status_code == 200, enumeration_resp.json
-
-    run_resp = ap_run(client, bp.url_prefix, api_version=api_version)
-    assert run_resp.status_code == 202, run_resp.json
-
-    action_id = run_resp.get_json()["action_id"]
-    status_resp = ap_status(client, bp.url_prefix, action_id, api_version=api_version)
-    assert status_resp.status_code == 200, status_resp.json
-
-    log_resp = ap_log(client, bp.url_prefix, action_id, api_version=api_version)
-    assert log_resp.status_code == 200, log_resp.json
-
-    cancel_resp = ap_cancel(client, bp.url_prefix, action_id, api_version=api_version)
-    assert cancel_resp.status_code == 200, cancel_resp.json
-
-    release_resp = ap_release(client, bp.url_prefix, action_id, api_version=api_version)
-    assert release_resp.status_code == 200, release_resp.json
+    introspect_resp = client.introspect()
+    assert list(introspect_resp.access_control_allow_origin) == ["*"]
+    client.enumerate()
+    action_id = client.run().get_json()["action_id"]
+    client.status(action_id)
+    client.log(action_id)
+    client.cancel(action_id)
+    client.release(action_id)
 
 
 @pytest.mark.parametrize("app_fixture", ["aptb_app", "add_routes_app"])
@@ -103,89 +84,20 @@ def test_bogus_authorization_headers_are_rejected_without_io(
     request, app_fixture, api_version, authorization_header
 ):
     app: flask.Flask = request.getfixturevalue(app_fixture)
-    client = app.test_client()
     _, bp = list(app.blueprints.items())[0]
-
     bp.input_schema = ActionProviderPydanticInputSchema
+
+    client = ActionProviderClient(
+        app.test_client(), bp.url_prefix, api_version=api_version
+    )
 
     headers = []
     if authorization_header is not None:
         headers.append(("Authorization", authorization_header))
 
-    if api_version == "1.1":
-        enumeration_resp = ap_enumeration(client, bp.url_prefix, headers=headers)
-        assert enumeration_resp.status_code == 401, enumeration_resp.json
-
-    run_resp = ap_run(client, bp.url_prefix, api_version=api_version, headers=headers)
-    assert run_resp.status_code == 401, run_resp.json
-
-    status_resp = ap_status(
-        client, bp.url_prefix, "any", api_version=api_version, headers=headers
-    )
-    assert status_resp.status_code == 401, status_resp.json
-
-    log_resp = ap_log(
-        client, bp.url_prefix, "any", api_version=api_version, headers=headers
-    )
-    assert log_resp.status_code == 401, log_resp.json
-
-    cancel_resp = ap_cancel(
-        client, bp.url_prefix, "any", api_version=api_version, headers=headers
-    )
-    assert cancel_resp.status_code == 401, cancel_resp.json
-
-    release_resp = ap_release(
-        client, bp.url_prefix, "any", api_version=api_version, headers=headers
-    )
-    assert release_resp.status_code == 401, release_resp.json
-
-
-def ap_introspection(client, url_prefix: str):
-    return client.get(url_prefix, follow_redirects=True)
-
-
-def ap_enumeration(client, url_prefix: str, **kwargs):
-    kwargs.setdefault("headers", [("Authorization", "Bearer AAAAAAAAAA")])
-    return client.get(f"{url_prefix}/actions", **kwargs)
-
-
-def ap_run(client, url_prefix: str, *, api_version: str, **kwargs):
-    kwargs.setdefault("headers", [("Authorization", "Bearer AAAAAAAAAA")])
-    payload = {"request_id": "0", "body": {"echo_string": "This is a test"}}
-
-    if api_version == "1.0":
-        return client.post(f"{url_prefix}/run", json=payload, **kwargs)
-    if api_version == "1.1":
-        return client.post(f"{url_prefix}/actions", json=payload, **kwargs)
-
-
-def ap_status(client, url_prefix: str, action_id: str, *, api_version: str, **kwargs):
-    kwargs.setdefault("headers", [("Authorization", "Bearer AAAAAAAAAA")])
-    if api_version == "1.0":
-        return client.get(f"{url_prefix}/{action_id}/status", **kwargs)
-    if api_version == "1.1":
-        return client.get(f"{url_prefix}/actions/{action_id}", **kwargs)
-
-
-def ap_log(client, url_prefix: str, action_id: str, *, api_version: str, **kwargs):
-    kwargs.setdefault("headers", [("Authorization", "Bearer AAAAAAAAAA")])
-    if api_version == "1.0":
-        return client.get(f"{url_prefix}/{action_id}/log", **kwargs)
-    if api_version == "1.1":
-        return client.get(f"{url_prefix}/actions/{action_id}/log", **kwargs)
-
-
-def ap_cancel(client, url_prefix: str, action_id: str, *, api_version: str, **kwargs):
-    kwargs.setdefault("headers", [("Authorization", "Bearer AAAAAAAAAA")])
-    if api_version == "1.0":
-        return client.post(f"{url_prefix}/{action_id}/cancel", **kwargs)
-    if api_version == "1.1":
-        return client.post(f"{url_prefix}/actions/{action_id}/cancel", **kwargs)
-
-
-def ap_release(client, url_prefix: str, action_id: str, *, api_version: str, **kwargs):
-    kwargs.setdefault("headers", [("Authorization", "Bearer AAAAAAAAAA")])
-    if api_version == "1.0":
-        return client.post(f"{url_prefix}/{action_id}/release", **kwargs)
-    if api_version == "1.1":
-        return client.delete(f"{url_prefix}/actions/{action_id}", **kwargs)
+    client.enumerate(assert_status=401, headers=headers)
+    client.run(assert_status=401, headers=headers)
+    client.status("any", assert_status=401, headers=headers)
+    client.log("any", assert_status=401, headers=headers)
+    client.cancel("any", assert_status=401, headers=headers)
+    client.release("any", assert_status=401, headers=headers)

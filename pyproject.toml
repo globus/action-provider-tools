@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "globus-action-provider-tools"
-version = "0.17.0"
+version = "0.18.0"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
     "Globus Team <support@globus.org>",
@@ -31,7 +31,6 @@ python = ">=3.8"
 globus-sdk="^3.9.0"
 jsonschema = "^4.17"
 pyyaml = "^6"
-pybase62 = "^0.4.0"
 pydantic = "^1.7.3"
 isodate = "^0.6.0"
 cachetools = "^5.0"
