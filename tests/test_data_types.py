@@ -11,16 +11,16 @@ from globus_action_provider_tools.data_types import (
     ActionStatusValue,
 )
 
-ACTION_STATUS_ARGS = dict(
-    status=ActionStatusValue.SUCCEEDED,
-    creator_id=f"urn:globus:auth:identity:{uuid.uuid4()}",
-    monitor_by=set(),
-    manage_by=set(),
-    completion_time=str(datetime.datetime.now().isoformat()),
-    release_after="P30D",
-    display_status=ActionStatusValue.SUCCEEDED,
-    details={},
-)
+ACTION_STATUS_ARGS = {
+    "status": ActionStatusValue.SUCCEEDED,
+    "creator_id": f"urn:globus:auth:identity:{uuid.uuid4()}",
+    "monitor_by": set(),
+    "manage_by": set(),
+    "completion_time": str(datetime.datetime.now().isoformat()),
+    "release_after": "P30D",
+    "display_status": ActionStatusValue.SUCCEEDED,
+    "details": {},
+}
 
 
 @pytest.mark.parametrize(
