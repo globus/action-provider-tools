@@ -21,12 +21,12 @@ pytest_plugins = ("globus_action_provider_tools.testing.fixtures",)
 
 @pytest.fixture
 def config():
-    return dict(
-        client_id=canned_responses.mock_client_id(),
-        client_secret=canned_responses.mock_client_secret(),
-        expected_scopes=(canned_responses.mock_scope(),),
-        expected_audience=canned_responses.mock_expected_audience(),
-    )
+    return {
+        "client_id": canned_responses.mock_client_id(),
+        "client_secret": canned_responses.mock_client_secret(),
+        "expected_scopes": (canned_responses.mock_scope(),),
+        "expected_audience": canned_responses.mock_expected_audience(),
+    }
 
 
 @pytest.fixture
