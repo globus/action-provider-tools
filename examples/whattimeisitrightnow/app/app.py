@@ -5,12 +5,13 @@ from datetime import datetime, timedelta, timezone
 from random import randint
 from typing import Any, Dict, Tuple
 
+import globus_sdk
 from flask import Flask, Response, jsonify, request
 
 from examples.whattimeisitrightnow.app import config
 from examples.whattimeisitrightnow.app import error as err
 from examples.whattimeisitrightnow.app.database import db
-from globus_action_provider_tools.authentication import TokenChecker
+from globus_action_provider_tools.authentication import AuthStateBuilder
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
@@ -26,7 +27,10 @@ from globus_action_provider_tools.flask.helpers import assign_json_provider
 app = Flask(__name__)
 assign_json_provider(app)
 
-token_checker = TokenChecker(config.client_id, config.client_secret, [config.our_scope])
+state_builder = AuthStateBuilder(
+    globus_sdk.ConfidentialAppAuthClient(config.client_id, config.client_secret),
+    [config.our_scope],
+)
 
 COMPLETE_STATES = (ActionStatusValue.SUCCEEDED, ActionStatusValue.FAILED)
 INCOMPLETE_STATES = (ActionStatusValue.ACTIVE, ActionStatusValue.INACTIVE)
@@ -51,16 +55,13 @@ def before_request() -> None:
 
     flask_validate_request ensures that we are receiving a valid request
     body from the user.
-
-    token_checker.check_token ensure that the requester provided a valid,
-    Globus recognized token for interacting with the Provider.
     """
     validation_result = flask_validate_request(request)
     if validation_result.errors:
         raise err.InvalidRequest(*validation_result.errors)
 
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    auth_state = token_checker.check_token(token)
+    auth_state = state_builder.build(token)
     if not auth_state.identities:
         # Returning these authentication errors to the caller will make debugging
         # easier for this example. Consider whether this is appropriate
