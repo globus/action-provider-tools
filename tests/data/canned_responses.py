@@ -1,4 +1,5 @@
 import json
+import uuid
 from time import time
 from typing import Callable, List
 from unittest.mock import Mock
@@ -116,8 +117,4 @@ def mock_client_secret():
 
 
 def mock_effective_identity() -> str:
-    return "00000000-0000-0000-0000-000000000000"
-
-
-def mock_expected_audience() -> str:
-    return "action_provider_tools_automated_tests"
+    return str(uuid.UUID(int=0))

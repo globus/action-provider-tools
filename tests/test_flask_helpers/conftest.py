@@ -4,6 +4,8 @@ helpers with authentication mocked out. Each fixture creates an identical app,
 the only difference being in the helper that is used to create the app.
 """
 
+from unittest import mock
+
 import pytest
 from flask import Blueprint, Flask
 
@@ -25,7 +27,7 @@ from .app_utils import (
 
 
 @pytest.fixture
-def aptb_app(create_app_from_blueprint):
+def aptb_app(auth_state, create_app_from_blueprint):
     """
     This fixture creates a Flask app using the ActionProviderBlueprint
     helper. The function form of the decorators are used to register each
@@ -37,7 +39,11 @@ def aptb_app(create_app_from_blueprint):
         url_prefix="/aptb",
         provider_description=ap_description,
     )
-    return create_app_from_blueprint(blueprint)
+    with mock.patch(
+        "globus_action_provider_tools.authentication.AuthStateBuilder.build",
+        return_value=auth_state,
+    ):
+        yield create_app_from_blueprint(blueprint)
 
 
 @pytest.fixture
@@ -60,7 +66,7 @@ def create_app_from_blueprint(apt_blueprint_noauth, auth_state):
 
 
 @pytest.fixture()
-def add_routes_app(flask_helpers_noauth, auth_state):
+def add_routes_app(auth_state):
     """
     This fixture creates a Flask app with routes loaded via the
     add_action_routes_to_blueprint Flask helper.
@@ -72,7 +78,6 @@ def add_routes_app(flask_helpers_noauth, auth_state):
         blueprint=bp,
         client_id="bogus",
         client_secret="bogus",
-        client_name=None,
         provider_description=ap_description,
         action_run_callback=mock_action_run_func,
         action_status_callback=mock_action_status_func,
@@ -85,4 +90,8 @@ def add_routes_app(flask_helpers_noauth, auth_state):
         ],
     )
     app.register_blueprint(bp)
-    return app
+    with mock.patch(
+        "globus_action_provider_tools.authentication.AuthStateBuilder.build",
+        return_value=auth_state,
+    ):
+        yield app

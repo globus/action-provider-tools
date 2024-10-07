@@ -1,28 +1,30 @@
 Authentication
 ==============
+
 The authentication helpers can be used in your action provider as follows:
 
 .. code-block:: python
 
-    from globus_action_provider_tools.authentication import TokenChecker
+    from globus_action_provider_tools.authentication import AuthStateBuilder
 
     # You will need to register a client and scope(s) in Globus Auth
-    # Then initialize a TokenChecker instance for your provider:
-    checker = TokenChecker(
-        client_id='YOUR_CLIENT_ID',
-        client_secret='YOUR_CLIENT_SECRET',
+    # Then initialize an AuthStateBuilder instance for your provider:
+    state_builder = AuthStateBuilder(
+        globus_sdk.ConfidentialAppAuthClient(
+            client_id='YOUR_CLIENT_ID',
+            client_secret='YOUR_CLIENT_SECRET',
+        ),
         expected_scopes=['https://auth.globus.org/scopes/YOUR_SCOPES_HERE'],
     )
 
 
-When a request comes in, use your TokenChecker to validate the access token from
-the HTTP Authorization header.
+When a request comes in, use your state_builder to construct an ``AuthState``,
+thus validating the access token:
 
 .. code-block:: python
 
     access_token = request.headers['Authorization'].replace('Bearer ', '')
-    auth_state = checker.check_token(access_token)
-
+    auth_state = state_builder.build(access_token)
 
 The AuthState has several properties and methods that will make it easier for
 you to decide whether or not to allow a request to proceed:
