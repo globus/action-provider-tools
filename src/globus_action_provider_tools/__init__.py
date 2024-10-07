@@ -1,4 +1,4 @@
-from globus_action_provider_tools.authentication import AuthState, TokenChecker
+from globus_action_provider_tools.authentication import AuthState, AuthStateBuilder
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionProviderJsonEncoder,
@@ -10,7 +10,7 @@ from globus_action_provider_tools.utils import now_isoformat, principal_urn_rege
 
 __all__ = [
     "AuthState",
-    "TokenChecker",
+    "AuthStateBuilder",
     "ActionProviderDescription",
     "ActionProviderJsonEncoder",
     "ActionRequest",

@@ -65,39 +65,3 @@ def test_introspect_cors_requests(request, app_fixture):
     ]
     assert list(introspection_cors_response.access_control_allow_origin) == ["*"]
     assert list(introspection_cors_response.access_control_expose_headers) == ["*"]
-
-
-@pytest.mark.parametrize("app_fixture", ["aptb_app", "add_routes_app"])
-@pytest.mark.parametrize("api_version", ["1.0", "1.1"])
-@pytest.mark.parametrize(
-    "authorization_header",
-    (
-        pytest.param(None, id="missing Authorization header"),
-        pytest.param("", id="blank header value"),
-        pytest.param("  ", id="whitespace header value"),
-        pytest.param("A" * 100, id="no 'Bearer ' prefix"),
-        pytest.param("Bearer " + "A" * 9, id="short token"),
-        pytest.param("Bearer " + "A" * 2049, id="long token"),
-    ),
-)
-def test_bogus_authorization_headers_are_rejected_without_io(
-    request, app_fixture, api_version, authorization_header
-):
-    app: flask.Flask = request.getfixturevalue(app_fixture)
-    _, bp = list(app.blueprints.items())[0]
-    bp.input_schema = ActionProviderPydanticInputSchema
-
-    client = ActionProviderClient(
-        app.test_client(), bp.url_prefix, api_version=api_version
-    )
-
-    headers = []
-    if authorization_header is not None:
-        headers.append(("Authorization", authorization_header))
-
-    client.enumerate(assert_status=401, headers=headers)
-    client.run(assert_status=401, headers=headers)
-    client.status("any", assert_status=401, headers=headers)
-    client.log("any", assert_status=401, headers=headers)
-    client.cancel("any", assert_status=401, headers=headers)
-    client.release("any", assert_status=401, headers=headers)

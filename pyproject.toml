@@ -70,6 +70,11 @@ source = [
     "globus_action_provider_tools",
     "tests",
 ]
+[tool.coverage.paths]
+source = [
+    "src/",
+    "*/site-packages/",
+]
 
 [tool.coverage.report]
 # When the test coverage increases, this bar should also raise.

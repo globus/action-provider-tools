@@ -50,20 +50,12 @@ class AuthState:
         auth_client: ConfidentialAppAuthClient,
         bearer_token: str,
         expected_scopes: Iterable[str],
-        expected_audience: str | None = None,
     ) -> None:
         self.auth_client = auth_client
         self.bearer_token = bearer_token
         self.sanitized_token = self.bearer_token[-7:]
         self.expected_scopes = expected_scopes
 
-        # Default to client_id unless expected_audience has been explicitly
-        # provided (supporting legacy clients that may have a different
-        # client name registered with Auth)
-        if expected_audience is None:
-            self.expected_audience = auth_client.client_id
-        else:
-            self.expected_audience = expected_audience
         self.errors: list[Exception] = []
         self._groups_client: GroupsClient | None = None
 
@@ -98,12 +90,6 @@ class AuthState:
                 raise AssertionError(
                     "Token invalid scopes. "
                     f"Expected one of: {self.expected_scopes}, got: {scopes}"
-                )
-            aud = resp.get("aud", [])
-            if self.expected_audience not in aud:
-                raise AssertionError(
-                    "Token not intended for us: "
-                    f"audience={aud}, expected={self.expected_audience}"
                 )
             if "identity_set" not in resp:
                 raise AssertionError("Missing identity_set")
@@ -364,29 +350,20 @@ class AuthState:
         return bool(allowed_set & all_principals)
 
 
-class TokenChecker:
+class AuthStateBuilder:
     def __init__(
         self,
-        client_id: str,
-        client_secret: str,
+        auth_client: globus_sdk.ConfidentialAppAuthClient,
         expected_scopes: Iterable[str],
-        expected_audience: str | None = None,
     ) -> None:
-        self.auth_client = ConfidentialAppAuthClient(client_id, client_secret)
+        self.auth_client = auth_client
         self.default_expected_scopes = frozenset(expected_scopes)
 
-        if expected_audience is None:
-            self.expected_audience = client_id
-        else:
-            self.expected_audience = expected_audience
-
-    def check_token(
+    def build(
         self, access_token: str, expected_scopes: Iterable[str] | None = None
     ) -> AuthState:
         if expected_scopes is None:
             expected_scopes = self.default_expected_scopes
         else:
             expected_scopes = frozenset(expected_scopes)
-        return AuthState(
-            self.auth_client, access_token, expected_scopes, self.expected_audience
-        )
+        return AuthState(self.auth_client, access_token, expected_scopes)
