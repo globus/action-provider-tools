@@ -6,24 +6,31 @@ import globus_sdk
 import pytest
 from globus_sdk._testing import load_response
 
-from globus_action_provider_tools.authentication import AuthState, identity_principal
+from globus_action_provider_tools.authentication import (
+    AuthState,
+    InvalidTokenScopesError,
+    identity_principal,
+)
 
 
 def get_auth_state_instance(expected_scopes: t.Iterable[str]) -> AuthState:
     return AuthState(
         auth_client=globus_sdk.ConfidentialAppAuthClient("bogus", "bogus"),
         bearer_token="bogus",
-        expected_scopes=expected_scopes,
+        expected_scopes=frozenset(expected_scopes),
     )
+
+
+@pytest.fixture(autouse=True)
+def _clear_auth_state_cache():
+    AuthState.dependent_tokens_cache.clear()
+    AuthState.group_membership_cache.clear()
+    AuthState.introspect_cache.clear()
 
 
 @pytest.fixture
 def auth_state(mocked_responses) -> AuthState:
     """Create an AuthState instance."""
-
-    AuthState.dependent_tokens_cache.clear()
-    AuthState.group_membership_cache.clear()
-    AuthState.introspect_cache.clear()
     # note that expected-scope MUST match the fixture data
     return get_auth_state_instance(["expected-scope"])
 
@@ -90,3 +97,13 @@ def test_invalid_grant_exception(auth_state):
     load_response("token-introspect", case="success")
     load_response("token", case="invalid-grant")
     assert auth_state.get_authorizer_for_scope("doesn't matter") is None
+
+
+def test_invalid_scopes_error():
+    auth_state = get_auth_state_instance(["bad-scope"])
+    load_response("token-introspect", case="success")
+    with pytest.raises(InvalidTokenScopesError) as excinfo:
+        auth_state.introspect_token()
+
+    assert excinfo.value.expected_scopes == {"bad-scope"}
+    assert excinfo.value.actual_scopes == {"expected-scope"}

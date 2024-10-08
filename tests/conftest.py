@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import pathlib
 import typing as t
-from unittest.mock import patch
+from unittest import mock
 
 import freezegun
 import globus_sdk
@@ -16,8 +16,6 @@ from globus_action_provider_tools.authentication import AuthState, TokenChecker
 
 from .data import canned_responses
 
-pytest_plugins = ("globus_action_provider_tools.testing.fixtures",)
-
 
 @pytest.fixture
 def config():
@@ -29,7 +27,7 @@ def config():
 
 
 @pytest.fixture
-@patch("globus_action_provider_tools.authentication.ConfidentialAppAuthClient")
+@mock.patch("globus_action_provider_tools.authentication.ConfidentialAppAuthClient")
 def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
     # Mock the introspection first because that gets called as soon as we create
     # a TokenChecker
@@ -62,6 +60,35 @@ def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
     # auth_state._groups_client = GroupsClient(authorizer=None)
     # auth_state._groups_client.list_groups = canned_responses.groups_response()
     return auth_state
+
+
+@pytest.fixture
+def apt_blueprint_noauth(auth_state):
+    """
+    A fixture function which will mock an ActionProviderBlueprint instance's
+    TokenChecker.
+    """
+
+    def _apt_blueprint_noauth(aptb):
+        # Manually remove the function that creates the internal token_checker
+        for f in aptb.deferred_functions:
+            if f.__name__ == "_create_token_checker":
+                aptb.deferred_functions.remove(f)
+
+        # Use a mocked auth state builder internally
+        aptb.checker = mock.Mock()
+        aptb.checker.check_token.return_value = auth_state
+
+    return _apt_blueprint_noauth
+
+
+@pytest.fixture
+def flask_helpers_noauth(auth_state):
+    with mock.patch(
+        "globus_action_provider_tools.flask.api_helpers.TokenChecker.check_token",
+        return_value=auth_state,
+    ):
+        yield
 
 
 @pytest.fixture(scope="session", autouse=True)

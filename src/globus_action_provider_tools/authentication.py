@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import hashlib
 import logging
 from time import time
@@ -34,6 +35,19 @@ def identity_principal(id_: str) -> str:
     return f"urn:globus:auth:identity:{id_}"
 
 
+class InvalidTokenScopesError(ValueError):
+    def __init__(
+        self, expected_scopes: frozenset[str], actual_scopes: frozenset[str]
+    ) -> None:
+        self.expected_scopes = expected_scopes
+        self.actual_scopes = actual_scopes
+        super().__init__(
+            f"Token scopes were not valid. "
+            f"The valid scopes for this service are {self.expected_scopes} but the "
+            f"token contained {self.actual_scopes} upon inspection."
+        )
+
+
 class AuthState:
     # Cache for introspection operations, max lifetime: 30 seconds
     introspect_cache: TTLCache = TTLCache(maxsize=100, ttl=30)
@@ -49,7 +63,7 @@ class AuthState:
         self,
         auth_client: ConfidentialAppAuthClient,
         bearer_token: str,
-        expected_scopes: Iterable[str],
+        expected_scopes: frozenset[str],
     ) -> None:
         self.auth_client = auth_client
         self.bearer_token = bearer_token
@@ -59,48 +73,46 @@ class AuthState:
         self.errors: list[Exception] = []
         self._groups_client: GroupsClient | None = None
 
-    def introspect_token(self) -> GlobusHTTPResponse | None:
-        # There are cases where a null or empty string bearer token are present as a
-        # placeholder
-        if self.bearer_token is None:
-            return None
+    @functools.cached_property
+    def _token_hash(self) -> str:
+        return _hash_token(self.bearer_token)
 
-        resp = AuthState.introspect_cache.get(self.bearer_token)
-        if resp is not None:
-            log.info(
-                f"Using cached introspection response for token ***{self.sanitized_token}"
+    def _cached_introspect_call(self) -> GlobusHTTPResponse:
+        introspect_result = AuthState.introspect_cache.get(self._token_hash)
+        if introspect_result is not None:
+            log.debug(
+                f"Using cached introspection introspect_resultonse for <token_hash={self._token_hash}>"
             )
-            return resp
+            return introspect_result
 
-        log.info(f"Introspecting token ***{self.sanitized_token}")
-        resp = self.auth_client.oauth2_token_introspect(
+        log.debug(f"Introspecting token <token_hash={self._token_hash}>")
+        introspect_result = self.auth_client.oauth2_token_introspect(
             self.bearer_token, include="identity_set"
         )
-        now = time()
+        self.introspect_cache[self._token_hash] = introspect_result
 
-        try:
-            if resp.get("active", False) is not True:
-                raise AssertionError("Invalid token.")
-            if not resp.get("nbf", now + 4) < (time() + 3):
-                raise AssertionError("Token not yet valid -- check system clock?")
-            if not resp.get("exp", 0) > (time() - 3):
-                raise AssertionError("Token expired.")
-            scopes = frozenset(resp.get("scope", "").split())
-            if not scopes & set(self.expected_scopes):
-                raise AssertionError(
-                    "Token invalid scopes. "
-                    f"Expected one of: {self.expected_scopes}, got: {scopes}"
-                )
-            if "identity_set" not in resp:
-                raise AssertionError("Missing identity_set")
-        except AssertionError as err:
-            self.errors.append(err)
-            log.info(err)
+        return introspect_result
+
+    def introspect_token(self) -> GlobusHTTPResponse | None:
+        introspect_result = self._cached_introspect_call()
+
+        # FIXME: convert this to an exception, rather than 'None'
+        # the exception could be raised in _verify_introspect_result
+        if not introspect_result["active"]:
             return None
-        else:
-            log.info(f"Caching token response for token ***{self.sanitized_token}")
-            AuthState.introspect_cache[self.bearer_token] = resp
-            return resp
+
+        self._verify_introspect_result(introspect_result)
+        return introspect_result
+
+    def _verify_introspect_result(self, introspect_result: GlobusHTTPResponse) -> None:
+        """
+        A helper which checks token introspect properties and raises exceptions on failure.
+        """
+        # validate scopes, ensuring that the token provided accords with the service's
+        # notion of what operations exist and are supported
+        scopes = set(introspect_result.get("scope", "").split())
+        if any(s not in self.expected_scopes for s in scopes):
+            raise InvalidTokenScopesError(self.expected_scopes, frozenset(scopes))
 
     @property
     def effective_identity(self) -> str | None:
