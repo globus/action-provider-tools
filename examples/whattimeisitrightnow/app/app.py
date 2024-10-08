@@ -26,9 +26,7 @@ from globus_action_provider_tools.flask.helpers import assign_json_provider
 app = Flask(__name__)
 assign_json_provider(app)
 
-token_checker = TokenChecker(
-    config.client_id, config.client_secret, [config.our_scope], config.token_audience
-)
+token_checker = TokenChecker(config.client_id, config.client_secret, [config.our_scope])
 
 COMPLETE_STATES = (ActionStatusValue.SUCCEEDED, ActionStatusValue.FAILED)
 INCOMPLETE_STATES = (ActionStatusValue.ACTIVE, ActionStatusValue.INACTIVE)

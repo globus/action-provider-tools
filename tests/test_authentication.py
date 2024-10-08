@@ -9,32 +9,23 @@ from globus_sdk._testing import load_response
 from globus_action_provider_tools.authentication import AuthState, identity_principal
 
 
-def get_auth_state_instance(
-    expected_scopes: t.Iterable[str],
-    expected_audience: str,
-) -> AuthState:
+def get_auth_state_instance(expected_scopes: t.Iterable[str]) -> AuthState:
     return AuthState(
         auth_client=globus_sdk.ConfidentialAppAuthClient("bogus", "bogus"),
         bearer_token="bogus",
         expected_scopes=expected_scopes,
-        expected_audience=expected_audience,
     )
 
 
 @pytest.fixture
 def auth_state(mocked_responses) -> AuthState:
-    """Create an AuthState instance.
-
-    AuthState compares its `expected_scopes` and `expected_audience` values
-    against the values present in an API request and will fail if they don't match.
-    Unfortunately, this currently means that these values are duplicated
-    in the API fixture .yaml files and here.
-    """
+    """Create an AuthState instance."""
 
     AuthState.dependent_tokens_cache.clear()
     AuthState.group_membership_cache.clear()
     AuthState.introspect_cache.clear()
-    return get_auth_state_instance(["expected-scope"], "expected-audience")
+    # note that expected-scope MUST match the fixture data
+    return get_auth_state_instance(["expected-scope"])
 
 
 def test_get_identities(auth_state, freeze_time):
@@ -84,10 +75,7 @@ def test_caching_groups(auth_state, freeze_time, mocked_responses):
 def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_responses):
     response = freeze_time(load_response("token-introspect", case="success"))
 
-    duplicate_auth_state = get_auth_state_instance(
-        auth_state.expected_scopes,
-        auth_state.expected_audience,
-    )
+    duplicate_auth_state = get_auth_state_instance(auth_state.expected_scopes)
     assert duplicate_auth_state is not auth_state
 
     assert len(auth_state.identities) == len(response.metadata["identities"])

@@ -106,7 +106,6 @@ def add_action_routes_to_blueprint(
     blueprint: flask.Blueprint,
     client_id: str,
     client_secret: str,
-    client_name: str | None,
     provider_description: ActionProviderDescription,
     action_run_callback: ActionRunCallback,
     action_status_callback: ActionStatusCallback,
@@ -141,13 +140,6 @@ def add_action_routes_to_blueprint(
     ``client_secret`` (*string*)
     A Globus Auth generated ``client_secret`` which will be used when validating input
     request tokens.
-
-    ``client_name`` (*string*) Most commonly, this will be a None value. In the rare,
-    legacy case where a name has been associated with a client_id, it can be provided
-    here. If you are not aware of a name associated with your client_id, it most likely
-    doesn't have one and the value should be None. This will be passed to the
-    (:class:`TokenChecker<globus_action_provider_tools.authentication>`) as the
-    `expected_audience`.
 
     ``provider_description`` (:class:`ActionProviderDescription\
     <globus_action_provider_tools.data_types>`)
@@ -190,7 +182,6 @@ def add_action_routes_to_blueprint(
         client_id=client_id,
         client_secret=client_secret,
         expected_scopes=all_accepted_scopes,
-        expected_audience=client_name,
     )
 
     assign_json_provider(blueprint)
