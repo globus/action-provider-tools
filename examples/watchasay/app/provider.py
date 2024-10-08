@@ -233,7 +233,6 @@ def create_app():
         blueprint=skeleton_blueprint,
         client_id=config.client_id,
         client_secret=config.client_secret,
-        client_name=None,
         provider_description=provider_description,
         action_run_callback=action_run,
         action_status_callback=action_status,

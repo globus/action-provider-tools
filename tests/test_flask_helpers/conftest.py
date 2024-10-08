@@ -72,7 +72,6 @@ def add_routes_app(flask_helpers_noauth, auth_state):
         blueprint=bp,
         client_id="bogus",
         client_secret="bogus",
-        client_name=None,
         provider_description=ap_description,
         action_run_callback=mock_action_run_func,
         action_status_callback=mock_action_status_func,

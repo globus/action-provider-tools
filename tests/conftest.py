@@ -25,7 +25,6 @@ def config():
         "client_id": canned_responses.mock_client_id(),
         "client_secret": canned_responses.mock_client_secret(),
         "expected_scopes": (canned_responses.mock_scope(),),
-        "expected_audience": canned_responses.mock_expected_audience(),
     }
 
 
@@ -53,7 +52,6 @@ def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
         client_id=config["client_id"],
         client_secret=config["client_secret"],
         expected_scopes=config["expected_scopes"],
-        expected_audience=config["expected_audience"],
     )
     auth_state = checker.check_token("NOT_A_TOKEN")
 

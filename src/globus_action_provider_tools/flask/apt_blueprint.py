@@ -53,7 +53,6 @@ class ActionProviderBlueprint(Blueprint):
         self,
         provider_description: ActionProviderDescription,
         *args,
-        globus_auth_client_name: t.Optional[str] = None,
         additional_scopes: t.Iterable[str] = (),
         action_repository: t.Optional[AbstractActionRepository] = None,
         request_lifecycle_hooks: t.Optional[t.List[t.Any]] = None,
@@ -65,13 +64,6 @@ class ActionProviderBlueprint(Blueprint):
 
         :param provider_description: A Provider Description which will be
         returned from introspection calls to this Blueprint.
-
-        :param globus_auth_client_name: The name of the Globus Auth Client (also
-        known as the resource server name). This will be used to validate the
-        intended audience for tokens passed to the operations on this
-        Blueprint. By default, the client id will be used for checkign audience,
-        and unless the client has explicitly been given a resource server name
-        in Globus Auth, this will be proper behavior.
 
         :param additional_scopes: Additional scope strings the Action Provider
         should allow scopes in addition to the one specified by the
@@ -93,7 +85,6 @@ class ActionProviderBlueprint(Blueprint):
             provider_description,
             config=config,
         )
-        self.globus_auth_client_name = globus_auth_client_name
         self.additional_scopes = additional_scopes
         self.config = config
 
@@ -170,7 +161,6 @@ class ActionProviderBlueprint(Blueprint):
             client_id=client_id,
             client_secret=client_secret,
             expected_scopes=scopes,
-            expected_audience=self.globus_auth_client_name,
         )
 
     def _action_introspect(self):
