@@ -68,8 +68,8 @@ log = logging.getLogger(__name__)
 
 
 def _api_operation_for_request(request: flask.Request) -> str:
-    method = request.path.rsplit("/", 1)
-    op_name = method[-1]
+    method: str = request.path.rsplit("/", 1)
+    op_name: str = method[-1]
     return op_name
 
 

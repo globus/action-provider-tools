@@ -298,7 +298,7 @@ class ActionProviderBlueprint(Blueprint):
 
         try:
             if action:
-                result = self.action_resume_callback(action, g.auth_state)  # type: ignore
+                result = self.action_resume_callback(action, g.auth_state)
             else:
                 result = self.action_resume_callback(action_id, g.auth_state)  # type: ignore
         except AttributeError:
@@ -354,7 +354,7 @@ class ActionProviderBlueprint(Blueprint):
 
         try:
             if action:
-                result = self.action_status_callback(action, g.auth_state)  # type: ignore
+                result = self.action_status_callback(action, g.auth_state)
             else:
                 result = self.action_status_callback(action_id, g.auth_state)  # type: ignore
         except AttributeError:
@@ -397,7 +397,7 @@ class ActionProviderBlueprint(Blueprint):
 
         try:
             if action:
-                result = self.action_cancel_callback(action, g.auth_state)  # type: ignore
+                result = self.action_cancel_callback(action, g.auth_state)
             else:
                 result = self.action_cancel_callback(action_id, g.auth_state)  # type: ignore
         except AttributeError:
@@ -452,7 +452,7 @@ class ActionProviderBlueprint(Blueprint):
 
         try:
             if action:
-                result = self.action_release_callback(action, g.auth_state)  # type: ignore
+                result = self.action_release_callback(action, g.auth_state)
             else:
                 result = self.action_release_callback(action_id, g.auth_state)  # type: ignore
         except ValidationError as ve:
@@ -516,10 +516,10 @@ class ActionProviderBlueprint(Blueprint):
         Executes an action_saver to store the ActionStatus in the specified
         backend.
         """
-        if isinstance(result, ActionStatus):
-            action = result
-        elif isinstance(result, tuple):
+        action = result
+        if isinstance(result, tuple) and len(result) > 0:
             action = result[0]
+
         if not isinstance(action, ActionStatus):
             current_app.logger.warning(
                 f"Attempted to save a non ActionStatus: {action}"

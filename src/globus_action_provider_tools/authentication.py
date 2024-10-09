@@ -3,11 +3,10 @@ from __future__ import annotations
 import functools
 import hashlib
 import logging
-from time import time
+import time
 from typing import Iterable
 
 import globus_sdk
-from cachetools import TTLCache
 from globus_sdk import (
     AccessTokenAuthorizer,
     ConfidentialAppAuthClient,
@@ -17,6 +16,8 @@ from globus_sdk import (
     GroupsClient,
     RefreshTokenAuthorizer,
 )
+
+from .utils import TypedTTLCache
 
 log = logging.getLogger(__name__)
 
@@ -49,14 +50,20 @@ class InvalidTokenScopesError(ValueError):
 
 class AuthState:
     # Cache for introspection operations, max lifetime: 30 seconds
-    introspect_cache: TTLCache = TTLCache(maxsize=100, ttl=30)
+    introspect_cache: TypedTTLCache[globus_sdk.GlobusHTTPResponse] = TypedTTLCache(
+        maxsize=100, ttl=30
+    )
 
     # Cache for dependent tokens, max lifetime: 47 hours: a bit less than the 48 hours
     # until a refresh would be required anyway
-    dependent_tokens_cache: TTLCache = TTLCache(maxsize=100, ttl=47 * 3600)
+    dependent_tokens_cache: TypedTTLCache[globus_sdk.OAuthDependentTokenResponse] = (
+        TypedTTLCache(maxsize=100, ttl=47 * 3600)
+    )
 
     # Cache for group lookups, max lifetime: 5 minutes
-    group_membership_cache: TTLCache = TTLCache(maxsize=100, ttl=60 * 5)
+    group_membership_cache: TypedTTLCache[frozenset[str]] = TypedTTLCache(
+        maxsize=100, ttl=60 * 5
+    )
 
     def __init__(
         self,
@@ -140,7 +147,7 @@ class AuthState:
     def principals(self) -> frozenset[str]:
         return self.identities.union(self.groups)
 
-    @property  # type: ignore
+    @property
     def groups(self) -> frozenset[str]:
         try:
             groups_client = self._get_groups_client()
@@ -331,7 +338,7 @@ class AuthState:
         if refresh_token is not None:
             return True
 
-        if token_expiration <= (int(time()) + required_authorizer_expiration_time):
+        if token_expiration <= (int(time.time()) + required_authorizer_expiration_time):
             return False
 
         return access_token is not None
