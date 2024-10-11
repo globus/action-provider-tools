@@ -11,6 +11,7 @@ class TypedTTLCache(t.Generic[T]):
     A tiny wrapper class which provides a type-checked layer on top of TTLCache.
     This allows us to know and enforce the types of cached objects.
     """
+
     def __init__(self, *, maxsize: int, ttl: int) -> None:
         self._cache: cachetools.TTLCache = cachetools.TTLCache(maxsize=maxsize, ttl=ttl)
 
