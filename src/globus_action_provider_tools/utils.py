@@ -30,6 +30,9 @@ class TypedTTLCache(t.Generic[T]):
     def __contains__(self, key: str) -> bool:
         return key in self._cache
 
+    def clear(self) -> None:
+        self._cache.clear()
+
 
 def now_isoformat():
     return str(datetime.datetime.now(datetime.timezone.utc).isoformat())
