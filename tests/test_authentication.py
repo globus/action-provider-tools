@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import time
 import typing as t
+from unittest import mock
 
 import globus_sdk
 import pytest
-from globus_sdk._testing import load_response
+from globus_sdk._testing import RegisteredResponse, load_response
 
 from globus_action_provider_tools.authentication import (
     AuthState,
@@ -14,8 +16,11 @@ from globus_action_provider_tools.authentication import (
 
 
 def get_auth_state_instance(expected_scopes: t.Iterable[str]) -> AuthState:
+    client = globus_sdk.ConfidentialAppAuthClient(
+        "bogus", "bogus", transport_params={"max_retries": 0}
+    )
     return AuthState(
-        auth_client=globus_sdk.ConfidentialAppAuthClient("bogus", "bogus"),
+        auth_client=client,
         bearer_token="bogus",
         expected_scopes=frozenset(expected_scopes),
     )
@@ -97,6 +102,70 @@ def test_invalid_grant_exception(auth_state):
     load_response("token-introspect", case="success")
     load_response("token", case="invalid-grant")
     assert auth_state.get_authorizer_for_scope("doesn't matter") is None
+
+
+def test_dependent_token_callout_500_fails_dependent_authorization(auth_state):
+    """
+    On a 5xx response, getting an authorizer fails.
+
+    FIXME: currently this simply emits 'None' -- in the future the error should propagate
+    """
+    RegisteredResponse(
+        service="auth", path="/v2/oauth2/token", method="POST", status=500
+    ).add()
+    assert (
+        auth_state.get_authorizer_for_scope(
+            "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships"
+        )
+        is None
+    )
+
+
+def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
+    """
+    Populate the cache "incorrectly" and then "fix it" by asking for an authorizer
+    and expecting the dependent token logic to appropriately redrive.
+    """
+    # the mock by_scopes value is a dict -- similar enough since it just needs to be
+    # a mapping type -- which we populate for "foo"
+    mock_response = mock.Mock()
+    mock_response.by_scopes = {
+        "foo_scope": {
+            "expires_at_seconds": time.time() + 100,
+            "access_token": "foo_AT",
+            "refresh_token": "foo_RT",
+        }
+    }
+    auth_state.dependent_tokens_cache[auth_state._dependent_token_cache_key] = (
+        mock_response
+    )
+
+    # register a response for a different resource server -- 'bar'
+    RegisteredResponse(
+        service="auth",
+        path="/v2/oauth2/token",
+        method="POST",
+        json=[
+            {
+                "resource_server": "bar",
+                "scope": "bar_scope",
+                "expires_at_seconds": time.time() + 100,
+                "access_token": "bar_AT",
+                "refresh_token": "bar_RT",
+            }
+        ],
+    ).add()
+    # now get the 'bar_scope' authorizer
+    authorizer = auth_state.get_authorizer_for_scope("bar_scope")
+
+    # it should be a refresh token authorizer and the cache should be updated
+    assert isinstance(authorizer, globus_sdk.RefreshTokenAuthorizer)
+    cache_value = auth_state.dependent_tokens_cache[
+        auth_state._dependent_token_cache_key
+    ]
+    assert isinstance(cache_value, globus_sdk.OAuthDependentTokenResponse)
+    assert "foo_scope" not in cache_value.by_scopes
+    assert "bar_scope" in cache_value.by_scopes
 
 
 def test_invalid_scopes_error():
