@@ -133,12 +133,12 @@ def blueprint_error_handler(exc: Exception) -> ViewReturn:
     # ActionProviderToolsException is the base class for HTTP-based exceptions,
     # return those directly
     if isinstance(exc, ActionProviderToolsException):
-        return exc  # type: ignore
+        return exc
 
     # If a component in the toolkit throw's an unhandled AuthenticationError,
     # replace it with a Flask-based response
     if isinstance(exc, AuthenticationError):
-        return UnauthorizedRequest()  # type: ignore
+        return UnauthorizedRequest()
 
     current_app.logger.exception("Handling unexpected exception", exc_info=True)
     # Handle unexpected Exceptions in a somewhat predictable way
