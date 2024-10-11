@@ -215,7 +215,7 @@ class ActionStatus(BaseModel):
         min_length=1,
         max_length=64,
     )
-    monitor_by: Set[str] | None = Field(
+    monitor_by: Optional[Set[str]] = Field(
         default_factory=set,
         description=(
             "A list of principal URNs containing identities which are allowed to "
@@ -224,7 +224,7 @@ class ActionStatus(BaseModel):
         ),
         regex=principal_urn_regex,
     )
-    manage_by: Set[str] | None = Field(
+    manage_by: Optional[Set[str]] = Field(
         default_factory=set,
         description=(
             "A list of principal URNs containing identities which are allowed "
