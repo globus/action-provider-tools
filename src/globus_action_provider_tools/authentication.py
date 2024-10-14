@@ -401,14 +401,16 @@ class AuthState:
         return bool(allowed_set & all_principals)
 
 
-class TokenChecker:
+class AuthStateBuilder:
     def __init__(
-        self, client_id: str, client_secret: str, expected_scopes: Iterable[str]
+        self,
+        auth_client: globus_sdk.ConfidentialAppAuthClient,
+        expected_scopes: Iterable[str],
     ) -> None:
-        self.auth_client = ConfidentialAppAuthClient(client_id, client_secret)
+        self.auth_client = auth_client
         self.default_expected_scopes = frozenset(expected_scopes)
 
-    def check_token(
+    def build(
         self, access_token: str, expected_scopes: Iterable[str] | None = None
     ) -> AuthState:
         if expected_scopes is None:

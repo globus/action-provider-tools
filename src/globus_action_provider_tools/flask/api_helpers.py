@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 
 import flask
+import globus_sdk
 from flask import jsonify, request
 from pydantic import ValidationError
 
-from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionStatusValue,
@@ -17,10 +17,10 @@ from globus_action_provider_tools.flask.exceptions import (
     UnauthorizedRequest,
 )
 from globus_action_provider_tools.flask.helpers import (
+    FlaskAuthStateBuilder,
     action_status_return_to_view_return,
     assign_json_provider,
     blueprint_error_handler,
-    check_token,
     get_input_body_validator,
     parse_query_args,
     query_args_to_enum,
@@ -178,10 +178,15 @@ def add_action_routes_to_blueprint(
     else:
         all_accepted_scopes = [provider_description.globus_auth_scope]
 
-    checker = TokenChecker(
+    # FIXME:
+    # it needs to be possible to parametrize this client to control its network callout
+    # behavior, tuning retries and timeouts
+    auth_client = globus_sdk.ConfidentialAppAuthClient(
         client_id=client_id,
         client_secret=client_secret,
-        expected_scopes=all_accepted_scopes,
+    )
+    state_builder = FlaskAuthStateBuilder(
+        auth_client=auth_client, expected_scopes=all_accepted_scopes
     )
 
     assign_json_provider(blueprint)
@@ -200,7 +205,7 @@ def add_action_routes_to_blueprint(
 
         # Check tokens if "public" is not in the *visible_to* list.
         if "public" not in provider_description.visible_to:
-            auth_state = check_token(request, checker)
+            auth_state = state_builder.build_from_request()
             if not auth_state.check_authorization(
                 provider_description.visible_to,
                 allow_public=True,
@@ -215,7 +220,7 @@ def add_action_routes_to_blueprint(
     @blueprint.route("/actions", methods=["POST"])
     @blueprint.route("/run", methods=["POST"])
     def action_run() -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = state_builder.build_from_request()
         if not auth_state.check_authorization(
             provider_description.runnable_by, allow_all_authenticated_users=True
         ):
@@ -248,7 +253,7 @@ def add_action_routes_to_blueprint(
     @blueprint.route("/<string:action_id>/status", methods=["GET"])
     @blueprint.route("/actions/<string:action_id>", methods=["GET"])
     def action_status(action_id: str) -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = state_builder.build_from_request()
         try:
             status = action_status_callback(action_id, auth_state)  # type: ignore
         except ValidationError as ve:
@@ -262,7 +267,7 @@ def add_action_routes_to_blueprint(
     @blueprint.route("/<string:action_id>/cancel", methods=["POST"])
     @blueprint.route("/actions/<string:action_id>/cancel", methods=["POST"])
     def action_cancel(action_id: str) -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = state_builder.build_from_request()
         try:
             status = action_cancel_callback(action_id, auth_state)  # type: ignore
         except ValidationError as ve:
@@ -276,7 +281,7 @@ def add_action_routes_to_blueprint(
     @blueprint.route("/<string:action_id>/release", methods=["POST"])
     @blueprint.route("/actions/<string:action_id>", methods=["DELETE"])
     def action_release(action_id: str) -> ViewReturn:
-        auth_state = check_token(request, checker)
+        auth_state = state_builder.build_from_request()
         try:
             status = action_release_callback(action_id, auth_state)  # type: ignore
         except ValidationError as ve:
@@ -292,14 +297,14 @@ def add_action_routes_to_blueprint(
         @blueprint.route("/actions/<string:action_id>/log", methods=["GET"])
         @blueprint.route("/<string:action_id>/log", methods=["GET"])
         def action_log(action_id: str) -> ViewReturn:
-            check_token(request, checker)
+            state_builder.build_from_request()
             return jsonify({"log": "message"}), 200
 
     if action_enumeration_callback is not None:
 
         @blueprint.route("/actions", methods=["GET"])
         def action_enumeration():
-            auth_state = check_token(request, checker)
+            auth_state = state_builder.build_from_request()
 
             valid_statuses = {e.name.casefold() for e in ActionStatusValue}
             statuses = parse_query_args(

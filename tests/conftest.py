@@ -12,7 +12,7 @@ import responses
 import yaml
 from globus_sdk._testing import RegisteredResponse, register_response_set
 
-from globus_action_provider_tools.authentication import AuthState, TokenChecker
+from globus_action_provider_tools.authentication import AuthState, AuthStateBuilder
 
 from .data import canned_responses
 
@@ -27,10 +27,12 @@ def config():
 
 
 @pytest.fixture
-@mock.patch("globus_action_provider_tools.authentication.ConfidentialAppAuthClient")
+@mock.patch("globus_sdk.ConfidentialAppAuthClient")
 def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
+    # FIXME: the comment below is a lie, assess and figure out what is being said
+    #
     # Mock the introspection first because that gets called as soon as we create
-    # a TokenChecker
+    # an AuthStateBuilder
     client = MockAuthClient.return_value
     client.oauth2_token_introspect.return_value = (
         canned_responses.introspect_response()()
@@ -45,13 +47,9 @@ def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
         globus_sdk.GroupsClient, "get_my_groups", canned_responses.groups_response()
     )
 
-    # Create a TokenChecker to be used to create a mocked auth_state object
-    checker = TokenChecker(
-        client_id=config["client_id"],
-        client_secret=config["client_secret"],
-        expected_scopes=config["expected_scopes"],
-    )
-    auth_state = checker.check_token("NOT_A_TOKEN")
+    # Create an AuthStateBuilder to be used to create a mocked auth_state object
+    builder = AuthStateBuilder(client, expected_scopes=config["expected_scopes"])
+    auth_state = builder.build("NOT_A_TOKEN")
 
     # Reset the call count because check_token implicitly calls oauth2_token_introspect
     client.oauth2_token_introspect.call_count = 0
@@ -66,18 +64,19 @@ def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
 def apt_blueprint_noauth(auth_state):
     """
     A fixture function which will mock an ActionProviderBlueprint instance's
-    TokenChecker.
+    AuthStateBuilder.
     """
 
     def _apt_blueprint_noauth(aptb):
-        # Manually remove the function that creates the internal token_checker
+        # Manually remove the function that creates the internal state_builder
         for f in aptb.deferred_functions:
-            if f.__name__ == "_create_token_checker":
+            if f.__name__ == "_create_state_builder":
                 aptb.deferred_functions.remove(f)
 
         # Use a mocked auth state builder internally
-        aptb.checker = mock.Mock()
-        aptb.checker.check_token.return_value = auth_state
+        aptb.state_builder = mock.Mock()
+        aptb.state_builder.build.return_value = auth_state
+        aptb.state_builder.build_from_request.return_value = auth_state
 
     return _apt_blueprint_noauth
 
