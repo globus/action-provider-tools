@@ -33,6 +33,10 @@ _Note: this assumes `origin` is your desired upstream._
 - Create a GitHub release, which will auto-publish to pypi
     `gh release create "v$(poetry version -s)" --title "v$(poetry version -s)"`
 
-- Merge `production` back to `main`; `git checkout main; git merge production`
+- Merge `production` back to `main` by opening and merging a PR:
+
+    ```
+    gh pr create -B main -H production -t "Merge back production->main ($(date +"%Y-%m-%d"))" -b '' -l no-news-is-good-news
+    ```
 
 - Delete the release branch; `git branch -d release/$VERSION`
