@@ -48,6 +48,10 @@ class InvalidTokenScopesError(ValueError):
         )
 
 
+class InactiveTokenError(ValueError):
+    """Indicates that the token is not valid (its 'active' field is False)."""
+
+
 class AuthState:
     # Cache for introspection operations, max lifetime: 30 seconds
     introspect_cache: TypedTTLCache[globus_sdk.GlobusHTTPResponse] = TypedTTLCache(
@@ -95,7 +99,7 @@ class AuthState:
         introspect_result = AuthState.introspect_cache.get(self._token_hash)
         if introspect_result is not None:
             log.debug(
-                f"Using cached introspection introspect_resultonse for <token_hash={self._token_hash}>"
+                f"Using cached introspection response for token_hash={self._token_hash}"
             )
             return introspect_result
 
@@ -107,14 +111,8 @@ class AuthState:
 
         return introspect_result
 
-    def introspect_token(self) -> GlobusHTTPResponse | None:
+    def introspect_token(self) -> GlobusHTTPResponse:
         introspect_result = self._cached_introspect_call()
-
-        # FIXME: convert this to an exception, rather than 'None'
-        # the exception could be raised in _verify_introspect_result
-        if not introspect_result["active"]:
-            return None
-
         self._verify_introspect_result(introspect_result)
         return introspect_result
 
@@ -122,6 +120,10 @@ class AuthState:
         """
         A helper which checks token introspect properties and raises exceptions on failure.
         """
+
+        if not introspect_result["active"]:
+            raise InactiveTokenError("The token is invalid.")
+
         # validate scopes, ensuring that the token provided accords with the service's
         # notion of what operations exist and are supported
         scopes = set(introspect_result.get("scope", "").split())
@@ -129,18 +131,14 @@ class AuthState:
             raise InvalidTokenScopesError(self.expected_scopes, frozenset(scopes))
 
     @property
-    def effective_identity(self) -> str | None:
+    def effective_identity(self) -> str:
         tkn_details = self.introspect_token()
-        if tkn_details is None:
-            return None
         effective = identity_principal(tkn_details["sub"])
         return effective
 
     @property
     def identities(self) -> frozenset[str]:
         tkn_details = self.introspect_token()
-        if tkn_details is None:
-            return frozenset()
         return frozenset(map(identity_principal, tkn_details["identity_set"]))
 
     @property
@@ -221,7 +219,7 @@ class AuthState:
         self,
         scope: str,
         required_authorizer_expiration_time: int = 60,
-    ) -> RefreshTokenAuthorizer | AccessTokenAuthorizer | None:
+    ) -> RefreshTokenAuthorizer | AccessTokenAuthorizer:
         """
         Get dependent tokens for the caller's token, then retrieve token data for the
         requested scope and attempt to build an authorizer from that data.
@@ -240,39 +238,33 @@ class AuthState:
         If the access token is or will be expired within the
         ``required_authorizer_expiration_time``, it is treated as a failure.
         """
-        # this block is intentionally nested under a single exception handler
-        # if either dependent token callout fails, the entire operation is treated as a failure
-        try:
-            had_cached_value, dependent_tokens = self._get_cached_dependent_tokens()
 
-            # if the dependent token data (which could have been cached) failed to meet
-            # the requirements...
+        retrieved_from_cache, dependent_tokens = self._get_cached_dependent_tokens()
+
+        # if the dependent token data (which could have been cached) failed to meet
+        # the requirements...
+        if not self._dependent_token_response_satisfies_scope_request(
+            dependent_tokens, scope, required_authorizer_expiration_time
+        ):
+            # if there was no cached value, we just got fresh dependent tokens
+            # to do this work but they weren't sufficient
+            # there's no reason to expect new tokens would do better
+            # fail, but do not clear the cache -- it could be satisfactory
+            # for some other scope request
+            if not retrieved_from_cache:
+                raise ValueError("Dependent tokens do not match request.")
+
+            # otherwise, the cached value was bad -- fetch and check again,
+            # by clearing the cache and asking for the same data
+            del self.dependent_tokens_cache[self._dependent_token_cache_key]
+            _, dependent_tokens = self._get_cached_dependent_tokens()
+
+            # check again against requirements --
+            # this is guaranteed to be fresh data
             if not self._dependent_token_response_satisfies_scope_request(
                 dependent_tokens, scope, required_authorizer_expiration_time
             ):
-                # if there was no cached value, we just got fresh dependent tokens to do this work
-                # and they weren't sufficient
-                # there's no reason to expect new tokens would do better
-                # fail, but do not clear the cache -- it could be satisfactory for some other scope request
-                if not had_cached_value:
-                    return None  # FIXME: raise an exception instead
-
-                # otherwise, the cached value was bad -- fetch and check again, by clearing the cache and
-                # asking for the same data
-                del self.dependent_tokens_cache[self._dependent_token_cache_key]
-                _, dependent_tokens = self._get_cached_dependent_tokens()
-
-                # check again against requirements -- this is guaranteed to be fresh data
-                if not self._dependent_token_response_satisfies_scope_request(
-                    dependent_tokens, scope, required_authorizer_expiration_time
-                ):
-                    return None  # FIXME: raise an exception instead
-        except globus_sdk.AuthAPIError:
-            log.warning(
-                f"Unable to create GlobusAuthorizer for scope {scope}. Using 'None'",
-                exc_info=True,
-            )
-            return None
+                raise ValueError("Dependent tokens do not match request.")
 
         token_data = dependent_tokens.by_scopes[scope]
 
