@@ -1,11 +1,11 @@
 import typing as t
 
 import flask
+import globus_sdk
 from flask import Blueprint, blueprints, current_app, g, jsonify, request
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest as WerkzeugBadRequest
 
-from globus_action_provider_tools.authentication import TokenChecker
 from globus_action_provider_tools.authorization import (
     authorize_action_access_or_404,
     authorize_action_management_or_404,
@@ -26,10 +26,10 @@ from globus_action_provider_tools.flask.exceptions import (
     UnauthorizedRequest,
 )
 from globus_action_provider_tools.flask.helpers import (
+    FlaskAuthStateBuilder,
     action_status_return_to_view_return,
     assign_json_provider,
     blueprint_error_handler,
-    check_token,
     get_input_body_validator,
     parse_query_args,
     query_args_to_enum,
@@ -53,7 +53,6 @@ class ActionProviderBlueprint(Blueprint):
         self,
         provider_description: ActionProviderDescription,
         *args,
-        globus_auth_client_name: t.Optional[str] = None,
         additional_scopes: t.Iterable[str] = (),
         action_repository: t.Optional[AbstractActionRepository] = None,
         request_lifecycle_hooks: t.Optional[t.List[t.Any]] = None,
@@ -65,13 +64,6 @@ class ActionProviderBlueprint(Blueprint):
 
         :param provider_description: A Provider Description which will be
         returned from introspection calls to this Blueprint.
-
-        :param globus_auth_client_name: The name of the Globus Auth Client (also
-        known as the resource server name). This will be used to validate the
-        intended audience for tokens passed to the operations on this
-        Blueprint. By default, the client id will be used for checkign audience,
-        and unless the client has explicitly been given a resource server name
-        in Globus Auth, this will be proper behavior.
 
         :param additional_scopes: Additional scope strings the Action Provider
         should allow scopes in addition to the one specified by the
@@ -93,14 +85,13 @@ class ActionProviderBlueprint(Blueprint):
             provider_description,
             config=config,
         )
-        self.globus_auth_client_name = globus_auth_client_name
         self.additional_scopes = additional_scopes
         self.config = config
 
         assign_json_provider(self)
         self.before_request(self._check_token)
         self.register_error_handler(Exception, blueprint_error_handler)
-        self.record_once(self._create_token_checker)
+        self.record_once(self._create_state_builder)
 
         if request_lifecycle_hooks:
             for hooks in request_lifecycle_hooks:
@@ -149,7 +140,7 @@ class ActionProviderBlueprint(Blueprint):
             methods=["POST"],
         )
 
-    def _create_token_checker(self, setup_state: blueprints.BlueprintSetupState):
+    def _create_state_builder(self, setup_state: blueprints.BlueprintSetupState):
         app = setup_state.app
         provider_prefix = self.name.upper() + "_"
         client_id = app.config.get(provider_prefix + "CLIENT_ID")
@@ -163,15 +154,15 @@ class ActionProviderBlueprint(Blueprint):
         scopes.extend(self.additional_scopes)
 
         app.logger.info(
-            f"Initializing TokenChecker for client {client_id} and secret "
+            f"Initializing AuthStateBuilder for client {client_id} and secret "
             f"***{client_secret[-5:]}"
         )
-        self.checker = TokenChecker(
-            client_id=client_id,
-            client_secret=client_secret,
-            expected_scopes=scopes,
-            expected_audience=self.globus_auth_client_name,
+        # FIXME: it needs to be possible to parametrize this client to control its network
+        # callout behavior, tuning retries and timeouts
+        auth_client = globus_sdk.ConfidentialAppAuthClient(
+            client_id=client_id, client_secret=client_secret
         )
+        self.state_builder = FlaskAuthStateBuilder(auth_client, expected_scopes=scopes)
 
     def _action_introspect(self):
         """
@@ -308,7 +299,7 @@ class ActionProviderBlueprint(Blueprint):
 
         try:
             if action:
-                result = self.action_resume_callback(action, g.auth_state)  # type: ignore
+                result = self.action_resume_callback(action, g.auth_state)
             else:
                 result = self.action_resume_callback(action_id, g.auth_state)  # type: ignore
         except AttributeError:
@@ -364,7 +355,7 @@ class ActionProviderBlueprint(Blueprint):
 
         try:
             if action:
-                result = self.action_status_callback(action, g.auth_state)  # type: ignore
+                result = self.action_status_callback(action, g.auth_state)
             else:
                 result = self.action_status_callback(action_id, g.auth_state)  # type: ignore
         except AttributeError:
@@ -407,7 +398,7 @@ class ActionProviderBlueprint(Blueprint):
 
         try:
             if action:
-                result = self.action_cancel_callback(action, g.auth_state)  # type: ignore
+                result = self.action_cancel_callback(action, g.auth_state)
             else:
                 result = self.action_cancel_callback(action_id, g.auth_state)  # type: ignore
         except AttributeError:
@@ -462,7 +453,7 @@ class ActionProviderBlueprint(Blueprint):
 
         try:
             if action:
-                result = self.action_release_callback(action, g.auth_state)  # type: ignore
+                result = self.action_release_callback(action, g.auth_state)
             else:
                 result = self.action_release_callback(action_id, g.auth_state)  # type: ignore
         except ValidationError as ve:
@@ -526,10 +517,10 @@ class ActionProviderBlueprint(Blueprint):
         Executes an action_saver to store the ActionStatus in the specified
         backend.
         """
-        if isinstance(result, ActionStatus):
-            action = result
-        elif isinstance(result, tuple):
+        action = result
+        if isinstance(result, tuple) and len(result) > 0:
             action = result[0]
+
         if not isinstance(action, ActionStatus):
             current_app.logger.warning(
                 f"Attempted to save a non ActionStatus: {action}"
@@ -551,7 +542,7 @@ class ActionProviderBlueprint(Blueprint):
         ):
             return
 
-        g.auth_state = check_token(request, self.checker)
+        g.auth_state = self.state_builder.build_from_request()
         if g.auth_state.effective_identity is None:
             current_app.logger.info(
                 f"Request failed authentication due to: {g.auth_state.errors}"

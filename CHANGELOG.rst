@@ -10,6 +10,69 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.19.0:
+
+0.19.0 — 2024-10-18
+===================
+
+Features
+--------
+
+- The token introspect checking and caching performed in ``AuthState`` has
+  been improved.
+
+  - The cache is keyed off of token hashes, rather than raw token strings.
+
+  - The ``exp`` and ``nbf`` values are no longer verified, removing the
+    possibility of incorrect treatment of valid tokens as invalid due to clock
+    drift.
+
+  - Introspect response caching caches the raw response even for invalid
+    tokens, meaning that Action Providers will no longer repeatedly introspect
+    a token once it is known to be invalid.
+
+  - Scope validation raises a new, dedicated error class,
+    ``globus_action_provider_tools.authentication.InvalidTokenScopesError``, on
+    failure.
+
+Changes
+-------
+
+- The ``TokenChecker`` class has been removed and replaced in all cases with an
+  ``AuthStateBuilder`` which better matches the purpose of this class.
+
+- The ``check_token`` flask-specific helper has been replaced with a
+  ``FlaskAuthStateBuilder`` which subclasses ``AuthStateBuilder`` and
+  specializes it to handle a ``flask.Request`` object.
+
+- The ``aud`` field of token introspect responses is no longer validated and
+  fields associated with it have been removed. This includes changes to
+  function and class initializer signatures.
+
+  - The ``expected_audience`` field is no longer supported in ``AuthState`` and
+    ``TokenChecker``. It has been removed from the initializers for these
+    classes.
+
+  - ``globus_auth_client_name`` has been removed from ``ActionProviderBlueprint``.
+
+  - ``client_name`` has been removed from ``add_action_routes_to_blueprint``.
+
+Development
+-----------
+
+- Move to `src/` tree layout
+
+- Refactor ``AuthState.get_authorizer_for_scope`` without changing its
+  primary outward semantics. The ``bypass_dependent_token_cache`` argument
+  has been removed from its interface, as it is not necessary to expose
+  with the improved implementation.
+
+Removed
+-------
+
+- ``globus_action_provider_tools.testing`` has been removed. Users who were
+  relying on these components should make use of their own fixtures and mocks.
+
 .. _changelog-0.18.0:
 
 0.18.0 — 2024-06-14

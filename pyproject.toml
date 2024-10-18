@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "globus-action-provider-tools"
-version = "0.18.0"
+version = "0.19.0"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
     "Globus Team <support@globus.org>",
@@ -70,6 +70,11 @@ source = [
     "globus_action_provider_tools",
     "tests",
 ]
+[tool.coverage.paths]
+source = [
+    "src/",
+    "*/site-packages/",
+]
 
 [tool.coverage.report]
 # When the test coverage increases, this bar should also raise.
@@ -85,3 +90,15 @@ filterwarnings = [
     # dateutil, used by freezegun during testing, has a Python 3.12 compatibility issue.
     "ignore:datetime.datetime.utcfromtimestamp\\(\\) is deprecated:DeprecationWarning",
 ]
+
+[tool.mypy]
+sqlite_cache = true
+ignore_missing_imports = true
+disallow_subclassing_any = false
+warn_unreachable = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_no_return = true
+no_implicit_optional = true
+# disallow_untyped_defs = true

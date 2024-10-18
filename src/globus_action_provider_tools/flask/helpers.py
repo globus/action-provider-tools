@@ -12,7 +12,7 @@ import jsonschema
 from flask import Request, current_app, jsonify
 from pydantic import BaseModel, ValidationError
 
-from globus_action_provider_tools.authentication import AuthState, TokenChecker
+from globus_action_provider_tools.authentication import AuthState, AuthStateBuilder
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionProviderJsonEncoder,
@@ -46,6 +46,35 @@ if t.TYPE_CHECKING:
 
 
 ActionInputValidatorType = Callable[[Dict[str, Any]], None]
+
+
+class FlaskAuthStateBuilder(AuthStateBuilder):
+    """
+    A customized AuthStateBuilder which can handle a flask.Request object
+    as its input.
+    """
+
+    def build_from_request(self, *, request: Request | None = None) -> AuthState:
+        """
+        Build the ``AuthState`` from the ``Authorization`` header provided.
+
+        :param request: The flask request object to process. Defaults to the request
+            object found in the current app context.
+        """
+        if request is None:
+            request = flask.request
+        access_token = request.headers.get("Authorization")
+        if access_token is None:
+            raise UnverifiedAuthenticationError("No Authorization header received")
+        if not access_token.startswith("Bearer "):
+            raise UnverifiedAuthenticationError(
+                "No Bearer token in Authorization header"
+            )
+        access_token = access_token[len("Bearer ") :].strip()
+        if not 10 <= len(access_token) <= 2048:
+            raise UnverifiedAuthenticationError("Bearer token length is unexpected")
+
+        return super().build(access_token)
 
 
 def parse_query_args(
@@ -114,31 +143,16 @@ def action_status_return_to_view_return(
     return jsonify(status), status_code
 
 
-def check_token(request: Request, checker: TokenChecker) -> AuthState:
-    """Extract and validate a bearer token and return an AuthState instance."""
-
-    access_token = request.headers.get("Authorization")
-    if access_token is None:
-        raise UnverifiedAuthenticationError("No Authorization header received")
-    if not access_token.startswith("Bearer "):
-        raise UnverifiedAuthenticationError("No Bearer token in Authorization header")
-    access_token = access_token[len("Bearer ") :].strip()
-    if not 10 <= len(access_token) <= 2048:
-        raise UnverifiedAuthenticationError("Bearer token length is unexpected")
-    auth_state = checker.check_token(access_token)
-    return auth_state
-
-
 def blueprint_error_handler(exc: Exception) -> ViewReturn:
     # ActionProviderToolsException is the base class for HTTP-based exceptions,
     # return those directly
     if isinstance(exc, ActionProviderToolsException):
-        return exc  # type: ignore
+        return exc
 
     # If a component in the toolkit throw's an unhandled AuthenticationError,
     # replace it with a Flask-based response
     if isinstance(exc, AuthenticationError):
-        return UnauthorizedRequest()  # type: ignore
+        return UnauthorizedRequest()
 
     current_app.logger.exception("Handling unexpected exception", exc_info=True)
     # Handle unexpected Exceptions in a somewhat predictable way

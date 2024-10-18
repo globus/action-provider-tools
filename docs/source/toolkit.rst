@@ -26,10 +26,6 @@ common requirements so the focus can be on the logic of the Action provided.
 5. :doc:`Caching guide <toolkit/caching>` for tweaking the performance of Action
 Providers with relation to Globus Auth.
 
-6. :doc:`Testing tools <toolkit/testing>` provides various resources for
-stubbing Authentication out of an Action Provider and providing a simple way of
-validating an Action Provider's behavior.
-
 .. toctree::
    :maxdepth: 1
    :hidden:
@@ -39,7 +35,6 @@ validating an Action Provider's behavior.
    toolkit/data_types
    toolkit/flask_helpers
    toolkit/validation
-   toolkit/testing
 
 
 .. _Pydantic: https://pydantic-docs.helpmanual.io/
