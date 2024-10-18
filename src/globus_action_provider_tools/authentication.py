@@ -122,7 +122,7 @@ class AuthState:
         """
 
         if not introspect_result["active"]:
-            raise InactiveTokenError("The token is invalid or has been revoked")
+            raise InactiveTokenError("The token is invalid.")
 
         # validate scopes, ensuring that the token provided accords with the service's
         # notion of what operations exist and are supported
@@ -239,7 +239,7 @@ class AuthState:
         ``required_authorizer_expiration_time``, it is treated as a failure.
         """
 
-        had_cached_value, dependent_tokens = self._get_cached_dependent_tokens()
+        retrieved_from_cache, dependent_tokens = self._get_cached_dependent_tokens()
 
         # if the dependent token data (which could have been cached) failed to meet
         # the requirements...
@@ -251,8 +251,8 @@ class AuthState:
             # there's no reason to expect new tokens would do better
             # fail, but do not clear the cache -- it could be satisfactory
             # for some other scope request
-            if not had_cached_value:
-                raise ValueError("No matching cached dependent tokens found")
+            if not retrieved_from_cache:
+                raise ValueError("Dependent tokens do not match request.")
 
             # otherwise, the cached value was bad -- fetch and check again,
             # by clearing the cache and asking for the same data
@@ -264,7 +264,7 @@ class AuthState:
             if not self._dependent_token_response_satisfies_scope_request(
                 dependent_tokens, scope, required_authorizer_expiration_time
             ):
-                raise ValueError("Refreshed dependent tokens still don't match")
+                raise ValueError("Dependent tokens do not match request.")
 
         token_data = dependent_tokens.by_scopes[scope]
 
