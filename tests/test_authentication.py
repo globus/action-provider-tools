@@ -101,24 +101,19 @@ def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_res
 def test_invalid_grant_exception(auth_state):
     load_response("token-introspect", case="success")
     load_response("token", case="invalid-grant")
-    assert auth_state.get_authorizer_for_scope("doesn't matter") is None
+    with pytest.raises(globus_sdk.GlobusAPIError):
+        auth_state.get_authorizer_for_scope("doesn't matter")
 
 
 def test_dependent_token_callout_500_fails_dependent_authorization(auth_state):
-    """
-    On a 5xx response, getting an authorizer fails.
-
-    FIXME: currently this simply emits 'None' -- in the future the error should propagate
-    """
+    """On a 5xx response, getting an authorizer fails."""
     RegisteredResponse(
         service="auth", path="/v2/oauth2/token", method="POST", status=500
     ).add()
-    assert (
+    with pytest.raises(globus_sdk.GlobusAPIError):
         auth_state.get_authorizer_for_scope(
             "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships"
         )
-        is None
-    )
 
 
 def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
