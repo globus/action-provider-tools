@@ -175,4 +175,12 @@ def test_invalid_scopes_error():
         auth_state.introspect_token()
 
     assert excinfo.value.expected_scopes == {"bad-scope"}
-    assert excinfo.value.actual_scopes == {"expected-scope"}
+    assert excinfo.value.actual_scopes == {"expected-scope", "bonus-scope"}
+
+
+def test_required_scopes_may_be_a_subset_of_token_scopes():
+    """Verify that required scopes may be a subset of token scopes."""
+
+    auth_state_instance = get_auth_state_instance(["expected-scope"])
+    load_response("token-introspect", case="success")
+    auth_state_instance.introspect_token()

@@ -124,9 +124,9 @@ class AuthState:
         """
         # validate scopes, ensuring that the token provided accords with the service's
         # notion of what operations exist and are supported
-        scopes = set(introspect_result.get("scope", "").split())
-        if any(s not in self.expected_scopes for s in scopes):
-            raise InvalidTokenScopesError(self.expected_scopes, frozenset(scopes))
+        scopes = frozenset(introspect_result.get("scope", "").split())
+        if not scopes.issuperset(self.expected_scopes):
+            raise InvalidTokenScopesError(self.expected_scopes, scopes)
 
     @property
     def effective_identity(self) -> str | None:

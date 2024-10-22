@@ -10,10 +10,28 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.19.1:
+
+0.19.1 — 2024-10-22
+===================
+
+Bugfixes
+--------
+
+- When introspecting tokens, allow the introspected scopes to be a superset of required scopes.
+
+  A bug in the scope comparison code flipped the logic;
+  if a user consented to scopes A and B and the action provider required only scope A,
+  the comparison would fail *as if A and B were required but only A had been consented to*.
+
+  This is now fixed.
+
 .. _changelog-0.19.0:
 
 0.19.0 — 2024-10-18
 ===================
+
+**YANKED**
 
 Features
 --------
