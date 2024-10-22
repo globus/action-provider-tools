@@ -15,7 +15,7 @@ success:
     audience: &success-audience
       - expected-audience
     scope: &success-scope
-      expected-scope
+      expected-scope bonus-scope
     identities: &success-identities
       - 2c3c6ce2-96ee-4104-9ba8-8d7a5f5e3c7b
       - 2106ff4e-6a6f-4215-b0d4-aa78dcc43cc8
