@@ -10,10 +10,7 @@ import globus_sdk
 from globus_sdk import (
     AccessTokenAuthorizer,
     ConfidentialAppAuthClient,
-    GlobusAPIError,
-    GlobusError,
     GlobusHTTPResponse,
-    GroupsClient,
     RefreshTokenAuthorizer,
 )
 
@@ -81,7 +78,7 @@ class AuthState:
         self.expected_scopes = expected_scopes
 
         self.errors: list[Exception] = []
-        self._groups_client: GroupsClient | None = None
+        self._groups_client: globus_sdk.GroupsClient | None = None
 
     @functools.cached_property
     def _token_hash(self) -> str:
@@ -147,44 +144,33 @@ class AuthState:
 
     @property
     def groups(self) -> frozenset[str]:
-        try:
-            groups_client = self._get_groups_client()
-        except (GlobusAPIError, KeyError, ValueError) as err:
-            # Only warning level, because this could be normal state of
-            # affairs for a system that doesn't use or care about groups.
-            log.warning(
-                "Unable to determine groups membership. Setting groups to {}",
-                exc_info=True,
-            )
-            self.errors.append(err)
-            return frozenset()
-        else:
+        group_set: frozenset[str] | None = self.group_membership_cache.get(
+            self._token_hash
+        )
+        if group_set is None:
             try:
-                groups_token = groups_client.authorizer.access_token
-            except AttributeError as err:
-                log.error("Missing access token to use for groups service")
+                groups_client = self._get_groups_client()
+            except (globus_sdk.GlobusAPIError, KeyError, ValueError) as err:
+                # Only warning level, because this could be normal state of
+                # affairs for a system that doesn't use or care about groups.
+                log.warning(
+                    "Unable to determine groups membership. Setting groups to {}",
+                    exc_info=True,
+                )
                 self.errors.append(err)
                 return frozenset()
-            safe_groups_token = groups_token[-7:]
-            groups_set = AuthState.group_membership_cache.get(groups_token)
-            if groups_set is not None:
-                log.info(
-                    f"Using cached group membership for groups token ***{safe_groups_token}"
-                )
-                return groups_set
 
-        try:
-            log.info(f"Querying groups for groups token ***{safe_groups_token}")
-            groups = groups_client.get_my_groups()
-        except GlobusError as err:
-            log.exception("Error getting groups", exc_info=True)
-            self.errors.append(err)
-            return frozenset()
-        else:
-            groups_set = frozenset(map(group_principal, (grp["id"] for grp in groups)))
-            log.info(f"Caching groups for token **{safe_groups_token}")
-            AuthState.group_membership_cache[groups_token] = groups_set
-            return groups_set
+            try:
+                group_data = groups_client.get_my_groups()
+            except globus_sdk.GlobusAPIError:
+                log.warning(
+                    "failed to get groups, treating groups as '{}'", exc_info=True
+                )
+                return frozenset()
+
+            group_set = frozenset(group_principal(g["id"]) for g in group_data)
+            self.group_membership_cache[self._token_hash] = group_set
+        return group_set
 
     def get_dependent_tokens(
         self, *, bypass_cache_lookup: bool = False
@@ -335,19 +321,13 @@ class AuthState:
 
         return access_token is not None
 
-    def _get_groups_client(self) -> GroupsClient:
+    def _get_groups_client(self) -> globus_sdk.GroupsClient:
         if self._groups_client is not None:
             return self._groups_client
         authorizer = self.get_authorizer_for_scope(
-            GroupsClient.scopes.view_my_groups_and_memberships
+            globus_sdk.GroupsClient.scopes.view_my_groups_and_memberships
         )
-        if authorizer is None:
-            raise ValueError(
-                "Unable to get authorizer for "
-                + GroupsClient.scopes.view_my_groups_and_memberships
-            )
-
-        self._groups_client = GroupsClient(authorizer=authorizer)
+        self._groups_client = globus_sdk.GroupsClient(authorizer=authorizer)
         return self._groups_client
 
     @staticmethod
