@@ -128,7 +128,6 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
         "foo_scope": {
             "expires_at_seconds": time.time() + 100,
             "access_token": "foo_AT",
-            "refresh_token": "foo_RT",
         }
     }
     auth_state.dependent_tokens_cache[auth_state._dependent_token_cache_key] = (
@@ -146,15 +145,14 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
                 "scope": "bar_scope",
                 "expires_at_seconds": time.time() + 100,
                 "access_token": "bar_AT",
-                "refresh_token": "bar_RT",
             }
         ],
     ).add()
     # now get the 'bar_scope' authorizer
     authorizer = auth_state.get_authorizer_for_scope("bar_scope")
 
-    # it should be a refresh token authorizer and the cache should be updated
-    assert isinstance(authorizer, globus_sdk.RefreshTokenAuthorizer)
+    # it should be an access token authorizer and the cache should be updated
+    assert isinstance(authorizer, globus_sdk.AccessTokenAuthorizer)
     cache_value = auth_state.dependent_tokens_cache[
         auth_state._dependent_token_cache_key
     ]

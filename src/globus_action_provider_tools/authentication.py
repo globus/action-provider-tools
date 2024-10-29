@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import hashlib
 import logging
-import time
+import warnings
 from typing import Iterable
 
 import globus_sdk
@@ -11,7 +11,6 @@ from globus_sdk import (
     AccessTokenAuthorizer,
     ConfidentialAppAuthClient,
     GlobusHTTPResponse,
-    RefreshTokenAuthorizer,
 )
 
 from .utils import TypedTTLCache
@@ -56,7 +55,7 @@ class AuthState:
     )
 
     # Cache for dependent tokens, max lifetime: 47 hours: a bit less than the 48 hours
-    # until a refresh would be required anyway
+    # for which an access token is valid
     dependent_tokens_cache: TypedTTLCache[globus_sdk.OAuthDependentTokenResponse] = (
         TypedTTLCache(maxsize=100, ttl=47 * 3600)
     )
@@ -204,8 +203,8 @@ class AuthState:
     def get_authorizer_for_scope(
         self,
         scope: str,
-        required_authorizer_expiration_time: int = 60,
-    ) -> RefreshTokenAuthorizer | AccessTokenAuthorizer:
+        required_authorizer_expiration_time: int | None = None,
+    ) -> AccessTokenAuthorizer:
         """
         Get dependent tokens for the caller's token, then retrieve token data for the
         requested scope and attempt to build an authorizer from that data.
@@ -213,30 +212,25 @@ class AuthState:
         The class caches dependent token results, regardless of whether or not
         building authorizers succeeds.
 
-        .. warning::
-
-            This call converts *all* errors to `None` results.
-
-        If a dependent refresh token is available in the response, a
-        RefreshTokenAuthorizer will be built and returned.
-        Otherwise, this will attempt to build an AccessTokenAuthorizer.
-
-        If the access token is or will be expired within the
-        ``required_authorizer_expiration_time``, it is treated as a failure.
+        :param scope: The scope for which an authorizer is being requested
+        :param required_authorizer_expiration_time: Deprecated parameter. Has no effect.
         """
+        if required_authorizer_expiration_time is not None:
+            warnings.warn(
+                "`required_authorizer_expiration_time` has no effect and will be removed in a future version.",
+                DeprecationWarning,
+                stacklevel=1,
+            )
 
         retrieved_from_cache, dependent_tokens = self._get_cached_dependent_tokens()
 
         # if the dependent token data (which could have been cached) failed to meet
-        # the requirements...
-        if not self._dependent_token_response_satisfies_scope_request(
-            dependent_tokens, scope, required_authorizer_expiration_time
-        ):
+        # the scope requirement...
+        if scope not in dependent_tokens.by_scopes:
             # if there was no cached value, we just got fresh dependent tokens
-            # to do this work but they weren't sufficient
+            # to do this work but the scope was missing
             # there's no reason to expect new tokens would do better
-            # fail, but do not clear the cache -- it could be satisfactory
-            # for some other scope request
+            # fail, but do not clear the cache
             if not retrieved_from_cache:
                 raise ValueError("Dependent tokens do not match request.")
 
@@ -245,25 +239,12 @@ class AuthState:
             del self.dependent_tokens_cache[self._dependent_token_cache_key]
             _, dependent_tokens = self._get_cached_dependent_tokens()
 
-            # check again against requirements --
-            # this is guaranteed to be fresh data
-            if not self._dependent_token_response_satisfies_scope_request(
-                dependent_tokens, scope, required_authorizer_expiration_time
-            ):
+            # check scope again -- this is guaranteed to be fresh data
+            if scope not in dependent_tokens.by_scopes:
                 raise ValueError("Dependent tokens do not match request.")
 
         token_data = dependent_tokens.by_scopes[scope]
-
-        refresh_token: str | None = token_data.get("refresh_token")
-        if refresh_token is not None:
-            return RefreshTokenAuthorizer(
-                refresh_token,
-                self.auth_client,
-                access_token=token_data["access_token"],
-                expires_at=token_data["expires_at_seconds"],
-            )
-        else:
-            return AccessTokenAuthorizer(token_data["access_token"])
+        return AccessTokenAuthorizer(token_data["access_token"])
 
     def _get_cached_dependent_tokens(
         self,
@@ -275,51 +256,9 @@ class AuthState:
         """
         if self._dependent_token_cache_key in self.dependent_tokens_cache:
             return (True, self.dependent_tokens_cache[self._dependent_token_cache_key])
-
-        # FIXME: switch from dependent refresh tokens to dependent access tokens
-        #
-        # dependent refresh tokens in an ephemeral execution context are not appropriate
-        # because the dependent refresh tokens are cached in-memory, not in a persistent store of state,
-        # this means we're fetching long-lived credentials which are then not persisted into long term
-        # storage
-        #
-        # the discrepancy between the credential type and the storage strategy reveals that these tokens
-        # are only used in a synchronous context in which the refresh token is not needed or wanted
-        #
-        token_response = self.auth_client.oauth2_get_dependent_tokens(
-            self.bearer_token, additional_params={"access_type": "offline"}
-        )
+        token_response = self.auth_client.oauth2_get_dependent_tokens(self.bearer_token)
         self.dependent_tokens_cache[self._dependent_token_cache_key] = token_response
         return (False, token_response)
-
-    def _dependent_token_response_satisfies_scope_request(
-        self,
-        r: globus_sdk.OAuthDependentTokenResponse,
-        scope: str,
-        required_authorizer_expiration_time: int,
-    ) -> bool:
-        """
-        Check a token response to see if it appears to satisfy the request for tokens
-        with a specific scope.
-
-        :returns: True if the data is good, False if the data is bad
-        """
-        try:
-            token_data = r.by_scopes[scope]
-        except LookupError:
-            return False
-
-        refresh_token: str | None = token_data.get("refresh_token")
-        access_token: str | None = token_data.get("access_token")
-        token_expiration: int = token_data.get("expires_at_seconds", 0)
-
-        if refresh_token is not None:
-            return True
-
-        if token_expiration <= (int(time.time()) + required_authorizer_expiration_time):
-            return False
-
-        return access_token is not None
 
     def _get_groups_client(self) -> globus_sdk.GroupsClient:
         if self._groups_client is not None:
