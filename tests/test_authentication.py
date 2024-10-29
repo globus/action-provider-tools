@@ -98,6 +98,19 @@ def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_res
     assert len(mocked_responses.calls) == 1
 
 
+def test_(auth_state):
+    load_response("token-introspect", case="success")
+    load_response("token", case="success")
+    with pytest.warns(
+        DeprecationWarning,
+        match="`required_authorizer_expiration_time` has no effect and will be removed",
+    ):
+        auth_state.get_authorizer_for_scope(
+            "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships",
+            required_authorizer_expiration_time=60,
+        )
+
+
 def test_invalid_grant_exception(auth_state):
     load_response("token-introspect", case="success")
     load_response("token", case="invalid-grant")
@@ -128,7 +141,6 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
         "foo_scope": {
             "expires_at_seconds": time.time() + 100,
             "access_token": "foo_AT",
-            "refresh_token": "foo_RT",
         }
     }
     auth_state.dependent_tokens_cache[auth_state._dependent_token_cache_key] = (
@@ -146,15 +158,14 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
                 "scope": "bar_scope",
                 "expires_at_seconds": time.time() + 100,
                 "access_token": "bar_AT",
-                "refresh_token": "bar_RT",
             }
         ],
     ).add()
     # now get the 'bar_scope' authorizer
     authorizer = auth_state.get_authorizer_for_scope("bar_scope")
 
-    # it should be a refresh token authorizer and the cache should be updated
-    assert isinstance(authorizer, globus_sdk.RefreshTokenAuthorizer)
+    # it should be an access token authorizer and the cache should be updated
+    assert isinstance(authorizer, globus_sdk.AccessTokenAuthorizer)
     cache_value = auth_state.dependent_tokens_cache[
         auth_state._dependent_token_cache_key
     ]
