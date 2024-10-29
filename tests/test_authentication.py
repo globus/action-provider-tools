@@ -179,3 +179,27 @@ def test_required_scopes_may_be_a_subset_of_token_scopes():
     auth_state_instance = get_auth_state_instance(["expected-scope"])
     load_response("token-introspect", case="success")
     auth_state_instance.introspect_token()
+
+
+def test_no_groups_client_is_constructed_when_cache_is_warm(auth_state):
+    """
+    Confirm that if the group cache is warm, then the AuthState will refer to it without
+    even trying to collect credentials to callout to groups.
+    """
+    load_response("token", case="success")
+    load_response("token-introspect", case="success")
+    load_response("groups-my_groups", case="failure")
+
+    # put a mock in place so that we can see whether or not a client was built
+    auth_state._get_groups_client = mock.Mock()
+
+    # write a value directly into the cache
+    auth_state.group_membership_cache[auth_state._token_hash] = frozenset()
+
+    # now, fetch the groups property -- it should populate properly with an empty set
+    # even though there would be an error if we called out to groups
+    assert len(auth_state.groups) == 0
+
+    # finally, confirm via our mock that there was no attempt to instantiate a
+    # groups client
+    auth_state._get_groups_client.assert_not_called()
