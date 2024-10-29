@@ -219,7 +219,7 @@ class AuthState:
             warnings.warn(
                 "`required_authorizer_expiration_time` has no effect and will be removed in a future version.",
                 DeprecationWarning,
-                stacklevel=1,
+                stacklevel=2,
             )
 
         retrieved_from_cache, dependent_tokens = self._get_cached_dependent_tokens()
