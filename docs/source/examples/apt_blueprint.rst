@@ -1,10 +1,15 @@
-Flask Decorators
-================
+Flask Blueprint
+===============
+
+``globus-action-provider-tools`` provides a custom
+`Flask Blueprint <https://flask.palletsprojects.com/tutorial/views/>`_ object
+with decorators for registering functions which implement Action Provider
+interfaces.
 
 .. include:: ../../../examples/apt_blueprint/README.rst
 
 Action Provider Implementation
-==============================
+------------------------------
 
 .. literalinclude:: ../../../examples/apt_blueprint/config.py
    :language: python

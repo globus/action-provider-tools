@@ -1,18 +1,14 @@
 """
-This module contains fixtures for creating Flask app instances using the Flask
-helpers with authentication mocked out. Each fixture creates an identical app,
-the only difference being in the helper that is used to create the app.
+This module contains fixtures for creating a Flask app using the
+ActionProviderBlueprint, but with authentication mocked out.
 """
 
 from unittest import mock
 
 import pytest
-from flask import Blueprint, Flask
+from flask import Flask
 
-from globus_action_provider_tools.flask import (
-    ActionProviderBlueprint,
-    add_action_routes_to_blueprint,
-)
+from globus_action_provider_tools.flask import ActionProviderBlueprint
 from globus_action_provider_tools.flask.helpers import assign_json_provider
 
 from .app_utils import (
@@ -63,35 +59,3 @@ def create_app_from_blueprint(apt_blueprint_noauth, auth_state):
         return app
 
     return _create_app_from_blueprint
-
-
-@pytest.fixture()
-def add_routes_app(auth_state):
-    """
-    This fixture creates a Flask app with routes loaded via the
-    add_action_routes_to_blueprint Flask helper.
-    """
-    app = Flask(__name__)
-    assign_json_provider(app)
-    bp = Blueprint("func_helper", __name__, url_prefix="/func_helper")
-    add_action_routes_to_blueprint(
-        blueprint=bp,
-        client_id="bogus",
-        client_secret="bogus",
-        provider_description=ap_description,
-        action_run_callback=mock_action_run_func,
-        action_status_callback=mock_action_status_func,
-        action_cancel_callback=mock_action_cancel_func,
-        action_release_callback=mock_action_release_func,
-        action_log_callback=mock_action_log_func,
-        action_enumeration_callback=mock_action_enumeration_func,
-        additional_scopes=[
-            "https://auth.globus.org/scopes/d3a66776-759f-4316-ba55-21725fe37323/secondary_scope"
-        ],
-    )
-    app.register_blueprint(bp)
-    with mock.patch(
-        "globus_action_provider_tools.authentication.AuthStateBuilder.build",
-        return_value=auth_state,
-    ):
-        yield app
