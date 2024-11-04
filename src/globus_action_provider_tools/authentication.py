@@ -13,6 +13,7 @@ from globus_sdk import (
     GlobusHTTPResponse,
 )
 
+from .client_factory import ClientFactory
 from .utils import TypedTTLCache
 
 log = logging.getLogger(__name__)
@@ -70,14 +71,17 @@ class AuthState:
         auth_client: ConfidentialAppAuthClient,
         bearer_token: str,
         expected_scopes: frozenset[str],
+        client_factory: ClientFactory | None = None,
     ) -> None:
         self.auth_client = auth_client
         self.bearer_token = bearer_token
         self.sanitized_token = self.bearer_token[-7:]
         self.expected_scopes = expected_scopes
+        self._client_factory = (
+            client_factory if client_factory is not None else ClientFactory()
+        )
 
         self.errors: list[Exception] = []
-        self._groups_client: globus_sdk.GroupsClient | None = None
 
     @functools.cached_property
     def _token_hash(self) -> str:
@@ -148,20 +152,32 @@ class AuthState:
         )
         if group_set is None:
             try:
-                groups_client = self._get_groups_client()
-            except (globus_sdk.GlobusAPIError, KeyError, ValueError) as err:
-                # Only warning level, because this could be normal state of
-                # affairs for a system that doesn't use or care about groups.
-                log.warning(
-                    "Unable to determine groups membership. Setting groups to {}",
+                groups_client = self._groups_client
+            except (globus_sdk.GlobusAPIError, KeyError, ValueError):
+                # FIXME: currently this is treated as a soft-fail and produces the
+                #        empty set
+                #
+                # this fails to distinguish between a supported case:
+                #   AP does not have a dependent Groups scope
+                #   and has no desire to handle group-auth
+                #
+                # and an error case:
+                #   attempting to get Groups tokens fails
+                #   but the AP actually *does* intend to support group-auth
+                #
+                # this should become an error in a future release
+                log.error(
+                    "Failed to load GroupsClient. Falling back to empty-set for groups.",
                     exc_info=True,
                 )
-                self.errors.append(err)
                 return frozenset()
 
             try:
                 group_data = groups_client.get_my_groups()
             except globus_sdk.GlobusAPIError:
+                # FIXME: this error handler should be removed in a future release
+                #
+                # ignoring Groups API callout failures should not be default-on behavior
                 log.warning(
                     "failed to get groups, treating groups as '{}'", exc_info=True
                 )
@@ -260,14 +276,12 @@ class AuthState:
         self.dependent_tokens_cache[self._dependent_token_cache_key] = token_response
         return (False, token_response)
 
-    def _get_groups_client(self) -> globus_sdk.GroupsClient:
-        if self._groups_client is not None:
-            return self._groups_client
+    @functools.cached_property
+    def _groups_client(self) -> globus_sdk.GroupsClient:
         authorizer = self.get_authorizer_for_scope(
             globus_sdk.GroupsClient.scopes.view_my_groups_and_memberships
         )
-        self._groups_client = globus_sdk.GroupsClient(authorizer=authorizer)
-        return self._groups_client
+        return self._client_factory.make_groups_client(authorizer=authorizer)
 
     @staticmethod
     def group_in_principal_list(principal_list: Iterable[str]) -> bool:
@@ -317,9 +331,12 @@ class AuthStateBuilder:
         self,
         auth_client: globus_sdk.ConfidentialAppAuthClient,
         expected_scopes: Iterable[str],
+        *,
+        client_factory: ClientFactory | None = None,
     ) -> None:
         self.auth_client = auth_client
         self.default_expected_scopes = frozenset(expected_scopes)
+        self.client_factory = client_factory
 
     def build(
         self, access_token: str, expected_scopes: Iterable[str] | None = None
@@ -328,4 +345,9 @@ class AuthStateBuilder:
             expected_scopes = self.default_expected_scopes
         else:
             expected_scopes = frozenset(expected_scopes)
-        return AuthState(self.auth_client, access_token, expected_scopes)
+        return AuthState(
+            self.auth_client,
+            access_token,
+            expected_scopes,
+            client_factory=self.client_factory,
+        )
