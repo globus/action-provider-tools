@@ -13,17 +13,37 @@ from globus_action_provider_tools.authentication import (
     InvalidTokenScopesError,
     identity_principal,
 )
+from globus_action_provider_tools.client_factory import ClientFactory
 
 
-def get_auth_state_instance(expected_scopes: t.Iterable[str]) -> AuthState:
-    client = globus_sdk.ConfidentialAppAuthClient(
-        "bogus", "bogus", transport_params={"max_retries": 0}
-    )
-    return AuthState(
-        auth_client=client,
-        bearer_token="bogus",
-        expected_scopes=frozenset(expected_scopes),
-    )
+class FastRetryClientFactory(ClientFactory):
+    DEFAULT_AUTH_TRANSPORT_PARAMS = (("max_sleep", 0), ("max_retries", 1))
+    DEFAULT_GROUPS_TRANSPORT_PARAMS = (("max_sleep", 0), ("max_retries", 1))
+
+
+class NoRetryClientFactory(ClientFactory):
+    DEFAULT_AUTH_TRANSPORT_PARAMS = (("max_retries", 0),)
+    DEFAULT_GROUPS_TRANSPORT_PARAMS = (("max_retries", 0),)
+
+
+_NO_RETRY_FACTORY = NoRetryClientFactory()
+
+
+@pytest.fixture
+def get_auth_state_instance():
+    def _func(
+        expected_scopes: t.Iterable[str],
+        client_factory: ClientFactory = _NO_RETRY_FACTORY,
+    ) -> AuthState:
+        client = client_factory.make_confidential_app_auth_client("bogus", "bogus")
+        return AuthState(
+            auth_client=client,
+            bearer_token="bogus",
+            expected_scopes=frozenset(expected_scopes),
+            client_factory=client_factory,
+        )
+
+    return _func
 
 
 @pytest.fixture(autouse=True)
@@ -34,7 +54,7 @@ def _clear_auth_state_cache():
 
 
 @pytest.fixture
-def auth_state(mocked_responses) -> AuthState:
+def auth_state(mocked_responses, get_auth_state_instance) -> AuthState:
     """Create an AuthState instance."""
     # note that expected-scope MUST match the fixture data
     return get_auth_state_instance(["expected-scope"])
@@ -84,7 +104,9 @@ def test_caching_groups(auth_state, freeze_time, mocked_responses):
     assert len(mocked_responses.calls) == 2
 
 
-def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_responses):
+def test_auth_state_caching_across_instances(
+    get_auth_state_instance, auth_state, freeze_time, mocked_responses
+):
     response = freeze_time(load_response("token-introspect", case="success"))
 
     duplicate_auth_state = get_auth_state_instance(auth_state.expected_scopes)
@@ -118,15 +140,58 @@ def test_invalid_grant_exception(auth_state):
         auth_state.get_authorizer_for_scope("doesn't matter")
 
 
-def test_dependent_token_callout_500_fails_dependent_authorization(auth_state):
-    """On a 5xx response, getting an authorizer fails."""
-    RegisteredResponse(
-        service="auth", path="/v2/oauth2/token", method="POST", status=500
-    ).add()
-    with pytest.raises(globus_sdk.GlobusAPIError):
-        auth_state.get_authorizer_for_scope(
-            "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships"
-        )
+@pytest.mark.parametrize(
+    "statuses, succeeds",
+    (
+        pytest.param((500, 200), True, id="500-200-succeeds"),
+        pytest.param((500, 500, 200), False, id="500-500-200-fails"),
+    ),
+)
+def test_dependent_token_callout_500_retry_behavior(
+    caplog, get_auth_state_instance, statuses, succeeds
+):
+    """
+    Test the behavior of 500s and retries using the FastRetryClientFactory defined above.
+
+    On a 5xx response followed by a 200, getting an authorizer succeeds.
+    (Default configuration)
+
+    On two 5xx responses followed by a 200, getting an authorizer fails.
+    (Default configuration)
+    """
+    auth_state = get_auth_state_instance(
+        ["expected-scope"], client_factory=FastRetryClientFactory()
+    )
+    body_for_200s = [
+        {
+            "access_token": "oompa-loompa-doompa-de-access-token",
+            "resource_server": "wonka-chocolates.api.globus.org",
+            "scope": "golden-ticket",
+            "expires_in": 3600,
+            "refresh_token": None,
+            "token_type": "bearer",
+        },
+    ]
+
+    for status in statuses:
+        if status == 200:
+            body = body_for_200s
+        else:
+            body = {}
+        RegisteredResponse(
+            service="auth",
+            path="/v2/oauth2/token",
+            method="POST",
+            status=status,
+            json=body,
+        ).add()
+
+    if succeeds:
+        authorizer = auth_state.get_authorizer_for_scope("golden-ticket")
+        assert isinstance(authorizer, globus_sdk.AccessTokenAuthorizer)
+    else:
+        with pytest.raises(globus_sdk.GlobusAPIError):
+            auth_state.get_authorizer_for_scope("golden-ticket")
 
 
 def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
@@ -174,7 +239,7 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
     assert "bar_scope" in cache_value.by_scopes
 
 
-def test_invalid_scopes_error():
+def test_invalid_scopes_error(get_auth_state_instance):
     auth_state = get_auth_state_instance(["bad-scope"])
     load_response("token-introspect", case="success")
     with pytest.raises(InvalidTokenScopesError) as excinfo:
@@ -184,7 +249,7 @@ def test_invalid_scopes_error():
     assert excinfo.value.actual_scopes == {"expected-scope", "bonus-scope"}
 
 
-def test_required_scopes_may_be_a_subset_of_token_scopes():
+def test_required_scopes_may_be_a_subset_of_token_scopes(get_auth_state_instance):
     """Verify that required scopes may be a subset of token scopes."""
 
     auth_state_instance = get_auth_state_instance(["expected-scope"])

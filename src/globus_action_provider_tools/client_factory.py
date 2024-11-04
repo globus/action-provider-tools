@@ -5,17 +5,6 @@ import uuid
 
 import globus_sdk
 
-_DEFAULT_AUTH_PARAMS: tuple[tuple[str, t.Any], ...] = (
-    ("http_timeout", 30),
-    ("max_retries", 1),
-    ("max_sleep", 5),
-)
-_DEFAULT_GROUPS_PARAMS: tuple[tuple[str, t.Any], ...] = (
-    ("http_timeout", 30),
-    ("max_retries", 1),
-    ("max_sleep", 5),
-)
-
 
 class ClientFactory:
     """
@@ -28,13 +17,24 @@ class ClientFactory:
     in order to customize client construction.
     """
 
+    DEFAULT_AUTH_TRANSPORT_PARAMS: tuple[tuple[str, t.Any], ...] = (
+        ("http_timeout", 30),
+        ("max_retries", 1),
+        ("max_sleep", 5),
+    )
+    DEFAULT_GROUPS_TRANSPORT_PARAMS: tuple[tuple[str, t.Any], ...] = (
+        ("http_timeout", 30),
+        ("max_retries", 1),
+        ("max_sleep", 5),
+    )
+
     def make_confidential_app_auth_client(
         self, client_id: str | uuid.UUID, client_secret: str
     ) -> globus_sdk.ConfidentialAppAuthClient:
         return globus_sdk.ConfidentialAppAuthClient(
             client_id=client_id,
             client_secret=client_secret,
-            transport_params={k: v for k, v in _DEFAULT_AUTH_PARAMS},
+            transport_params={k: v for k, v in self.DEFAULT_AUTH_TRANSPORT_PARAMS},
         )
 
     def make_groups_client(
@@ -45,5 +45,5 @@ class ClientFactory:
     ) -> globus_sdk.GroupsClient:
         return globus_sdk.GroupsClient(
             authorizer=authorizer,
-            transport_params={k: v for k, v in _DEFAULT_GROUPS_PARAMS},
+            transport_params={k: v for k, v in self.DEFAULT_GROUPS_TRANSPORT_PARAMS},
         )
