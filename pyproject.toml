@@ -84,8 +84,8 @@ fail_under = 83
 filterwarnings = [
     "error",
 
-    # Minimum Flask versions interact with werkzeug in a now-deprecated manner.
-    "ignore:The '__version__' attribute is deprecated:DeprecationWarning",
+    # Minimum Flask versions use a werkzeug version that triggers AST warnings.
+    "ignore:.+? is deprecated and will be removed:DeprecationWarning:werkzeug|ast",
 
     # dateutil, used by freezegun during testing, has a Python 3.12 compatibility issue.
     "ignore:datetime.datetime.utcfromtimestamp\\(\\) is deprecated:DeprecationWarning",
