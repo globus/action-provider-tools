@@ -30,7 +30,7 @@ _NO_RETRY_FACTORY = NoRetryClientFactory()
 
 
 @pytest.fixture
-def get_auth_state_instance():
+def get_auth_state_instance() -> t.Callable[..., AuthState]:
     def _func(
         expected_scopes: t.Iterable[str],
         client_factory: ClientFactory = _NO_RETRY_FACTORY,
@@ -54,7 +54,9 @@ def _clear_auth_state_cache():
 
 
 @pytest.fixture
-def auth_state(mocked_responses, get_auth_state_instance) -> AuthState:
+def auth_state(
+    mocked_responses, get_auth_state_instance: t.Callable[..., AuthState]
+) -> AuthState:
     """Create an AuthState instance."""
     # note that expected-scope MUST match the fixture data
     return get_auth_state_instance(["expected-scope"])
