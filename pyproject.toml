@@ -128,3 +128,4 @@ categories = [
     "Development",
 ]
 version = "literal: pyproject.toml: tool.poetry.version"
+new_fragment_template = "file: fragment-template.rst.txt"
