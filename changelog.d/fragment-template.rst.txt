@@ -1,0 +1,20 @@
+..
+
+    De-dent what you need.
+    Delete everything you don't.
+{% for category in config.categories %}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    {{ category }}
+    {{ config.rst_header_chars[1] * (category|length) }}
+
+    *   Describe your "{{ category }}" change here. EDIT ME!
+
+{%- if category.title() == "Breaking Changes" %}
+
+        Document what steps must be taken to account for the breaking change.
+        If there are multiple breaking changes,
+        list them in separate bullet points or create additional changelog fragments.
+
+{%- endif %}
+{% endfor %}

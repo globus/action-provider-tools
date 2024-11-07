@@ -543,7 +543,3 @@ class ActionProviderBlueprint(Blueprint):
             return
 
         g.auth_state = self.state_builder.build_from_request()
-        if g.auth_state.effective_identity is None:
-            current_app.logger.info(
-                f"Request failed authentication due to: {g.auth_state.errors}"
-            )

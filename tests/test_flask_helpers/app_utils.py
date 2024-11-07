@@ -1,10 +1,3 @@
-"""
-This module essentially contains the pieces required for creating a Flask app
-using either the Decorator helper or the add_action_routes_to_blueprint helper.
-These pieces are meant to be imported and used in a fixture to assemble the
-Flask app according to what needs to be tested.
-"""
-
 from datetime import datetime, timezone
 from typing import Dict, List, Set
 

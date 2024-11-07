@@ -98,27 +98,35 @@ def test_auth_state_caching_across_instances(auth_state, freeze_time, mocked_res
     assert len(mocked_responses.calls) == 1
 
 
+def test_(auth_state):
+    load_response("token-introspect", case="success")
+    load_response("token", case="success")
+    with pytest.warns(
+        DeprecationWarning,
+        match="`required_authorizer_expiration_time` has no effect and will be removed",
+    ):
+        auth_state.get_authorizer_for_scope(
+            "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships",
+            required_authorizer_expiration_time=60,
+        )
+
+
 def test_invalid_grant_exception(auth_state):
     load_response("token-introspect", case="success")
     load_response("token", case="invalid-grant")
-    assert auth_state.get_authorizer_for_scope("doesn't matter") is None
+    with pytest.raises(globus_sdk.GlobusAPIError):
+        auth_state.get_authorizer_for_scope("doesn't matter")
 
 
 def test_dependent_token_callout_500_fails_dependent_authorization(auth_state):
-    """
-    On a 5xx response, getting an authorizer fails.
-
-    FIXME: currently this simply emits 'None' -- in the future the error should propagate
-    """
+    """On a 5xx response, getting an authorizer fails."""
     RegisteredResponse(
         service="auth", path="/v2/oauth2/token", method="POST", status=500
     ).add()
-    assert (
+    with pytest.raises(globus_sdk.GlobusAPIError):
         auth_state.get_authorizer_for_scope(
             "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships"
         )
-        is None
-    )
 
 
 def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
@@ -133,7 +141,6 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
         "foo_scope": {
             "expires_at_seconds": time.time() + 100,
             "access_token": "foo_AT",
-            "refresh_token": "foo_RT",
         }
     }
     auth_state.dependent_tokens_cache[auth_state._dependent_token_cache_key] = (
@@ -151,15 +158,14 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
                 "scope": "bar_scope",
                 "expires_at_seconds": time.time() + 100,
                 "access_token": "bar_AT",
-                "refresh_token": "bar_RT",
             }
         ],
     ).add()
     # now get the 'bar_scope' authorizer
     authorizer = auth_state.get_authorizer_for_scope("bar_scope")
 
-    # it should be a refresh token authorizer and the cache should be updated
-    assert isinstance(authorizer, globus_sdk.RefreshTokenAuthorizer)
+    # it should be an access token authorizer and the cache should be updated
+    assert isinstance(authorizer, globus_sdk.AccessTokenAuthorizer)
     cache_value = auth_state.dependent_tokens_cache[
         auth_state._dependent_token_cache_key
     ]
@@ -184,3 +190,27 @@ def test_required_scopes_may_be_a_subset_of_token_scopes():
     auth_state_instance = get_auth_state_instance(["expected-scope"])
     load_response("token-introspect", case="success")
     auth_state_instance.introspect_token()
+
+
+def test_no_groups_client_is_constructed_when_cache_is_warm(auth_state):
+    """
+    Confirm that if the group cache is warm, then the AuthState will refer to it without
+    even trying to collect credentials to callout to groups.
+    """
+    load_response("token", case="success")
+    load_response("token-introspect", case="success")
+    load_response("groups-my_groups", case="failure")
+
+    # put a mock in place so that we can see whether or not a client was built
+    auth_state._get_groups_client = mock.Mock()
+
+    # write a value directly into the cache
+    auth_state.group_membership_cache[auth_state._token_hash] = frozenset()
+
+    # now, fetch the groups property -- it should populate properly with an empty set
+    # even though there would be an error if we called out to groups
+    assert len(auth_state.groups) == 0
+
+    # finally, confirm via our mock that there was no attempt to instantiate a
+    # groups client
+    auth_state._get_groups_client.assert_not_called()

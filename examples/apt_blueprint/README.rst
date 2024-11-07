@@ -1,6 +1,7 @@
 Overview
-^^^^^^^^
-This is a sample Flask application implemented using the Flask Decorators in the
+--------
+
+This is a sample Flask application implemented using the Flask Blueprint in the
 Action Provider Toolkit. The Toolkit provides an `ActionProviderBlueprint` with five
 decorators which are used to decorate functions that will be run when the Action
 Provider is invoked. Each decorator corresponds to one of the Action Provider
@@ -14,11 +15,12 @@ Interface endpoints. The decorators available are:
 
 
 Using this Tool
-^^^^^^^^^^^^^^^
-The `ActionProviderBlueprint` is exactly like a Flask `Blueprint`, except it has
-been customized to implement the *Action Provider Interface* and ties together
-much of the tooling available in the rest of the Toolkit to provide a
-streamlined development experience. The ActionProviderBlueprint will:
+---------------
+
+The `ActionProviderBlueprint` is a Flask `Blueprint` which has
+been customized to implement the *Action Provider Interface*.
+
+The ActionProviderBlueprint will:
 
 - Validate that incoming requests to your ActionProvider adhere to the
   ActionRequest schema
@@ -165,7 +167,7 @@ would register any other Flask Blueprint and run your ActionProvider:
     application's "CLIENT_ID" and "CLIENT_SECRET" values.
 
 Example Configuration
-=====================
+---------------------
 
 To run this example Action Provider, you need to generate your own
 CLIENT_ID, CLIENT_SECRET, and SCOPE.  It may be useful to follow the directions

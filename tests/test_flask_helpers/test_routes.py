@@ -19,22 +19,20 @@ from .app_utils import (
 )
 
 
-@pytest.mark.parametrize("app_fixture", ["aptb_app", "add_routes_app"])
 @pytest.mark.parametrize("api_version", ["1.0", "1.1"])
 @pytest.mark.parametrize("use_pydantic_schema", [True, False])
 def test_routes_conform_to_api(
-    freeze_time, request, app_fixture: str, api_version: str, use_pydantic_schema: bool
+    freeze_time, request, aptb_app, api_version: str, use_pydantic_schema: bool
 ):
     freeze_time(load_response("token-introspect", case="success"))
-    app: flask.Flask = request.getfixturevalue(app_fixture)
-    _, bp = list(app.blueprints.items())[0]
+    _, bp = list(aptb_app.blueprints.items())[0]
     if use_pydantic_schema:
         bp.input_schema = ActionProviderPydanticInputSchema
     else:
         bp.input_schema = action_provider_json_input_schema
 
     client = ActionProviderClient(
-        app.test_client(), bp.url_prefix, api_version=api_version
+        aptb_app.test_client(), bp.url_prefix, api_version=api_version
     )
 
     introspect_resp = client.introspect()
@@ -47,13 +45,11 @@ def test_routes_conform_to_api(
     client.release(action_id)
 
 
-@pytest.mark.parametrize("app_fixture", ["aptb_app", "add_routes_app"])
-def test_introspect_cors_requests(request, app_fixture):
+def test_introspect_cors_requests(request, aptb_app):
     """Verify that CORS requests are allowed on introspect routes."""
 
-    app: flask.Flask = request.getfixturevalue(app_fixture)
-    client: flask.testing.FlaskClient = app.test_client()
-    _, bp = list(app.blueprints.items())[0]
+    client: flask.testing.FlaskClient = aptb_app.test_client()
+    _, bp = list(aptb_app.blueprints.items())[0]
 
     introspection_cors_response = client.options(bp.url_prefix)
     assert introspection_cors_response.status_code == 204

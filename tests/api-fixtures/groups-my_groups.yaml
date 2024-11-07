@@ -42,3 +42,10 @@ success:
         ],
       },
     ]
+
+failure:
+  service: groups
+  path: /groups/my_groups
+  method: GET
+  json: {"message": "Internal server error."}
+  status: 500
