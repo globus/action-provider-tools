@@ -116,13 +116,15 @@ filterwarnings = [
 
 [tool.scriv]
 categories = [
+    "Breaking changes",
+    "Security",
+    "Deprecations",
     "Python support",
+    "Dependencies",
     "Features",
     "Bugfixes",
     "Changes",
     "Documentation",
-    "Deprecations",
     "Development",
-    "Dependencies",
 ]
 version = "literal: pyproject.toml: tool.poetry.version"
