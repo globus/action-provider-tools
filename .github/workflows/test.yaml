@@ -1,0 +1,69 @@
+name: "🧪 Test"
+
+on:
+  pull_request: null
+  push:
+    branches:
+      - "main"
+      - "production"
+
+jobs:
+  test:
+    name: "${{ matrix.name }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        # These names establish the number of jobs that will run,
+        # and the actual job configurations will be added by matching "name" keys
+        # in the "include" section below.
+        name:
+          - "Linux"
+          - "macOS"
+          - "Windows"
+          - "Quality"
+
+        # The nested list in this single-item list will be added to each job above.
+        cache-key-hash-files:
+          -
+            - "pyproject.toml"
+            - "requirements/*/requirements.txt"
+
+        include:
+          - name: "Linux"
+            runner: "ubuntu-latest"
+            cpythons:
+              - "3.8"
+              - "3.9"
+              - "3.10"
+              - "3.11"
+              - "3.12"
+            tox-environments-from-pythons: true
+            tox-post-environments:
+              - "py3.8-minimum_flask"
+              - "py3.12-minimum_flask"
+
+          - name: "macOS"
+            runner: "macos-latest"
+            cpythons:
+              - "3.12"
+            tox-environments-from-pythons: true
+
+          - name: "Windows"
+            runner: "windows-latest"
+            cpythons:
+              - "3.12"
+            tox-environments-from-pythons: true
+
+          - name: "Quality"
+            runner: "ubuntu-latest"
+            cpythons:
+              - "3.12"  # This must match the Read the Docs interpreter version.
+            tox-environments:
+              - "docs"
+              - "mypy"
+            cache-paths:
+              - ".mypy_cache/"
+
+    uses: "globus/workflows/.github/workflows/tox.yaml@04b4abd6fcb9b4be7263bc9d6994ae2ada220739" # v1.1
+    with:
+      config: "${{ toJSON(matrix) }}"
