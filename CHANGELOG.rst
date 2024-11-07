@@ -10,6 +10,74 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.20.0:
+
+0.20.0 — 2024-11-07
+===================
+
+Breaking changes
+----------------
+
+*   Remove the ``globus_action_provider_tools.flask.api_helpers`` module,
+    and the helpers it provided.
+
+    If possible, it is recommended to immediately migrate Action Providers
+    off of the code in the Flask API helpers module.
+
+    If this cannot be done immediately, it is recommended to pin
+    the Action Provider Tools dependency to ``0.19.1``.
+
+Deprecations
+------------
+
+*   The ``required_authorizer_expiration_time`` parameter to ``get_authorizer_for_scope`` is deprecated.
+
+    Given token expiration and caching lifetimes,
+    it was not possible for this parameter to have any effect based on its prior documented usage.
+
+Bugfixes
+--------
+
+*   Action Provider Tools no longer requests Dependent Refresh Tokens
+    if Access Tokens are sufficient. As a result of this fix,
+    the AuthState dependent token cache will never contain dependent refresh tokens.
+
+Changes
+-------
+
+*   ``AuthState.introspect_token()`` will no longer return ``None``
+    if the token is not active.
+
+    Instead, a new exception, ``InactiveTokenError``, will be raised.
+    ``InactiveTokenError`` is a subclass of ``ValueError``.
+
+    Code that calls ``AuthState.introspect_token()`` no longer returns ``None``, either,
+    but will instead raise ``ValueError`` (or a subclass) or a ``globus_sdk.GlobusAPIError``:
+
+    *   ``AuthState.get_authorizer_for_scope``
+    *   ``AuthState.effective_identity``
+    *   ``AuthState.identities``
+
+*   Group caching behavior in the ``AuthState`` class has been improved
+    to ensure that the cache is checked before any external operations
+    (e.g., dependent token callouts) are required.
+    The cache now uses the token hash as its key, rather than a dependent token.
+
+Documentation
+-------------
+
+*   Remove examples from documentation which relied upon the ``api_helpers`` module.
+
+Development
+-----------
+
+*   Introduce new scriv categories to better communicate how the project evolves.
+
+    The categories are also re-ordered,
+    which defines how fragments will be ordered in the CHANGELOG.
+
+*   Add a changelog fragment template.
+
 .. _changelog-0.19.1:
 
 0.19.1 — 2024-10-22
