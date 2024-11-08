@@ -192,8 +192,10 @@ def test_dependent_token_callout_500_retry_behavior(
         authorizer = auth_state.get_authorizer_for_scope("golden-ticket")
         assert isinstance(authorizer, globus_sdk.AccessTokenAuthorizer)
     else:
-        with pytest.raises(globus_sdk.GlobusAPIError):
+        with pytest.raises(globus_sdk.GlobusAPIError) as excinfo:
             auth_state.get_authorizer_for_scope("golden-ticket")
+        error = excinfo.value
+        assert error.http_status == 500
 
 
 def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
