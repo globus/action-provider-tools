@@ -334,7 +334,7 @@ class AuthStateBuilder:
     ) -> None:
         self.auth_client = auth_client
         self.default_expected_scopes = frozenset(expected_scopes)
-        self.client_factory = client_factory
+        self.client_factory = client_factory or ClientFactory()
 
     def build(
         self, access_token: str, expected_scopes: Iterable[str] | None = None
