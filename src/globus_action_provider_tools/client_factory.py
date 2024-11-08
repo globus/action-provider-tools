@@ -34,7 +34,7 @@ class ClientFactory:
         return globus_sdk.ConfidentialAppAuthClient(
             client_id=client_id,
             client_secret=client_secret,
-            transport_params={k: v for k, v in self.DEFAULT_AUTH_TRANSPORT_PARAMS},
+            transport_params=dict(self.DEFAULT_AUTH_TRANSPORT_PARAMS),
         )
 
     def make_groups_client(
@@ -45,5 +45,5 @@ class ClientFactory:
     ) -> globus_sdk.GroupsClient:
         return globus_sdk.GroupsClient(
             authorizer=authorizer,
-            transport_params={k: v for k, v in self.DEFAULT_GROUPS_TRANSPORT_PARAMS},
+            transport_params=dict(self.DEFAULT_GROUPS_TRANSPORT_PARAMS),
         )

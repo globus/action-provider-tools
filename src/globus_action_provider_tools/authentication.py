@@ -77,9 +77,7 @@ class AuthState:
         self.bearer_token = bearer_token
         self.sanitized_token = self.bearer_token[-7:]
         self.expected_scopes = expected_scopes
-        self._client_factory = (
-            client_factory if client_factory is not None else ClientFactory()
-        )
+        self._client_factory = client_factory or ClientFactory()
 
         self.errors: list[Exception] = []
 
