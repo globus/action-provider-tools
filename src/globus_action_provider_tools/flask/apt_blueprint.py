@@ -1,7 +1,6 @@
 import typing as t
 
 import flask
-import globus_sdk
 from flask import Blueprint, blueprints, current_app, g, jsonify, request
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest as WerkzeugBadRequest
@@ -75,6 +74,9 @@ class ActionProviderBlueprint(Blueprint):
         after_request, and/or teardown_request method. If any of these functions exist
         they  will be registered with the blueprint. RequestLifecycleHook classes are
         registered and therefore executed in the order they are provided.
+
+        :param client_factory: A customized ``ClientFactory`` object used to build the
+            internal globus-sdk clients for Auth and Groups. Optional.
         """
 
         super().__init__(*args, **kwarg)
@@ -157,12 +159,14 @@ class ActionProviderBlueprint(Blueprint):
             f"Initializing AuthStateBuilder for client {client_id} and secret "
             f"***{client_secret[-5:]}"
         )
-        # FIXME: it needs to be possible to parametrize this client to control its network
-        # callout behavior, tuning retries and timeouts
-        auth_client = globus_sdk.ConfidentialAppAuthClient(
+        auth_client = self.config.client_factory.make_confidential_app_auth_client(
             client_id=client_id, client_secret=client_secret
         )
-        self.state_builder = FlaskAuthStateBuilder(auth_client, expected_scopes=scopes)
+        self.state_builder = FlaskAuthStateBuilder(
+            auth_client,
+            expected_scopes=scopes,
+            client_factory=self.config.client_factory,
+        )
 
     def _action_introspect(self):
         """
