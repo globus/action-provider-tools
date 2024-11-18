@@ -1,12 +1,6 @@
 Action Provider Interface
 =========================
 
-We provide an overview of the *Action Provider Interface* as a guide for use
-when implementing an *Action Provider*.
-
-.. raw:: html
-    :file: cli/example_action_run.html
-
 The Action Provider Interface is a RESTful model for starting, monitoring,
 canceling and removing state associated with the invocation of an Action.
 Following the REST resource life-cycle pattern, each Action invocation returns
@@ -24,7 +18,7 @@ Life-cycle described below specifically supports these execution modes as well
 as handling failures and Actions which may be, temporarily, unable to make
 progress.
 
-Action Life-cycle
+Action Lifecycle
 ^^^^^^^^^^^^^^^^^
 
 The Life-cycle of an Action defines the set of states that the Action may be in,
