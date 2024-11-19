@@ -57,7 +57,7 @@ class ActionProviderBlueprint(Blueprint):
         request_lifecycle_hooks: t.Optional[t.List[t.Any]] = None,
         config: ActionProviderConfig = DEFAULT_CONFIG,
         **kwarg,
-    ):
+    ) -> None:
         """Create a new ActionProviderBlueprint. All arguments not listed here are the
         same as a Flask Blueprint.
 

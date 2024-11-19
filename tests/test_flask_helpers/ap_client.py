@@ -11,7 +11,9 @@ _BEARER_AUTHORIZATION = [("Authorization", "Bearer fake-access-token")]
 
 class ActionProviderClient:
 
-    def __init__(self, client: FlaskClient, url_prefix: str, api_version: str = "1.0"):
+    def __init__(
+        self, client: FlaskClient, url_prefix: str, api_version: str = "1.0"
+    ) -> None:
         self._client = client
         self._url_prefix = url_prefix
         self._api_version = api_version

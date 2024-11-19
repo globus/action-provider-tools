@@ -42,33 +42,23 @@ master_doc = "index"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_material"
-html_logo = "_static/images/globus_110x110.png"
+html_theme = "furo"
+html_logo = "_static/images/logo.png"
+html_title = "globus-action-provider-tools"
 
-# Material theme options (see theme.conf for more information)
+# Theme options (see theme.conf for more information)
 html_theme_options = {
     # Set the name of the project to appear in the navigation.
-    "nav_title": "Globus Action Provider Tools",
-    # Set the color and the accent color
-    "color_primary": "blue",
-    "color_accent": "light-blue",
-    # Set the repo location to get a badge with stats
-    "repo_url": "https://github.com/globus/action-provider-tools",
-    "repo_name": "Action Provider Tools",
-    # Visible levels of the global TOC; -1 means unlimited
-    "globaltoc_depth": 2,
-    # If False, expand all TOC entries
-    "globaltoc_collapse": True,
-    # If True, show hidden TOC entries
-    "globaltoc_includehidden": False,
-    "repo_type": "github",
-    "master_doc": True,
+    "light_css_variables": {
+        "color-brand-primary": "#27518F",
+    },
 }
-pygments_style = "stata-light"
 
-html_sidebars = {
-    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
-}
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = "friendly"
+pygments_dark_style = "monokai"  # this is a furo-specific option
+
+html_show_sourcelink = True
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
