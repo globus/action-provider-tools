@@ -110,6 +110,19 @@ class AuthState:
         return introspect_result
 
     def introspect_token(self) -> GlobusHTTPResponse:
+        """
+        Introspect the caller's credential, retrieving and returning an introspect API
+        response.
+
+        The value will be cached, resulting in only one network call even when this
+        method is called multiple times on the same credential. However, each time the
+        method is called, the token data is validated.
+
+        :raises InactiveTokenError: a subtype of ValueError, if the token is invalid
+            per the introspect data
+        :raises InvalidTokenScopesError: a subtype of ValueError, if the token's scopes
+            do not include the scopes expected by this AuthState
+        """
         introspect_result = self._cached_introspect_call()
         self._verify_introspect_result(introspect_result)
         return introspect_result
@@ -228,6 +241,9 @@ class AuthState:
 
         :param scope: The scope for which an authorizer is being requested
         :param required_authorizer_expiration_time: Deprecated parameter. Has no effect.
+
+        :raises ValueError: If the dependent token data for the caller does not match
+            the requested scope.
         """
         if required_authorizer_expiration_time is not None:
             warnings.warn(
