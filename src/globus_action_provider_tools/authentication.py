@@ -205,9 +205,13 @@ class AuthState:
         Returns OAuthTokenResponse representing the dependent tokens associated
         with a particular access token.
         """
-        # TODO: consider deprecating and removing this method
-        # it is no longer used by `get_authorizer_for_scope()`, which now uses logic which cannot
+        # this mehtod is no longer used by `get_authorizer_for_scope()`, which now uses logic which cannot
         # be satisfied by the contract provided by this method
+        warnings.warn(
+            "`get_dependent_tokens` is deprecated and will be removed in a future version.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         if not bypass_cache_lookup:
             resp = self.dependent_tokens_cache.get(self._dependent_token_cache_key)
