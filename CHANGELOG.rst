@@ -10,6 +10,35 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.20.1:
+
+0.20.1 — 2024-12-04
+===================
+
+Deprecations
+------------
+
+*   ``AuthState.get_dependent_tokens`` is now deprecated. It will be removed in
+    a future release.
+
+Features
+--------
+
+*   A new component, ``ClientFactory`` is now exposed in
+    ``globus_action_provider_tools.client_factory``. This allows users to
+    customize the transport-layer settings used for Auth and Groups clients which
+    are constructed by the Action Provider Tools library, and sets initial
+    parameters for this tuning.
+
+    *   The number of retries for both client types is reduced to 1 (from an
+        SDK-default of 5).
+    *   The HTTP timeout is reduced to 30 seconds (from an SDK default of 60s).
+    *   The max sleep duration is reduced to 5 seconds (from an SDK default of
+        10s).
+    *   ActionProviderConfig, AuthStateBuilder, and AuthState are all customized to
+        accept a ClientFactory, and to use the client factory for any client
+        building operations.
+
 .. _changelog-0.20.0:
 
 0.20.0 — 2024-11-07
