@@ -44,7 +44,7 @@ class CloudWatchMetricEMFLogger:
 
     def __init__(
         self, namespace: str, action_provider_name: str, log_level: int | None = None
-    ):
+    ) -> None:
         """
         :param namespace: Custom CloudWatch Namespace target
         :param action_provider_name: Action Provider Name to be used in metric dimension

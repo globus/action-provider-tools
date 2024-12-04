@@ -279,6 +279,9 @@ class ActionStatus(BaseModel):
         return self.status in (ActionStatusValue.SUCCEEDED, ActionStatusValue.FAILED)
 
 
+_DEFAULT_JSON_ENCODER = json.JSONEncoder()
+
+
 def convert_to_json(o: Any) -> Any:
     if isinstance(o, AbstractSet):
         return list(o)
@@ -290,7 +293,7 @@ def convert_to_json(o: Any) -> Any:
         return o.isoformat()
     elif isinstance(o, datetime.timedelta):
         return isodate.duration_isoformat(o)
-    return json.JSONEncoder().default(o)
+    return _DEFAULT_JSON_ENCODER.default(o)
 
 
 class ActionProviderJsonEncoder(json.JSONEncoder):

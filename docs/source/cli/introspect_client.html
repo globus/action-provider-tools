@@ -1,8 +1,0 @@
-<div class="use-termynal" data-ty-lineDelay="0" data-termynal>
-    <span data-ty=input>curl -s --user $CLIENT_ID:$CLIENT_SECRET \</span>
-    <span data-ty=input data-ty-prompt="">https://auth.globus.org/v2/api/clients/$CLIENT_ID | jq</span>
-</div>
-<script>
-    containers = document.querySelectorAll(".use-termynal");
-    containers.forEach(container => new Termynal(container))
-</script>
