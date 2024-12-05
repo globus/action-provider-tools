@@ -7,8 +7,8 @@ from globus_action_provider_tools.flask import (
     ActionProviderBlueprint,
     ActionProviderConfig,
 )
-from tests.test_flask_helpers.ap_client import ActionProviderClient
-from tests.test_flask_helpers.app_utils import ap_description
+from tests.flask.ap_client import ActionProviderClient
+from tests.flask.app_utils import ap_description
 
 
 class _ScalarPydanticModel(BaseModel):

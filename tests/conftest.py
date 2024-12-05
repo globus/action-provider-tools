@@ -16,6 +16,13 @@ from globus_action_provider_tools.authentication import AuthState, AuthStateBuil
 
 from .data import canned_responses
 
+try:
+    import flask
+
+    assert flask
+except ModuleNotFoundError:
+    collect_ignore = ["flask"]
+
 
 @pytest.fixture
 def config():
