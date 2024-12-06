@@ -15,7 +15,7 @@ from globus_action_provider_tools.flask.helpers import assign_json_provider
 from globus_action_provider_tools.flask.request_lifecycle_hooks import (
     CloudWatchMetricEMFLogger,
 )
-from tests.test_flask_helpers.app_utils import ap_description, mock_action_run_func
+from tests.flask.app_utils import ap_description, mock_action_run_func
 
 
 def erroring_4xx_run_route(action_request: ActionRequest, auth: AuthState):
