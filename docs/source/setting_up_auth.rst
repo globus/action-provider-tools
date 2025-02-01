@@ -3,293 +3,327 @@
 Set Up an Action Provider in Globus Auth
 ========================================
 
-The Action Provider Interface makes use of and is bound closely with
-authentication via the `Globus Auth
-<https://docs.globus.org/api/auth/specification/>`_ system. To
-authenticate RESTful requests using Globus Auth, a service must register as a
-"resource server". This is a multi-step process involving use of both the Globus
-Auth developer portal and the Globus Auth API for configuring various access
-control states. To help with this process, we provide a step-by-step guide to
-using Globus Auth for this purpose
+In the Globus ecosystem, services use
+`Globus Auth <https://docs.globus.org/api/auth/>`_
+to handle user authentication. In order for an Action Provider to function, it
+needs to be configured as a service in Globus Auth.
+
+This guide doc will walk you through the setup process.
+
+Prerequisites
+-------------
+
+This guide will use the Globus Python SDK, which requires that you have Python
+installed.
+If a supported version of Python is not already installed on your system, see
+this `Python installation guide \
+<https://docs.python-guide.org/starting/installation/>`_.
+
+Steps
+-----
+
+Step 1: Install the SDK
+'''''''''''''''''''''''
+
+We recommend using virtualenvs for python applications. Create a virtualenv in
+a development directory:
+
+.. tab-set::
+
+    .. tab-item:: Unix/macOS
+
+       .. code-block:: shell
+
+          python -m venv venv
+
+    .. tab-item:: Windows
+
+       .. code-block:: shell
+
+          py -m venv venv
+
+Activate the virtualenv:
+
+.. tab-set::
+
+    .. tab-item:: Unix/macOS
+
+       .. code-block:: shell
+
+          source venv/bin/activate
+
+    .. tab-item:: Windows
+
+       .. code-block:: shell
+
+          venv\Scripts\activate.bat
+
+Finally, install the SDK:
+
+.. code-block:: bash
+
+    pip install globus-sdk
+
+Step 2: Create an Auth Client
+'''''''''''''''''''''''''''''
+
+In Globus Auth, applications are represented as **client**\s.
+Your **client** registration will be your way of managing settings for your
+Action Provider.
+
+When you create your **client**, you will also be prompted to create or use a
+**project**. A **project** is a grouping of **client**\s which lets you assign
+administrators.
+
+1.  Go to `the Developers page <https://app.globus.org/settings/developers>`_.
+
+2.  Select ``Advanced registration``.
+
+3.  Create a new **project** when prompted.
+
+4.  Fill in the **client** fields:
+
+    a.  ``App Name``: The name for your Action Provider.
+
+    b.  ``Redirects``: This field will not be used. Leave it blank.
+
+    c.  Leave the checkboxes at their defaults.
+
+    d.  Optionally enter URLs for your privacy policy and terms of service (if
+        applicable).
+
+Stay on the resulting application page!
+We will continue from here in the next step.
+
+Step 3: Create and Record a Client Secret and the Client ID
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+Your Action Provider will need credentials to communicate with Globus Auth.
+These will be used to validate credentials sent by users and resolve them to
+user IDs and Groups.
+
+From the application page for your new client, you will create and save a new
+Client Secret. First, prepare a local Python script which will contain the
+secret:
+
+1.  Create a new file, ``manage-ap.py``
+
+2.  In your editor, put the following content into ``manage-ap.py``:
+
+    .. code-block:: python
+
+        import globus_sdk
+
+        CLIENT_ID = "..."
+        CLIENT_SECRET = "..."
 
 .. note::
-    In the examples below, we will use the command line tool ``curl`` to
-    perform the HTTP operations as it is widely available. We also use the
-    command line tool ``jq`` to format the ``curl`` command's json responses.
-    However, other tools and clients exist for interacting with REST and HTTP
-    services, so you may need to translate the ``curl`` and ``jq`` commands to
-    your preferred tools.
 
-Step 1: Register a new App
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Throughout this guide, we will store the client ID and secret directly in
+    the ``manage-ap.py`` script for simplicity. You could move this data to
+    another location -- a database, config storage, keychain, environment
+    variables -- at your discretion.
 
-Register a new App on `<https://developers.globus.org>`_ using a browser.
-Once logged in, perform the following steps
+    All that matters is that the Python code has access to these values as strings.
 
-- Select "Add another project"
+Now that we have a storage location prepared, we can create the secret from the
+web application:
 
-  - | Provide a name, contact email and select which of your own Globus Auth
-        linked identities are permitted to administer the project. You will be
-        required to login with this identity in future interactions with the Globus
-        Developer Portal to manipulate the resource server.
+1.  Select `Add Client Secret`.
 
-- After filling in your new Project's details, select "Create Project"
+2.  Name the secret when prompted, this is a label for your own record keeping.
 
-- | Find your new, empty project, and select the "Add" drop down and then click
-    "Add new app"
+3.  At this point the secret will be shown **only once**. Save the resulting
+    secret in a new python script, filling it in for ``CLIENT_SECRET``.
 
-  - | Provide a name for the specific app within the project. This will be a
-      common name displayed to users when they make use of the Action Provider.
-      "Redirects" is not used, but a value must be provided. You can use a
-      URL associated with your service or a placeholder value like ``"https://localhost"``.
+    .. warning::
 
-  - | When creating a resource server, the other fields on the app creation page
-      are not used. On this menu, "Scopes" is not relevant and make no
-      difference, so this field should be left blank. The "Privacy Policy" and
-      "Terms and Conditions" may be displayed to users making use of your action
-      provider, but they are not required.
+        Make sure you copy the secret *exactly*. Use the copy button to be sure.
 
-- Select "Create app"
+4.  Record the client ID (``Client UUID``) from the application screen in
+    ``CLIENT_ID``.
 
-- You will be redirected to the "Apps and Services" page. Scroll to your
-  Project, then to the newly created App. Make note of the "Client ID" in the
-  expanded description of your app. This value will be used elsewhere in the
-  creation of the service and is often referenced as ``client_id``.
+Step 4: Verify Your Credentials
+'''''''''''''''''''''''''''''''
 
-- In the section "Client Secrets" click "Generate New Client Secret"
+It's always good to double-check things! In this step, we'll verify that the
+Client ID and Secret were saved correctly.
 
-  - | Provide a Description which is meaningful to you. It will not be
-      displayed to other users.
+1.  Update ``manage-ap.py`` to add the following lines to the end:
 
-- Click "Generate Secret".
+    .. code-block:: python
 
-  - | Make note of the generated secret. Like the ``client_id`` this will be
-      used later in development. Be sure **not to lose it** as it can only be
-      displayed once. However, new client secrets can be created and old ones
-      deleted at any time should the need for a replacement secret arise.
+        app = globus_sdk.ClientApp("manage-ap", client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+        client = globus_sdk.AuthClient(app=app)
+        print(client.get_identities(ids=CLIENT_ID))
 
-- | Set the client_id and client_secret on your command line to follow
-    along with the rest of this guide.
+2.  Run ``python manage-ap.py``. Your output should look similar to the
+    following:
 
-    .. code-block:: BASH
-
-        export CLIENT_ID=<client_id>
-        export CLIENT_SECRET=<client_secret>
-
-
-Step 2: Use the Globus Auth API to introspect your Action Provider Resource Server
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-- | Introspect your Globus Auth client to see the same settings you setup in
-    the developer portal. Notice we exported the ``<client_id>`` and
-    ``<client_secret>`` values generated during your registration on the Globus
-    Developer Portal into environment variables.
-
-    .. code-block:: BASH
-
-        curl -s --user $CLIENT_ID:$CLIENT_SECRET \
-            https://auth.globus.org/v2/api/clients/$CLIENT_ID | jq
-
-- | A successful return from this command is a JSON representation of the
-    Globus Auth client similar to:
-
-    .. code-block:: JSON
+    .. code-block:: json
 
         {
-            "client": {
-                "scopes": [],
-                "redirect_uris": [
-                    "https://localhost"
-                ],
-                "name": "My Action Provider",
-                "links": {
-                    "privacy_policy": null,
-                    "terms_and_conditions": null
-                },
-                "grant_types": [
-                    "authorization_code",
-                    "client_credentials",
-                    "refresh_token",
-                    "urn:globus:auth:grant_type:dependent_token"
-                ],
-                "fqdns": [],
-                "visibility": "private",
-                "project": "a47b9014-9250-4e21-9de5-b4aac81d464b",
-                "required_idp": null,
-                "preselect_idp": null,
-                "id": "8e98ba5a-21a9-4bef-ab6a-0fcdbed36405",
-                "public_client": false,
-                "parent_client": null
+          "identities": [
+            {
+              "organization": null,
+              "email": null,
+              "name": "your-client-name",
+              "identity_provider": "3a74877b-e2a3-44b1-8958-ede1031b1827",
+              "id": "your-client-id-goes-here",
+              "identity_type": null,
+              "status": "used",
+              "username": "your-client-id-goes-here@clients.auth.globus.org"
             }
+          ]
         }
 
-- | Of note is the ``scopes`` field. ``scopes`` are created to identify
-    operations on the Action Provider. Typically, an Action Provide defines just
-    one scope and it is provided to users in the Action Provider's introspection
-    (``GET /``) information in the field ``globus_auth_scope``. In the next
-    section, we demonstrate how to create a ``scope``.
+As long as there are no errors and you get a JSON response with an
+``identities`` array, it means the credentials are working.
+
+Step 5: Create the Action Provider Scope
+''''''''''''''''''''''''''''''''''''''''
+
+Globus Auth scopes allow services to control the level of access that
+applications grant one another. For a full explanation, see the
+`official documentation on clients, scopes, and consents
+<https://docs.globus.org/guides/overviews/clients-scopes-and-consents/>`_.
+
+For proper function, an Action Provider must define exactly one scope which
+will be used by its consumers. Additional scopes can be defined for
+applications which serve multiple purposes, but there is only one per Action
+Provider.
+
+1.  Update ``manage-ap.py`` to create a scope named ``action_all``. We'll also
+    add some use of ``argparse`` in this step so that the script can carry out
+    multiple different operations over time:
+
+    .. code-block:: python
+
+        import argparse
+
+        import globus_sdk
+
+        CLIENT_ID = "YOUR_ID_HERE"
+        CLIENT_SECRET = "YOUR_SECRET_HERE"
+
+        app = globus_sdk.ClientApp(
+            "manage-ap", client_id=CLIENT_ID, client_secret=CLIENT_SECRET
+        )
+
+        client = globus_sdk.AuthClient(app=app)
+        client.add_app_scope(globus_sdk.AuthClient.scopes.manage_projects)
+
+        parser = argparse.ArgumentParser("manage-ap")
+        parser.add_argument("action", choices=("show-self", "create-scope"))
 
 
-Step 3. Create your Action Provider's Scope
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        def main():
+            args = parser.parse_args()
+            if args.action == "show-self":
+                print(client.get_identities(ids=CLIENT_ID))
+            elif args.action == "create-scope":
+                # we have looked up the scope for Globus Groups for you in this
+                # case -- see note below for details
+                groups_scope_spec = globus_sdk.DependentScopeSpec(
+                    "73320ffe-4cb4-4b25-a0a3-83d53d59ce4f", False, False
+                )
+                print(
+                    client.create_scope(
+                        CLIENT_ID,
+                        "Action Provider 'all'",
+                        "Access to my action provider",
+                        "action_all",
+                        dependent_scopes=[groups_scope_spec],
+                    )
+                )
+            else:
+                raise NotImplementedError
 
-- | Creation of a scope is required as the scope will be used in authenticating
-    REST calls on the Action Provider.
 
-- | Start by creating a "scope definition" JSON document in the
-    following format replacing the ``name``, ``description`` and optionally
-    the ``scope_suffix``.
+        if __name__ == "__main__":
+            main()
 
-    .. code-block:: JSON
+2.  Run the script to ``create-scope``:
 
+    .. code-block:: bash
+
+        $ python ./manage-ap.py create-scope
         {
-            "scope": {
-                "name": "Action Provider Operations",
-                "description": "All Operations on My Action Provider",
-                "scope_suffix": "action_all",
-                "dependent_scopes": [
-                        {
-                            "optional": false,
-                            "requires_refresh_token": true,
-                            "scope": "73320ffe-4cb4-4b25-a0a3-83d53d59ce4f"
-                        }
-                    ],
-                "advertised": true,
-                "allow_refresh_tokens": true
-            }
-        }
-
-- | The ``name`` and ``description`` fields are purely
-    informative and will be presented to other users who use the Globus Auth API
-    to lookup the scope. The ``scope_suffix`` will be placed at the end of the
-    generated "scope string" which is a URL identifier for the scope. It
-    provides the context for the operations this scope covers among all
-    operations your service provides. For Action Providers, we commonly use
-    ``action_all`` to indicate all operations defined by the Action Provider
-    API, but any string is acceptable.
-
-- | The ``advertised`` property indicates whether the scope will be
-    visible to all users who do scope look ups on Globus Auth. You may select
-    either ``true`` or ``false`` for this depending on your own policy.
-    ``allow_refresh_tokens`` should generally be set to ``true``, indicating
-    that a client of the Action Provider who has authenticated the user via
-    Globus Auth is a allowed to refresh that authentication without further
-    interactions from the user. Especially in the case where an Action may be
-    long running and is monitored by an automated system like Globus Flows, it
-    is important that token refresh is permitted.
-
-- | ``dependent_scopes`` define scopes of other Globus Auth resource
-    servers that your Action Provider will invoke to perform its work. For
-    example, if your Action Provider uses Globus Transfer to first move some
-    data to compute upon, the scope for the Globus Transfer service would be
-    placed in the ``dependent_scopes`` list. In the most common case, as
-    shown in the example, the scope for the `Globus Groups API
-    <https://docs.globus.org/api/groups/>`_ (with UUID
-    ``73320ffe-4cb4-4b25-a0a3-83d53d59ce4f``) should be listed. This allows
-    your Action Provider to determine what groups a user calling the
-    provider belongs to and can therefore enforce policies, such as
-    ``runnable_by`` or ``monitor_by`` based on group membership. If this
-    scope is not listed as a dependent scope, the Action Provider Tools
-    library will not be able to, and will therefore not attempt to, retrieve
-    a user's groups and so no policies based on Groups may be used. We
-    encourage you to consult the `Globus Auth Documentation
-    <https://docs.globus.org/api/auth/>`_ for more information on creation
-    and management of Scopes for more advanced scenarios such as other
-    dependent Globus Auth based services such as Globus Transfer.
-
-    .. note::
-        Scopes supplied in the dependent_scopes array must be identified by
-        their UUID. The snippet below demonstrates how to look up a scope's UUID
-        based on its uniquely idenfitfying FQDN
-
-    .. code-block:: BASH
-
-        # Target FQDN is https://auth.globus.org/scopes/actions.globus.org/transfer/transfer
-        export SCOPE_STRING=https://auth.globus.org/scopes/actions.globus.org/transfer/transfer
-        curl -s -u "$CLIENT_ID:$CLIENT_SECRET" \
-            "https://auth.globus.org/v2/api/scopes?scope_strings=$SCOPE_STRING" | jq ".scopes[0].id"
-
-
-- | With the scope creation JSON document complete, use the following REST
-    interaction to create the scope in Globus Auth via the ``curl`` command.
-
-    .. code-block:: BASH
-
-        curl -s --user "$CLIENT_ID:$CLIENT_SECRET" -H \
-            'Content-Type: application/json' \
-            -XPOST https://auth.globus.org/v2/api/clients/$CLIENT_ID/scopes \
-            -d '<Insert Scope creation document from above>' | jq
-
-- | This command should return the definition of the new scope matching the
-    values provided in your scope creation document. As an example:
-
-    .. note::
-        The returned value is an *array* of scopes. That is, more than one scope
-        definition may be generated from the single scope creation request. This
-        happens in the uncommon case where an FQDN has been registered for your
-        ``client_id`` (refer to the `Globus Auth Documentation
-        <https://docs.globus.org/api/auth/>`_ for information on FQDN
-        registration if you desire it, though it is not recommended). In this
-        case, a similar scope definition will also be generated, but the
-        ``scope_string`` will contain the FQDN value(s). The ``scope_string``
-        values may be used interchangeably both by users requesting
-        authentication to the Action Provider and in the ``globus_auth_scope``
-        value of the Action Provider Description.
-
-    .. code-block:: JSON
-
-        {
-            "scopes": [
+          "scopes": [
+            {
+              "name": "Action Provider 'all'",
+              "allows_refresh_token": true,
+              "description": "Access to my action provider",
+              "dependent_scopes": [
                 {
-                    "dependent_scopes": [
-                            {
-                            "optional": false,
-                            "requires_refresh_token": true,
-                            "scope": "73320ffe-4cb4-4b25-a0a3-83d53d59ce4f"
-                            }
-                        ],
-                    "description": "<your description>",
-                    "allows_refresh_token": true,
-                    "client": "<client_id>",
-                    "advertised": true,
-                    "scope_string": "https://auth.globus.org/scopes/<client_id>/action_all",
-                    "id": "<A UUID for this scope>",
-                    "name": "<your scope name>"
+                  "scope": "73320ffe-4cb4-4b25-a0a3-83d53d59ce4f",
+                  "optional": false,
+                  "requires_refresh_token": false
                 }
-            ]
+              ],
+              "required_domains": [],
+              "id": "THE_SCOPE_ID_HERE",
+              "client": "YOUR_CLIENT_ID_HERE",
+              "advertised": false,
+              "scope_string": "https://auth.globus.org/scopes/YOUR_CLIENT_ID_HERE/action_all"
+            }
+          ]
         }
 
-- | The returned ``scope_string``, which always takes the form of a URL, will be
-    the value exposed to users who wish to authenticate with Globus Auth to use
-    your Action Provider. It will be part of the Action Provider description
-    document, returned on the Action Provider Introspection operation (``GET
-    /``) with the key ``globus_auth_scope``.
+At this stage, you have a scope for your Action Provider!
 
-- | Verify that the created scope(s) are correctly associated with the Action
-    Provider:
+You can think of the scope under two identifiers:
 
-    .. code-block:: BASH
+- the full string: ``"https://auth.globus.org/scopes/$CLIENT_ID/action_all"``
+- the suffix: ``"action_all"``
 
-        curl -s --user $CLIENT_ID:$CLIENT_SECRET \
-            https://auth.globus.org/v2/api/clients/$CLIENT_ID | jq
+The full string is globally unique. Even if another application registers
+``action_all``, it won't conflict with your application's scope.
+The suffix is only unique to your application.
 
-- | Once your app and its scope(s) have been created and verified, remove your
-    credentials from your command line environment. Be sure to take note of the
-    client ID and its associated client secret for use in other places in the toolkit.
+For this reason, when communicating with other services you will always use
+the full string.
 
-    .. code-block:: BASH
+.. note::
 
-        unset CLIENT_ID CLIENT_SECRET
+    **The Globus Groups Scope**
+
+    In order to register inter-service dependencies, scopes need to declare how
+    they relate to other scopes, potentially from other applications.
+
+    For Action Providers, we will want to be able to view a user's groups using
+    the ``"urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships"``
+    scope.
+
+    To save you the trouble of finding this scope's ID, we have provided it for
+    you above. But you can do it yourself too! Using the Globus CLI, it's easy!
+    Just run:
+
+    .. code-block:: bash
+
+         globus api auth GET /v2/api/scopes \
+            -Q 'scope_strings=urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships' \
+            --jq 'scopes[0].id'
 
 Next Steps
-^^^^^^^^^^
-Once you have obtained your own CLIENT_ID and created a CLIENT_SECRET and
-SCOPE, you have all the pieces required for creating an Action Provider.
+----------
 
-For information on installing the toolkit read the :doc:`installation
+You now have a Client ID and Secret saved in a script, ``manage-ap.py``, and
+your application is registered in Globus Auth.
+
+You'll need the Client ID and Secret in order to create an Action Provider
+using ``globus_action_provider_tools`` and to run your Action Provider.
+
+``manage-ap.py`` currently only has two capabilities -- self-inspection and creating
+a scope -- but you can easily add more. If you want to update your scope
+description, you could add an ``"update-scope"`` command and make it call
+`client.update_scope
+<https://globus-sdk-python.readthedocs.io/en/stable/services/auth.html#globus_sdk.AuthClient.update_scope>`_!
+
+For information on installing Action Provider Tools read the :doc:`installation
 page<installation>`.
 
-For information on this toolkit's components, read the :doc:`toolkit
+For information on the library's components, read the :doc:`toolkit
 documentation<toolkit>`.
 
 To see a few sample Action Provider implementations head over to the
