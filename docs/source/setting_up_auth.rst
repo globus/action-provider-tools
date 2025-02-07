@@ -286,7 +286,7 @@ The full scope string is globally unique. Even if another application registers
 The suffix is only unique to your application.
 
 For this reason, when communicating with other services you will always use
-the full string.
+the full scope string.
 
 .. note::
 
