@@ -281,7 +281,7 @@ You can think of the scope under two identifiers:
 - the full scope string: ``"https://auth.globus.org/scopes/$CLIENT_ID/action_all"``
 - the suffix: ``"action_all"``
 
-The full string is globally unique. Even if another application registers
+The full scope string is globally unique. Even if another application registers
 ``action_all``, it won't conflict with your application's scope.
 The suffix is only unique to your application.
 
