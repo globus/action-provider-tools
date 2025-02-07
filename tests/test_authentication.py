@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import time
-import typing as t
 from unittest import mock
 
 import globus_sdk
 import pytest
-from globus_sdk._testing import RegisteredResponse, load_response
+from globus_sdk._testing import RegisteredResponse, get_response_set
 
 from globus_action_provider_tools.authentication import (
-    AuthState,
     InvalidTokenScopesError,
     identity_principal,
 )
@@ -21,49 +19,6 @@ class FastRetryClientFactory(ClientFactory):
     DEFAULT_GROUPS_TRANSPORT_PARAMS = (("max_sleep", 0), ("max_retries", 1))
 
 
-class NoRetryClientFactory(ClientFactory):
-    DEFAULT_AUTH_TRANSPORT_PARAMS = (("max_retries", 0),)
-    DEFAULT_GROUPS_TRANSPORT_PARAMS = (("max_retries", 0),)
-
-
-_NO_RETRY_FACTORY = NoRetryClientFactory()
-
-
-@pytest.fixture
-def get_auth_state_instance() -> t.Callable[..., AuthState]:
-    def _func(
-        expected_scopes: t.Iterable[str],
-        client_factory: ClientFactory = _NO_RETRY_FACTORY,
-    ) -> AuthState:
-        client = client_factory.make_confidential_app_auth_client("bogus", "bogus")
-        return AuthState(
-            auth_client=client,
-            bearer_token="bogus",
-            expected_scopes=frozenset(expected_scopes),
-            client_factory=client_factory,
-        )
-
-    return _func
-
-
-@pytest.fixture(autouse=True)
-def _clear_auth_state_cache():
-    AuthState.dependent_tokens_cache.clear()
-    AuthState.group_membership_cache.clear()
-    AuthState.introspect_cache.clear()
-
-
-@pytest.fixture
-def auth_state(
-    mocked_responses,
-    get_auth_state_instance: t.Callable[..., AuthState],
-    introspect_success_response,
-) -> AuthState:
-    """Create an AuthState instance."""
-    # note that expected-scope MUST match the fixture data
-    return get_auth_state_instance(["expected-scope"])
-
-
 def test_get_identities(auth_state, introspect_success_response):
     assert len(auth_state.identities) == len(
         introspect_success_response.metadata["identities"]
@@ -71,10 +26,8 @@ def test_get_identities(auth_state, introspect_success_response):
     assert all(i.startswith("urn:globus:auth:identity") for i in auth_state.identities)
 
 
-def test_get_groups(auth_state, introspect_success_response):
-    load_response("token", case="success")
-    group_response = load_response("groups-my_groups", case="success")
-    assert len(auth_state.groups) == len(group_response.metadata["group-ids"])
+def test_get_groups(auth_state, groups_success_response):
+    assert len(auth_state.groups) == len(groups_success_response.metadata["group-ids"])
     assert all(g.startswith("urn:globus:groups:id:") for g in auth_state.groups)
 
 
@@ -87,7 +40,7 @@ def test_effective_identity(auth_state, introspect_success_response):
 def test_caching_identities(auth_state, introspect_success_response, mocked_responses):
     num_test_calls = 10
     for _ in range(num_test_calls):
-        assert len(auth_state.identities) == 6
+        assert len(auth_state.identities) == 7
         assert auth_state.effective_identity == identity_principal(
             introspect_success_response.metadata["effective-id"]
         )
@@ -95,13 +48,12 @@ def test_caching_identities(auth_state, introspect_success_response, mocked_resp
     assert len(mocked_responses.calls) == 1
 
 
-def test_caching_groups(auth_state, mocked_responses):
-    load_response("token", case="success")
-    load_response("token-introspect", case="success")
-    group_response = load_response("groups-my_groups", case="success")
+def test_caching_groups(auth_state, mocked_responses, groups_success_response):
     num_test_calls = 10
     for _ in range(num_test_calls):
-        assert len(auth_state.groups) == len(group_response.metadata["group-ids"])
+        assert len(auth_state.groups) == len(
+            groups_success_response.metadata["group-ids"]
+        )
 
     # 3 calls no matter how many times the loop runs:
     # - introspect
@@ -111,25 +63,28 @@ def test_caching_groups(auth_state, mocked_responses):
 
 
 def test_auth_state_caching_across_instances(
-    get_auth_state_instance, auth_state, freeze_time, mocked_responses
+    get_auth_state_instance,
+    auth_state,
+    freeze_time,
+    mocked_responses,
+    introspect_success_response,
 ):
-    response = freeze_time(load_response("token-introspect", case="success"))
-
     duplicate_auth_state = get_auth_state_instance(auth_state.expected_scopes)
     assert duplicate_auth_state is not auth_state
 
-    assert len(auth_state.identities) == len(response.metadata["identities"])
+    assert len(auth_state.identities) == len(
+        introspect_success_response.metadata["identities"]
+    )
     assert len(mocked_responses.calls) == 1
     # The second instance should see the cached value,
     # resulting in no additional HTTP calls.
-    assert len(duplicate_auth_state.identities) == len(response.metadata["identities"])
+    assert len(duplicate_auth_state.identities) == len(
+        introspect_success_response.metadata["identities"]
+    )
     assert len(mocked_responses.calls) == 1
 
 
-def test_deprecation_warning_on_required_authorizer_expiration_time(
-    auth_state, introspect_success_response
-):
-    load_response("token", case="success")
+def test_deprecation_warning_on_required_authorizer_expiration_time(auth_state):
     with pytest.warns(
         DeprecationWarning,
         match="`required_authorizer_expiration_time` has no effect and will be removed",
@@ -141,7 +96,7 @@ def test_deprecation_warning_on_required_authorizer_expiration_time(
 
 
 def test_invalid_grant_exception(auth_state, introspect_success_response):
-    load_response("token", case="invalid-grant")
+    get_response_set("token").lookup("invalid-grant").replace()
     with pytest.raises(globus_sdk.GlobusAPIError):
         auth_state.get_authorizer_for_scope("doesn't matter")
 
@@ -233,7 +188,7 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
                 "access_token": "bar_AT",
             }
         ],
-    ).add()
+    ).replace()
     # now get the 'bar_scope' authorizer
     authorizer = auth_state.get_authorizer_for_scope("bar_scope")
 
@@ -272,8 +227,7 @@ def test_no_groups_client_is_constructed_when_cache_is_warm(auth_state):
     Confirm that if the group cache is warm, then the AuthState will refer to it without
     even trying to collect credentials to callout to groups.
     """
-    load_response("token", case="success")
-    load_response("groups-my_groups", case="failure")
+    get_response_set("groups-my_groups").lookup("failure").replace()
 
     # put a mock in place so that we can see whether or not a client was built
     auth_state._get_groups_client = mock.Mock()
