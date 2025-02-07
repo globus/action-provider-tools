@@ -2,7 +2,14 @@ from unittest import mock
 
 import pytest
 
-from globus_action_provider_tools.errors import UnverifiedAuthenticationError
+from globus_action_provider_tools.authentication import (
+    InactiveTokenError,
+    InvalidTokenScopesError,
+)
+from globus_action_provider_tools.errors import (
+    AuthenticationError,
+    UnverifiedAuthenticationError,
+)
 from globus_action_provider_tools.flask.helpers import FlaskAuthStateBuilder
 
 
@@ -36,4 +43,30 @@ def test_bogus_authorization_headers_are_rejected_without_io(authorization_heade
         side_effect=RuntimeError("ON NO"),
     ):
         with pytest.raises(UnverifiedAuthenticationError):
+            builder.build_from_request(request=mock_request_object)
+
+
+@pytest.mark.parametrize(
+    "underlying_error, expect_message",
+    (
+        (InactiveTokenError("foo"), "token was invalid, expired, or revoked"),
+        (
+            InvalidTokenScopesError(frozenset(["foo"]), frozenset(["bar"])),
+            "token had invalid scopes",
+        ),
+    ),
+)
+def test_invalid_token_data_results_in_authn_errors(underlying_error, expect_message):
+    # stub the Auth Client and scopes
+    builder = FlaskAuthStateBuilder(mock.Mock(), [])
+
+    mock_request_object = mock.Mock()
+    mock_request_object.headers = {"Authorization": "Bearer AbcDefGhiJklmnop"}
+
+    # mock in the underlying authentication related error
+    with mock.patch(
+        "globus_action_provider_tools.authentication.AuthState",
+        side_effect=underlying_error,
+    ):
+        with pytest.raises(AuthenticationError, match=expect_message):
             builder.build_from_request(request=mock_request_object)
