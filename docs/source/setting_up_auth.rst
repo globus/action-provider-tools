@@ -285,7 +285,8 @@ The full scope string is globally unique. Even if another application registers
 ``action_all``, it won't conflict with your application's scope.
 The suffix is only unique to your application.
 
-For this reason, when communicating with other services you will always use
+For this reason, when communicating with other services or configuring your
+**action provider** with ``globus_action_provider_tools`` you will always use
 the full scope string.
 
 .. note::
