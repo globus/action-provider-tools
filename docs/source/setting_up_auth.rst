@@ -73,7 +73,7 @@ Step 2: Create an Auth Client
 
 In Globus Auth, applications are represented as **client**\s.
 Your **client** registration will be your way of managing settings for your
-Action Provider.
+**action provider**.
 
 When you create your **client**, you will also be prompted to create or use a
 **project**. A **project** is a grouping of **client**\s which lets you assign
@@ -87,7 +87,7 @@ administrators.
 
 4.  Fill in the **client** fields:
 
-    a.  ``App Name``: The name for your Action Provider.
+    a.  ``App Name``: The name for your **action provider**.
 
     b.  ``Redirects``: This field will not be used. Leave it blank.
 
@@ -102,7 +102,7 @@ We will continue from here in the next step.
 Step 3: Create and Record a Client Secret and the Client ID
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-Your Action Provider will need credentials to communicate with Globus Auth.
+Your **action provider** will need credentials to communicate with Globus Auth.
 These will be used to validate credentials sent by users and resolve them to
 user IDs and Groups.
 
@@ -192,7 +192,7 @@ applications grant one another. For a full explanation, see the
 `official documentation on clients, scopes, and consents
 <https://docs.globus.org/guides/overviews/clients-scopes-and-consents/>`_.
 
-For proper function, an Action Provider must define exactly one scope which
+For proper function, an **action provider** must define exactly one scope which
 will be used by its consumers. Additional scopes can be defined for
 applications which serve multiple purposes, but there is only one per Action
 Provider.
@@ -274,7 +274,7 @@ Provider.
           ]
         }
 
-At this stage, you have a scope for your Action Provider!
+At this stage, you have a scope for your **action provider**!
 
 You can think of the scope under two identifiers:
 
@@ -296,7 +296,7 @@ the full scope string.
     In order to register inter-service dependencies, scopes need to declare how
     they relate to other scopes, potentially from other applications.
 
-    For Action Providers, we will want to be able to view a user's groups using
+    For **action providers**, we will want to be able to view a user's groups using
     the ``"urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships"``
     scope.
 
@@ -316,8 +316,8 @@ Next Steps
 You now have a Client ID and Secret saved in a script, ``manage-ap.py``, and
 your application is registered in Globus Auth.
 
-You'll need the Client ID and Secret in order to create an Action Provider
-using ``globus_action_provider_tools`` and to run your Action Provider.
+You'll need the Client ID and Secret in order to create an **action provider**
+using ``globus_action_provider_tools`` and to run your **action provider**.
 
 ``manage-ap.py`` currently only has two capabilities -- self-inspection and creating
 a scope -- but you can easily add more. If you want to update your scope
@@ -331,5 +331,5 @@ page<installation>`.
 For information on the library's components, read the :doc:`toolkit
 documentation<toolkit>`.
 
-To see a few sample Action Provider implementations head over to the
+To see a few sample **action provider** implementations head over to the
 :doc:`examples page<examples>`.
