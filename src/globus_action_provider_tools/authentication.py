@@ -231,11 +231,7 @@ class AuthState:
         self.dependent_tokens_cache[self._dependent_token_cache_key] = resp
         return resp
 
-    def get_authorizer_for_scope(
-        self,
-        scope: str,
-        required_authorizer_expiration_time: int | None = None,
-    ) -> AccessTokenAuthorizer:
+    def get_authorizer_for_scope(self, scope: str) -> AccessTokenAuthorizer:
         """
         Get dependent tokens for the caller's token, then retrieve token data for the
         requested scope and attempt to build an authorizer from that data.
@@ -244,18 +240,10 @@ class AuthState:
         building authorizers succeeds.
 
         :param scope: The scope for which an authorizer is being requested
-        :param required_authorizer_expiration_time: Deprecated parameter. Has no effect.
 
         :raises ValueError: If the dependent token data for the caller does not match
             the requested scope.
         """
-        if required_authorizer_expiration_time is not None:
-            warnings.warn(
-                "`required_authorizer_expiration_time` has no effect and will be removed in a future version.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
         retrieved_from_cache, dependent_tokens = self._get_cached_dependent_tokens()
 
         # if the dependent token data (which could have been cached) failed to meet
