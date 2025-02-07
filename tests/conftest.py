@@ -10,7 +10,7 @@ import globus_sdk
 import pytest
 import responses
 import yaml
-from globus_sdk._testing import RegisteredResponse, register_response_set
+from globus_sdk._testing import RegisteredResponse, load_response, register_response_set
 
 from globus_action_provider_tools.authentication import AuthState, AuthStateBuilder
 
@@ -33,7 +33,9 @@ def config():
 
 @pytest.fixture
 @mock.patch("globus_sdk.ConfidentialAppAuthClient")
-def auth_state(MockAuthClient, config, monkeypatch) -> AuthState:
+def auth_state(
+    MockAuthClient, config, monkeypatch, introspect_success_response
+) -> AuthState:
     # FIXME: the comment below is a lie, assess and figure out what is being said
     #
     # Mock the introspection first because that gets called as soon as we create
@@ -113,6 +115,11 @@ def mocked_responses() -> responses.RequestsMock:
 
     with responses.mock:
         yield responses.mock
+
+
+@pytest.fixture
+def introspect_success_response(mocked_responses):
+    return load_response("token-introspect", case="success")
 
 
 @pytest.fixture

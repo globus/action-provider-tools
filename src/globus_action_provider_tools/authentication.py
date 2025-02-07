@@ -81,6 +81,8 @@ class AuthState:
 
         self.errors: list[Exception] = []
 
+        self._token_data = self.introspect_token()
+
     @functools.cached_property
     def _token_hash(self) -> str:
         return _hash_token(self.bearer_token)
@@ -143,14 +145,12 @@ class AuthState:
 
     @property
     def effective_identity(self) -> str:
-        tkn_details = self.introspect_token()
-        effective = identity_principal(tkn_details["sub"])
+        effective = identity_principal(self._token_data["sub"])
         return effective
 
     @property
     def identities(self) -> frozenset[str]:
-        tkn_details = self.introspect_token()
-        return frozenset(map(identity_principal, tkn_details["identity_set"]))
+        return frozenset(map(identity_principal, self._token_data["identity_set"]))
 
     @property
     def principals(self) -> frozenset[str]:
