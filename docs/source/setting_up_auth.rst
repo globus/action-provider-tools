@@ -10,6 +10,10 @@ needs to be configured as a service in Globus Auth.
 
 This guide doc will walk you through the setup process.
 
+As part of this process, we will build a small Python application to manage your
+Globus Auth scopes. Managing your application's resources via code is a best
+practice and will make your action provider easier to build and maintain.
+
 Prerequisites
 -------------
 
