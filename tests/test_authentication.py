@@ -65,7 +65,6 @@ def test_caching_groups(auth_state, mocked_responses, groups_success_response):
 def test_auth_state_caching_across_instances(
     get_auth_state_instance,
     auth_state,
-    freeze_time,
     mocked_responses,
     introspect_success_response,
 ):
