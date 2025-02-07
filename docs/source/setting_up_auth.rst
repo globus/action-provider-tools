@@ -278,7 +278,7 @@ At this stage, you have a scope for your Action Provider!
 
 You can think of the scope under two identifiers:
 
-- the full string: ``"https://auth.globus.org/scopes/$CLIENT_ID/action_all"``
+- the full scope string: ``"https://auth.globus.org/scopes/$CLIENT_ID/action_all"``
 - the suffix: ``"action_all"``
 
 The full string is globally unique. Even if another application registers
