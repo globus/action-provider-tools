@@ -105,9 +105,6 @@ filterwarnings = [
 
     # Minimum Flask versions use a werkzeug version that triggers AST warnings.
     "ignore:.+? is deprecated and will be removed:DeprecationWarning:werkzeug|ast",
-
-    # dateutil, used by freezegun during testing, has a Python 3.12 compatibility issue.
-    "ignore:datetime.datetime.utcfromtimestamp\\(\\) is deprecated:DeprecationWarning",
 ]
 
 
