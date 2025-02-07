@@ -5,7 +5,7 @@ Set Up an Action Provider in Globus Auth
 
 In the Globus ecosystem, services use
 `Globus Auth <https://docs.globus.org/api/auth/>`_
-to handle user authentication. In order for an Action Provider to function, it
+to handle user authentication. In order for an **action provider** to function, it
 needs to be configured as a service in Globus Auth.
 
 This guide doc will walk you through the setup process.
