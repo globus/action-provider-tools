@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import datetime
 import pathlib
 import typing as t
 from unittest import mock
 
-import freezegun
 import pytest
 import responses
 import yaml
-from globus_sdk._testing import RegisteredResponse, load_response, register_response_set
+from globus_sdk._testing import load_response, register_response_set
 
 from globus_action_provider_tools.authentication import AuthState
 from globus_action_provider_tools.client_factory import ClientFactory
@@ -139,37 +137,3 @@ def register_api_fixtures():
     for yaml_file in (pathlib.Path(__file__).parent / "api-fixtures").rglob("*.yaml"):
         response_set = yaml.safe_load(yaml_file.read_text())
         register_response_set(yaml_file.stem, response_set)
-
-
-@pytest.fixture
-def freeze_time() -> (
-    t.Generator[t.Callable[[RegisteredResponse], RegisteredResponse], None, None]
-):
-    """Inspect a Globus SDK RegisteredResponse object and freeze time if needed.
-
-    Some responses may only be valid within a specific time range
-    (for example, a token may only be valid within a specific time period).
-    This fixture creates a function that will look for a "freezegun" key
-    in the Response metadata. If found, time will be frozen at that value.
-    """
-
-    frozen_time: t.Optional[freezegun.freeze_time] = None
-
-    def freezer(response: RegisteredResponse) -> RegisteredResponse:
-        """Freeze time based on a "freezegun" key (if any) in the response metadata."""
-
-        if "freezegun" in response.metadata:
-            instant = datetime.datetime.utcfromtimestamp(response.metadata["freezegun"])
-            # Update `frozen_time` in the outer scope.
-            nonlocal frozen_time
-            assert frozen_time is None, "You can't freeze time twice!"
-            frozen_time = freezegun.freeze_time(instant)
-            frozen_time.start()
-        return response
-
-    try:
-        yield freezer
-    finally:
-        # Unfreeze time, if needed.
-        if frozen_time is not None:
-            frozen_time.stop()

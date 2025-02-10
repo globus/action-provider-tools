@@ -10,8 +10,6 @@ invalid-client:
 
 success:
   metadata:
-    # Time must be frozen so the token introspection below can be valid.
-    freezegun: 1666716500
     audience: &success-audience
       - expected-audience
     scope: &success-scope
