@@ -49,10 +49,10 @@ def test_bogus_authorization_headers_are_rejected_without_io(authorization_heade
 @pytest.mark.parametrize(
     "underlying_error, expect_message",
     (
-        (InactiveTokenError("foo"), "token was invalid, expired, or revoked"),
+        (InactiveTokenError("foo"), "Token is invalid, expired, or revoked"),
         (
             InvalidTokenScopesError(frozenset(["foo"]), frozenset(["bar"])),
-            "token had invalid scopes",
+            "Token has invalid scopes",
         ),
     ),
 )

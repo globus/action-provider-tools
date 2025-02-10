@@ -82,9 +82,9 @@ class FlaskAuthStateBuilder(AuthStateBuilder):
         try:
             return super().build(access_token)
         except InvalidTokenScopesError as err:
-            raise AuthenticationError("token had invalid scopes") from err
+            raise AuthenticationError("Token has invalid scopes") from err
         except InactiveTokenError as err:
-            raise AuthenticationError("token was invalid, expired, or revoked") from err
+            raise AuthenticationError("Token is invalid, expired, or revoked") from err
 
 
 def parse_query_args(
