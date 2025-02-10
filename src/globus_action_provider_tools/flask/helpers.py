@@ -12,7 +12,12 @@ import jsonschema
 from flask import Request, current_app, jsonify
 from pydantic import BaseModel, ValidationError
 
-from globus_action_provider_tools.authentication import AuthState, AuthStateBuilder
+from globus_action_provider_tools.authentication import (
+    AuthState,
+    AuthStateBuilder,
+    InactiveTokenError,
+    InvalidTokenScopesError,
+)
 from globus_action_provider_tools.data_types import (
     ActionProviderDescription,
     ActionProviderJsonEncoder,
@@ -74,7 +79,12 @@ class FlaskAuthStateBuilder(AuthStateBuilder):
         if not 10 <= len(access_token) <= 2048:
             raise UnverifiedAuthenticationError("Bearer token length is unexpected")
 
-        return super().build(access_token)
+        try:
+            return super().build(access_token)
+        except InvalidTokenScopesError as err:
+            raise AuthenticationError("Token has invalid scopes") from err
+        except InactiveTokenError as err:
+            raise AuthenticationError("Token is invalid, expired, or revoked") from err
 
 
 def parse_query_args(

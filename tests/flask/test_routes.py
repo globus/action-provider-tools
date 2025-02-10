@@ -10,7 +10,6 @@ are in fact implemented.
 import flask
 import flask.testing
 import pytest
-from globus_sdk._testing import load_response
 
 from .ap_client import ActionProviderClient
 from .app_utils import (
@@ -22,9 +21,12 @@ from .app_utils import (
 @pytest.mark.parametrize("api_version", ["1.0", "1.1"])
 @pytest.mark.parametrize("use_pydantic_schema", [True, False])
 def test_routes_conform_to_api(
-    freeze_time, request, aptb_app, api_version: str, use_pydantic_schema: bool
+    introspect_success_response,
+    request,
+    aptb_app,
+    api_version: str,
+    use_pydantic_schema: bool,
 ):
-    freeze_time(load_response("token-introspect", case="success"))
     _, bp = list(aptb_app.blueprints.items())[0]
     if use_pydantic_schema:
         bp.input_schema = ActionProviderPydanticInputSchema
