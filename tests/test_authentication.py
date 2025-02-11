@@ -83,17 +83,6 @@ def test_auth_state_caching_across_instances(
     assert len(mocked_responses.calls) == 1
 
 
-def test_deprecation_warning_on_required_authorizer_expiration_time(auth_state):
-    with pytest.warns(
-        DeprecationWarning,
-        match="`required_authorizer_expiration_time` has no effect and will be removed",
-    ):
-        auth_state.get_authorizer_for_scope(
-            "urn:globus:auth:scope:groups.api.globus.org:view_my_groups_and_memberships",
-            required_authorizer_expiration_time=60,
-        )
-
-
 def test_invalid_grant_exception(auth_state, introspect_success_response):
     get_response_set("token").lookup("invalid-grant").replace()
     with pytest.raises(globus_sdk.GlobusAPIError):
