@@ -8,7 +8,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "globus-action-provider-tools"
-version = "0.20.1"
+version = "0.21.0"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
     "Globus Team <support@globus.org>",
