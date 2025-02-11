@@ -40,7 +40,9 @@ jobs:
             tox-environments-from-pythons: true
             tox-post-environments:
               - "py3.8-minimum_flask"
+              - "py3.8-flask"
               - "py3.12-minimum_flask"
+              - "py3.12-flask"
 
           - name: "macOS"
             runner: "macos-latest"

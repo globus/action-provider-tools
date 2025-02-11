@@ -6,7 +6,6 @@ from globus_action_provider_tools.data_types import (
     ActionStatus,
     ActionStatusValue,
 )
-from globus_action_provider_tools.utils import now_isoformat, principal_urn_regex
 
 __all__ = [
     "AuthState",
@@ -16,6 +15,4 @@ __all__ = [
     "ActionRequest",
     "ActionStatus",
     "ActionStatusValue",
-    "principal_urn_regex",
-    "now_isoformat",
 ]

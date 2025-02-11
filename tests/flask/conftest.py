@@ -6,10 +6,6 @@ ActionProviderBlueprint, but with authentication mocked out.
 from unittest import mock
 
 import pytest
-from flask import Flask
-
-from globus_action_provider_tools.flask import ActionProviderBlueprint
-from globus_action_provider_tools.flask.helpers import assign_json_provider
 
 from .app_utils import (
     ap_description,
@@ -29,6 +25,8 @@ def aptb_app(auth_state, create_app_from_blueprint):
     helper. The function form of the decorators are used to register each
     endpoint's functions.
     """
+    from globus_action_provider_tools.flask import ActionProviderBlueprint
+
     blueprint = ActionProviderBlueprint(
         name="aptb",
         import_name=__name__,
@@ -44,7 +42,11 @@ def aptb_app(auth_state, create_app_from_blueprint):
 
 @pytest.fixture
 def create_app_from_blueprint(apt_blueprint_noauth, auth_state):
-    def _create_app_from_blueprint(blueprint: ActionProviderBlueprint) -> Flask:
+    from flask import Flask
+
+    from globus_action_provider_tools.flask.helpers import assign_json_provider
+
+    def _create_app_from_blueprint(blueprint) -> Flask:
         app = Flask(__name__)
         assign_json_provider(app)
         blueprint.action_run(mock_action_run_func)

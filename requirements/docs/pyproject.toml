@@ -5,3 +5,4 @@ package-mode = false
 python = ">=3.8"
 sphinx = "*"
 furo = "*"
+sphinx-design = "*"
