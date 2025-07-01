@@ -35,7 +35,7 @@ license = "Apache-2.0"
 whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.9"
 globus-sdk=">=3.9,<4"
 jsonschema = ">=4.17,<5"
 pyyaml = ">=6,<7"
