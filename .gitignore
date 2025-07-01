@@ -109,4 +109,4 @@ venv.bak/
 .idea/
 
 # Poetry
-/poetry.lock
+poetry.lock
