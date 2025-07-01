@@ -1,9 +1,7 @@
-from typing import Dict
-
 from globus_action_provider_tools import ActionStatus
 from globus_action_provider_tools.storage import AbstractActionRepository
 
-simple_backend: Dict[str, ActionStatus] = {}
+simple_backend: dict[str, ActionStatus] = {}
 
 
 class ActionRepo(AbstractActionRepository):

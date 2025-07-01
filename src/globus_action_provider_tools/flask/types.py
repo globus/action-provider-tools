@@ -1,4 +1,5 @@
-from typing import Callable, Dict, Sequence, Set, Tuple, Union
+from collections.abc import Sequence
+from typing import Callable, Union
 
 from flask import Response
 
@@ -9,7 +10,7 @@ from globus_action_provider_tools.data_types import (
     ActionStatus,
 )
 
-ActionCallbackReturn = Union[ActionStatus, Tuple[ActionStatus, int]]
+ActionCallbackReturn = Union[ActionStatus, tuple[ActionStatus, int]]
 ActionOperationCallback = Union[
     Callable[[str, AuthState], ActionCallbackReturn],
     Callable[[ActionStatus, AuthState], ActionCallbackReturn],
@@ -22,7 +23,7 @@ ActionCancelCallback = ActionOperationCallback
 ActionReleaseCallback = ActionOperationCallback
 ActionLogCallback = Callable[[str, AuthState], ActionLogReturn]
 ActionEnumerationCallback = Callable[
-    [AuthState, Dict[str, Set]], Sequence[ActionStatus]
+    [AuthState, dict[str, set]], Sequence[ActionStatus]
 ]
 
-ViewReturn = Union[Tuple[Response, int], Tuple[str, int]]
+ViewReturn = Union[tuple[Response, int], tuple[str, int]]
