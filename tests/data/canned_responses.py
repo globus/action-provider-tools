@@ -1,6 +1,6 @@
 import json
 from time import time
-from typing import Callable, List
+from typing import Callable
 from unittest.mock import Mock
 
 from globus_sdk import (
@@ -24,7 +24,7 @@ def resp(data, status_code=200):
     return resp
 
 
-def groups_response() -> Callable[[], List]:
+def groups_response() -> Callable[[], list]:
     return Mock(
         return_value=[
             {"id": "a34c9958-6bd2-11e3-b3ad-12313809f035"},
