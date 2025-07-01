@@ -1,0 +1,4 @@
+Python support
+--------------
+
+*   Remove support for Python 3.8
