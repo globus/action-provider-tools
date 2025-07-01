@@ -4,7 +4,7 @@ import functools
 import hashlib
 import logging
 import warnings
-from typing import Iterable
+from collections.abc import Iterable
 
 import globus_sdk
 from globus_sdk import (

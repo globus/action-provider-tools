@@ -4,7 +4,7 @@ import inspect
 import json
 import sys
 import uuid
-from typing import AbstractSet, Any, Dict, List, Optional, Set, Type, Union
+from typing import AbstractSet, Any, Optional, Union
 
 import isodate
 from pydantic import BaseModel, Field, StrictStr
@@ -51,24 +51,24 @@ class ActionProviderDescription(BaseModel):
     title: str
     admin_contact: str
     synchronous: bool
-    input_schema: Union[str, Dict[str, Any], Type[BaseModel]]
-    types: List[ProviderType] = Field(default_factory=lambda: [ProviderType.Action])
+    input_schema: Union[str, dict[str, Any], type[BaseModel]]
+    types: list[ProviderType] = Field(default_factory=lambda: [ProviderType.Action])
     api_version: str = "1.0"
     subtitle: Optional[str] = None
     description: Optional[str] = None
-    keywords: Optional[List[str]] = None
-    visible_to: List[str] = Field(default_factory=lambda: ["public"])
+    keywords: Optional[list[str]] = None
+    visible_to: list[str] = Field(default_factory=lambda: ["public"])
     maximum_deadline: str = "P30D"  # Default value of 30 days
     log_supported: Optional[bool] = False
-    runnable_by: List[str] = Field(default_factory=lambda: ["all_authenticated_users"])
-    administered_by: Optional[List[str]] = None
-    event_types: Optional[List[EventType]] = None
+    runnable_by: list[str] = Field(default_factory=lambda: ["all_authenticated_users"])
+    administered_by: Optional[list[str]] = None
+    event_types: Optional[list[EventType]] = None
 
 
 class RequestObject(BaseModel):
     """Use pydantic to enforce that the request object is a Python dictionary."""
 
-    __root__: Dict[StrictStr, Any]
+    __root__: dict[StrictStr, Any]
 
 
 class ActionRequest(BaseModel):
@@ -82,7 +82,7 @@ class ActionRequest(BaseModel):
             "to attempt to guarantee execution of an action"
         ),
     )
-    body: Dict[str, Any] = Field(
+    body: dict[str, Any] = Field(
         ...,
         description=(
             "The Action Provider-specific content describing the action "
@@ -116,7 +116,7 @@ class ActionRequest(BaseModel):
             "30 days."
         ),
     )
-    monitor_by: Set[str] = Field(
+    monitor_by: set[str] = Field(
         default_factory=set,
         description=(
             "A list of principal URNs containing identities which are allowed "
@@ -126,7 +126,7 @@ class ActionRequest(BaseModel):
         ),
         regex=principal_urn_regex,
     )
-    manage_by: Set[str] = Field(
+    manage_by: set[str] = Field(
         default_factory=set,
         description=(
             "A list of principal URNs containing identities which are allowed to "
@@ -136,7 +136,7 @@ class ActionRequest(BaseModel):
         ),
         regex=principal_urn_regex,
     )
-    allowed_clients: List[str] = Field(
+    allowed_clients: list[str] = Field(
         default_factory=list, regex="^(public|globus|creator|.$)$"
     )
 
@@ -180,11 +180,11 @@ class PaginationWrapper(BaseModel):
 
 
 class ActionLogEntry(ExtensibleCodeDescription):
-    details: Optional[Dict[str, Any]] = Field(None, description="")
+    details: Optional[dict[str, Any]] = Field(None, description="")
 
 
 class ActionLogReturn(PaginationWrapper):
-    entries: List[ActionLogEntry]
+    entries: list[ActionLogEntry]
 
 
 class ActionInactiveDetails(ExtensibleCodeDescription):
@@ -215,7 +215,7 @@ class ActionStatus(BaseModel):
         min_length=1,
         max_length=64,
     )
-    monitor_by: Optional[Set[str]] = Field(
+    monitor_by: Optional[set[str]] = Field(
         default_factory=set,
         description=(
             "A list of principal URNs containing identities which are allowed to "
@@ -224,7 +224,7 @@ class ActionStatus(BaseModel):
         ),
         regex=principal_urn_regex,
     )
-    manage_by: Optional[Set[str]] = Field(
+    manage_by: Optional[set[str]] = Field(
         default_factory=set,
         description=(
             "A list of principal URNs containing identities which are allowed "
@@ -262,7 +262,7 @@ class ActionStatus(BaseModel):
         min_length=1,
         max_length=64,
     )
-    details: Union[ExtensibleCodeDescription, Dict[str, Any], str] = Field(
+    details: Union[ExtensibleCodeDescription, dict[str, Any], str] = Field(
         ...,
         description=(
             "A provider-specific object representing the full state of the "

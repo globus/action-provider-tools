@@ -32,15 +32,14 @@ jobs:
           - name: "Linux"
             runner: "ubuntu-latest"
             cpythons:
-              - "3.8"
               - "3.9"
               - "3.10"
               - "3.11"
               - "3.12"
             tox-environments-from-pythons: true
             tox-post-environments:
-              - "py3.8-minimum_flask"
-              - "py3.8-flask"
+              - "py3.9-minimum_flask"
+              - "py3.9-flask"
               - "py3.12-minimum_flask"
               - "py3.12-flask"
 

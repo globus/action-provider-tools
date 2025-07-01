@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import Dict, List, Set
 
 from flask import request
 from pydantic import BaseModel, Field
@@ -20,7 +19,7 @@ from globus_action_provider_tools.data_types import (
 from globus_action_provider_tools.flask.exceptions import ActionConflict, ActionNotFound
 from globus_action_provider_tools.flask.types import ActionCallbackReturn
 
-simple_backend: Dict[str, ActionStatus] = {}
+simple_backend: dict[str, ActionStatus] = {}
 
 action_provider_json_input_schema = {
     "$id": "whattimeisitnow.provider.input.schema.json",
@@ -61,8 +60,8 @@ ap_description = ActionProviderDescription(
 
 
 def mock_action_enumeration_func(
-    auth: AuthState, params: Dict[str, Set]
-) -> List[ActionStatus]:
+    auth: AuthState, params: dict[str, set]
+) -> list[ActionStatus]:
     statuses = params["statuses"]
     roles = params["roles"]
     matches = []

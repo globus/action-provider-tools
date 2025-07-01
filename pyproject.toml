@@ -1,17 +1,9 @@
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-
-# poetry
-# ------
-
-[tool.poetry]
+[project]
 name = "globus-action-provider-tools"
 version = "0.21.0"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
-    "Globus Team <support@globus.org>",
+    { name = "Globus Team", email = "support@globus.org" },
 ]
 keywords = [
   "globus",
@@ -22,30 +14,37 @@ keywords = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
-  "License :: Free To Use But Restricted",
   "Topic :: Internet :: WWW/HTTP",
   "Topic :: Software Development :: Libraries :: Application Frameworks",
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
-
 readme = "README.rst"
+requires-python = ">=3.9"
 license = "Apache-2.0"
+dependencies = [
+    "globus-sdk (>=3.9, <4)",
+    "jsonschema (>=4.17, <5)",
+    "pyyaml (>=6, <7)",
+    "pydantic (>=1.7.3, <2)",
+    "isodate (>=0.6, <0.7)",
+    "cachetools (>=5.0, <6)",
+]
 
-[tool.poetry.scripts]
+[project.urls]
+Source = "https://github.com/globus/action-provider-tools"
+Documentation = "https://action-provider-tools.readthedocs.io/en/latest/"
+
+[project.scripts]
 whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
-[tool.poetry.dependencies]
-python = ">=3.8"
-globus-sdk=">=3.9,<4"
-jsonschema = ">=4.17,<5"
-pyyaml = ">=6,<7"
-pydantic = ">=1.7.3,<2"
-isodate = ">=0.6,<0.7"
-cachetools = ">=5.0,<6"
-flask = {version = ">=2.3,<3", optional = true}
+[project.optional-dependencies]
+flask = [
+    "flask (>=2.3, <3)",
+]
 
-[tool.poetry.extras]
-flask = ["flask"]
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 
 # coverage
@@ -124,5 +123,5 @@ categories = [
     "Documentation",
     "Development",
 ]
-version = "literal: pyproject.toml: tool.poetry.version"
+version = "literal: pyproject.toml: project.version"
 new_fragment_template = "file: fragment-template.rst.txt"
