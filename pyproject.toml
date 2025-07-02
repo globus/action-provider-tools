@@ -104,6 +104,7 @@ filterwarnings = [
 
     # Minimum Flask versions use a werkzeug version that triggers AST warnings.
     "ignore:.+? is deprecated and will be removed:DeprecationWarning:werkzeug|ast",
+    "ignore:Constant\\.__init__ missing 1 required positional argument:DeprecationWarning:ast",
 ]
 
 

@@ -36,23 +36,24 @@ jobs:
               - "3.10"
               - "3.11"
               - "3.12"
+              - "3.13"
             tox-environments-from-pythons: true
             tox-post-environments:
               - "py3.9-minimum_flask"
               - "py3.9-flask"
-              - "py3.12-minimum_flask"
-              - "py3.12-flask"
+              - "py3.13-minimum_flask"
+              - "py3.13-flask"
 
           - name: "macOS"
             runner: "macos-latest"
             cpythons:
-              - "3.12"
+              - "3.13"
             tox-environments-from-pythons: true
 
           - name: "Windows"
             runner: "windows-latest"
             cpythons:
-              - "3.12"
+              - "3.13"
             tox-environments-from-pythons: true
 
           - name: "Quality"
