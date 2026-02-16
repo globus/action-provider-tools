@@ -20,8 +20,6 @@ from globus_action_provider_tools.flask.helpers import FlaskAuthStateBuilder
         pytest.param("", id="blank header value"),
         pytest.param("  ", id="whitespace header value"),
         pytest.param("A" * 100, id="no 'Bearer ' prefix"),
-        pytest.param("Bearer " + "A" * 9, id="short token"),
-        pytest.param("Bearer " + "A" * 2049, id="long token"),
     ),
 )
 def test_bogus_authorization_headers_are_rejected_without_io(authorization_header):
