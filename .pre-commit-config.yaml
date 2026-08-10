@@ -23,12 +23,12 @@ repos:
     hooks:
       - id: alphabetize-codeowners
 
-  # Enforce Python 3.9+ idioms.
+  # Enforce Python 3.10+ idioms.
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.21.2
     hooks:
       - id: pyupgrade
-        args: [--py39-plus]
+        args: [--py310-plus]
 
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 26.5.1

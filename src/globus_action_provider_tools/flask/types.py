@@ -1,5 +1,5 @@
-from collections.abc import Sequence
-from typing import Callable, Union
+from collections.abc import Callable, Sequence
+from typing import Union
 
 from flask import Response
 

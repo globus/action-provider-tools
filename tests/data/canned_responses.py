@@ -1,6 +1,6 @@
 import json
+from collections.abc import Callable
 from time import time
-from typing import Callable
 from unittest.mock import Mock
 
 from globus_sdk import (
