@@ -4,7 +4,7 @@ import inspect
 import json
 import sys
 import uuid
-from typing import AbstractSet, Any, Optional, Union
+from typing import AbstractSet, Any
 
 import isodate
 from pydantic import BaseModel, Field, StrictStr
@@ -51,18 +51,18 @@ class ActionProviderDescription(BaseModel):
     title: str
     admin_contact: str
     synchronous: bool
-    input_schema: Union[str, dict[str, Any], type[BaseModel]]
+    input_schema: str | dict[str, Any] | type[BaseModel]
     types: list[ProviderType] = Field(default_factory=lambda: [ProviderType.Action])
     api_version: str = "1.0"
-    subtitle: Optional[str] = None
-    description: Optional[str] = None
-    keywords: Optional[list[str]] = None
+    subtitle: str | None = None
+    description: str | None = None
+    keywords: list[str] | None = None
     visible_to: list[str] = Field(default_factory=lambda: ["public"])
     maximum_deadline: str = "P30D"  # Default value of 30 days
-    log_supported: Optional[bool] = False
+    log_supported: bool | None = False
     runnable_by: list[str] = Field(default_factory=lambda: ["all_authenticated_users"])
-    administered_by: Optional[list[str]] = None
-    event_types: Optional[list[EventType]] = None
+    administered_by: list[str] | None = None
+    event_types: list[EventType] | None = None
 
 
 class RequestObject(BaseModel):
@@ -90,13 +90,13 @@ class ActionRequest(BaseModel):
             "input_schema field of the Action Provider Description"
         ),
     )
-    label: Optional[str] = Field(
+    label: str | None = Field(
         None,
         description="A short human presentable description of the Action requested",
         min_length=1,
         max_length=64,
     )
-    deadline: Optional[datetime.datetime] = Field(
+    deadline: datetime.datetime | None = Field(
         None,
         description=(
             "A timestamp indicating by which time the action must complete. "
@@ -106,7 +106,7 @@ class ActionRequest(BaseModel):
             "Provider Description."
         ),
     )
-    release_after: Optional[datetime.timedelta] = Field(
+    release_after: datetime.timedelta | None = Field(
         None,
         description=(
             "An ISO8601 time duration value indicating how long retention of the "
@@ -176,11 +176,11 @@ class ActionFailedDetails(ExtensibleCodeDescription):
 class PaginationWrapper(BaseModel):
     limit: int
     has_next_page: bool
-    marker: Optional[str]
+    marker: str | None
 
 
 class ActionLogEntry(ExtensibleCodeDescription):
-    details: Optional[dict[str, Any]] = Field(None, description="")
+    details: dict[str, Any] | None = Field(None, description="")
 
 
 class ActionLogReturn(PaginationWrapper):
@@ -188,8 +188,8 @@ class ActionLogReturn(PaginationWrapper):
 
 
 class ActionInactiveDetails(ExtensibleCodeDescription):
-    required_scope: Optional[str] = Field(None, description="")
-    resolution_url: Optional[str] = Field(None, description="")
+    required_scope: str | None = Field(None, description="")
+    resolution_url: str | None = Field(None, description="")
 
 
 class ActionStatus(BaseModel):
@@ -209,13 +209,13 @@ class ActionStatus(BaseModel):
         description="The ID of the Action itself",
     )
     start_time: str = Field(default_factory=now_isoformat)
-    label: Optional[str] = Field(
+    label: str | None = Field(
         None,
         description="A short human presentable description of the Action requested",
         min_length=1,
         max_length=64,
     )
-    monitor_by: Optional[set[str]] = Field(
+    monitor_by: set[str] | None = Field(
         default_factory=set,
         description=(
             "A list of principal URNs containing identities which are allowed to "
@@ -224,7 +224,7 @@ class ActionStatus(BaseModel):
         ),
         regex=principal_urn_regex,
     )
-    manage_by: Optional[set[str]] = Field(
+    manage_by: set[str] | None = Field(
         default_factory=set,
         description=(
             "A list of principal URNs containing identities which are allowed "
@@ -234,21 +234,21 @@ class ActionStatus(BaseModel):
         ),
         regex=principal_urn_regex,
     )
-    completion_time: Optional[datetime.datetime] = Field(
+    completion_time: datetime.datetime | None = Field(
         None,
         description=(
             "The time in ISO8601 format when the Action reached a terminal "
             "(SUCCEEDED or FAILED) status"
         ),
     )
-    release_after: Optional[datetime.timedelta] = Field(
+    release_after: datetime.timedelta | None = Field(
         None,
         description=(
             "An ISO8601 time duration value indicating how long retention of "
             "the status of the action be retained after it reaches a completed state."
         ),
     )
-    display_status: Optional[str] = Field(
+    display_status: str | None = Field(
         None,
         description=(
             "A short, human consumable string describing the current status of "
@@ -262,7 +262,7 @@ class ActionStatus(BaseModel):
         min_length=1,
         max_length=64,
     )
-    details: Union[ExtensibleCodeDescription, dict[str, Any], str] = Field(
+    details: ExtensibleCodeDescription | dict[str, Any] | str = Field(
         ...,
         description=(
             "A provider-specific object representing the full state of the "
@@ -288,7 +288,7 @@ def convert_to_json(o: Any) -> Any:
     elif isinstance(o, BaseModel):
         return o.dict()
     elif inspect.isclass(o) and issubclass(o, BaseModel):
-        return o.schema()
+        return o.schema()  # type: ignore[attr-defined]
     elif isinstance(o, datetime.datetime):
         return o.isoformat()
     elif isinstance(o, datetime.timedelta):

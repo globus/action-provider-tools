@@ -19,7 +19,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 dependencies = [
     "globus-sdk (>=3.9, <4)",

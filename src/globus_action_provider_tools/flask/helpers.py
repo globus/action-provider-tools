@@ -3,10 +3,10 @@ from __future__ import annotations
 import inspect
 import json
 import typing as t
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from enum import Enum
 from functools import partial
-from typing import Any, Callable
+from typing import Any
 
 import flask
 import jsonschema
