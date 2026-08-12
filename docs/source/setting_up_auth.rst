@@ -1,7 +1,7 @@
 .. _globus_auth_setup:
 
 Set Up an Action Provider in Globus Auth
-========================================
+########################################
 
 In the Globus ecosystem, services use
 `Globus Auth <https://docs.globus.org/api/auth/>`_
@@ -15,7 +15,7 @@ Globus Auth scopes. Managing your application's resources via code is a best
 practice and will make your action provider easier to build and maintain.
 
 Prerequisites
--------------
+=============
 
 This guide will use the Globus Python SDK, which requires that you have Python
 installed.
@@ -24,10 +24,10 @@ this `Python installation guide \
 <https://docs.python-guide.org/starting/installation/>`_.
 
 Steps
------
+=====
 
 Step 1: Install the SDK
-'''''''''''''''''''''''
+-----------------------
 
 We recommend using virtualenvs for python applications. Create a virtualenv in
 a development directory:
@@ -69,7 +69,7 @@ Finally, install the SDK:
     pip install globus-sdk
 
 Step 2: Create an Auth Client
-'''''''''''''''''''''''''''''
+-----------------------------
 
 In Globus Auth, applications are represented as **client**\s.
 Your **client** registration will be your way of managing settings for your
@@ -100,7 +100,7 @@ Stay on the resulting application page!
 We will continue from here in the next step.
 
 Step 3: Create and Record a Client Secret and the Client ID
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+-----------------------------------------------------------
 
 Your **action provider** will need credentials to communicate with Globus Auth.
 These will be used to validate credentials sent by users and resolve them to
@@ -148,7 +148,7 @@ web application:
     ``CLIENT_ID``.
 
 Step 4: Verify Your Credentials
-'''''''''''''''''''''''''''''''
+-------------------------------
 
 It's always good to double-check things! In this step, we'll verify that the
 Client ID and Secret were saved correctly.
@@ -185,7 +185,7 @@ As long as there are no errors and you get a JSON response with an
 ``identities`` array, it means the credentials are working.
 
 Step 5: Create the Action Provider Scope
-''''''''''''''''''''''''''''''''''''''''
+----------------------------------------
 
 Globus Auth scopes allow services to control the level of access that
 applications grant one another. For a full explanation, see the
@@ -270,7 +270,7 @@ the full scope string.
             --jq 'scopes[0].id'
 
 Next Steps
-----------
+==========
 
 You now have a Client ID and Secret saved in a script, ``manage-ap.py``, and
 your application is registered in Globus Auth.
