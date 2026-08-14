@@ -22,7 +22,7 @@ readme = "README.rst"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 dependencies = [
-    "globus-sdk (>=3.9, <4)",
+    "globus-sdk (>=4.0.0, <5)",
     "jsonschema (>=4.17, <5)",
     "pyyaml (>=6, <7)",
     "pydantic (>=1.7.3, <2)",

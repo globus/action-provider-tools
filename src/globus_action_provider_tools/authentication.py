@@ -231,7 +231,9 @@ class AuthState:
         self.dependent_tokens_cache[self._dependent_token_cache_key] = resp
         return resp
 
-    def get_authorizer_for_scope(self, scope: str) -> AccessTokenAuthorizer:
+    def get_authorizer_for_scope(
+        self, scope: str | globus_sdk.Scope
+    ) -> AccessTokenAuthorizer:
         """
         Get dependent tokens for the caller's token, then retrieve token data for the
         requested scope and attempt to build an authorizer from that data.
@@ -244,6 +246,7 @@ class AuthState:
         :raises ValueError: If the dependent token data for the caller does not match
             the requested scope.
         """
+        scope = str(scope)
         retrieved_from_cache, dependent_tokens = self._get_cached_dependent_tokens()
 
         # if the dependent token data (which could have been cached) failed to meet

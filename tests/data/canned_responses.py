@@ -3,12 +3,7 @@ from collections.abc import Callable
 from time import time
 from unittest.mock import Mock
 
-from globus_sdk import (
-    BaseClient,
-    GlobusHTTPResponse,
-    GroupsClient,
-    OAuthDependentTokenResponse,
-)
+from globus_sdk import BaseClient, GlobusHTTPResponse
 from requests import Response
 
 
@@ -36,26 +31,6 @@ def groups_response() -> Callable[[], list]:
             {"id": "eae86240-a6d5-11e8-a980-0e5621afa498"},
             {"id": "cdd90ec0-7030-11e9-948c-0ef301d936cc"},
         ]
-    )
-
-
-def dependent_token_response() -> Callable[[], GlobusHTTPResponse]:
-    return Mock(
-        return_value=OAuthDependentTokenResponse(
-            resp(
-                [
-                    {
-                        "access_token": "ACCESS_TOKEN",
-                        "expires_in": 172800,
-                        "resource_server": "nexus.api.globus.org",
-                        "token_type": "Bearer",
-                        "scope": GroupsClient.scopes.view_my_groups_and_memberships,
-                        "refresh_token": "REFRESH_TOKEN",
-                    }
-                ]
-            ),
-            client=MockClient(),
-        )
     )
 
 

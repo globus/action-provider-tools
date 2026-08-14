@@ -7,7 +7,8 @@ from unittest import mock
 import pytest
 import responses
 import yaml
-from globus_sdk._testing import load_response, register_response_set
+from globus_sdk.testing import load_response, register_response_set
+from globus_sdk.transport import RetryConfig
 
 from globus_action_provider_tools.authentication import AuthState
 from globus_action_provider_tools.client_factory import ClientFactory
@@ -21,8 +22,7 @@ except ModuleNotFoundError:
 
 
 class NoRetryClientFactory(ClientFactory):
-    DEFAULT_AUTH_TRANSPORT_PARAMS = (("max_retries", 0),)
-    DEFAULT_GROUPS_TRANSPORT_PARAMS = (("max_retries", 0),)
+    DEFAULT_RETRY_CONFIG = RetryConfig(max_retries=0)
 
 
 _NO_RETRY_FACTORY = NoRetryClientFactory()

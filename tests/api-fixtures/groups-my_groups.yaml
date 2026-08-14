@@ -9,7 +9,7 @@ success:
         "55a27ead-ffd7-4ee7-8aa3-e493b349dcf6"
 
   service: groups
-  path: /groups/my_groups
+  path: /v2/groups/my_groups
   method: GET
   json:
     [
@@ -45,7 +45,7 @@ success:
 
 failure:
   service: groups
-  path: /groups/my_groups
+  path: /v2/groups/my_groups
   method: GET
   json: {"message": "Internal server error."}
   status: 500
