@@ -5,7 +5,7 @@ from unittest import mock
 
 import globus_sdk
 import pytest
-from globus_sdk._testing import RegisteredResponse, get_response_set
+from globus_sdk.testing import RegisteredResponse, get_response_set
 
 from globus_action_provider_tools.authentication import (
     InvalidTokenScopesError,
