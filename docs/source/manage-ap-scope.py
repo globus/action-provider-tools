@@ -10,10 +10,10 @@ import globus_sdk
 CLIENT_ID = "YOUR_ID_HERE"
 CLIENT_SECRET = "YOUR_SECRET_HERE"
 
-# Modify the SCOPE_* variables BEFORE running the `create-scope` command.
-SCOPE_NAME = "Action Provider 'all'"
-SCOPE_DESCRIPTION = "Access to my action provider"
-SCOPE_SUFFIX = "action_all"
+# Modify the SCOPE_* variables BEFORE running the `create` command.
+SCOPE_NAME = "<NAME>"  # Example: "Action Provider 'all'"
+SCOPE_DESCRIPTION = "<DESCRIPTION>"  # Example: "Allow my AP to do X-Y-Z"
+SCOPE_SUFFIX = "<your_scope_suffix_here>"  # Example: "action_all"
 SCOPE_DEPENDENCIES = [
     # Most action providers must be able to look up a caller's groups
     # for authorization purposes, so by default this script
@@ -26,39 +26,39 @@ SCOPE_DEPENDENCIES = [
     ),
 ]
 
-# Fill in the scope ID variable AFTER running the `create-scope` command.
+# Fill in the scope ID variable AFTER running the `create` command.
 AP_SCOPE_ID = "YOUR_SCOPE_ID_HERE"
 
 # ------------------------------------------------------------------------
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser("manage-ap")
+    parser = argparse.ArgumentParser("manage-ap-scope")
     parser.add_argument(
         "action",
-        choices=("show-self", "create-scope", "show-scope", "update-scope"),
+        choices=("show-client", "create", "show", "update"),
     )
     args = parser.parse_args()
 
-    if args.action == "show-self":
-        show_self()
-    elif args.action == "create-scope":
-        create_scope()
-    elif args.action == "show-scope":
-        show_scope()
-    elif args.action == "update-scope":
-        update_scope()
+    if args.action == "show-client":
+        show_client()
+    elif args.action == "create":
+        create()
+    elif args.action == "show":
+        show()
+    elif args.action == "update":
+        update()
     else:
         print(f"The action '{args.action}' is not recognized.", file=sys.stderr)
         raise SystemExit(1)
 
 
-def show_self() -> None:
+def show_client() -> None:
     client = _get_client()
     print(client.get_identities(ids=CLIENT_ID))
 
 
-def create_scope() -> None:
+def create() -> None:
     client = _get_client()
     print(
         client.create_scope(
@@ -72,17 +72,17 @@ def create_scope() -> None:
     )
 
 
-def show_scope() -> None:
+def show() -> None:
     client = _get_client()
     try:
         print(client.get_scope(AP_SCOPE_ID))
     except globus_sdk.AuthAPIError:
         print("The scope doesn't appear to exist.")
-        print("(Have you run the 'create-scope' command?)")
+        print("(Have you run the 'create' command?)")
         raise SystemExit(1)
 
 
-def update_scope() -> None:
+def update() -> None:
     client = _get_client()
     try:
         print(
@@ -97,13 +97,13 @@ def update_scope() -> None:
         )
     except globus_sdk.AuthAPIError:
         print("The scope doesn't appear to exist.")
-        print("(Have you run the 'create-scope' command?)")
+        print("(Have you run the 'create' command?)")
         raise SystemExit(1)
 
 
 def _get_client() -> globus_sdk.AuthClient:
     app = globus_sdk.ClientApp(
-        "manage-ap", client_id=CLIENT_ID, client_secret=CLIENT_SECRET
+        "manage-ap-scope", client_id=CLIENT_ID, client_secret=CLIENT_SECRET
     )
 
     client = globus_sdk.AuthClient(app=app)

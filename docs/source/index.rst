@@ -21,7 +21,7 @@ Table of Contents
 -----------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    action_provider_interface
    setting_up_auth

@@ -11,30 +11,14 @@ needs to be configured as a service in Globus Auth.
 This guide doc will walk you through the setup process.
 
 As part of this process, you'll use a small Python script
-to help manage your action provider's Globus Auth scopes.
+to help manage your action provider's Globus Auth scope.
 
 
 Prerequisites
 =============
 
-This guide will use the Globus Python SDK,
-which requires that you have a supported version of Python 3 installed.
-
-In addition, you'll need to download :download:`manage-ap.py`,
-the source of which is displayed below for reference.
-This is a template script; you'll need to fill in several variables in the file
-as you complete steps in this guide.
-
-..  literalinclude:: manage-ap.py
-    :caption: ``manage-ap.py`` [:download:`download <manage-ap.py>`]
-    :language: python
-
-
-Steps
-=====
-
-Step 1: Install the SDK
------------------------
+Step 0: Install the Globus SDK
+------------------------------
 
 We recommend using virtualenvs for Python applications.
 Use these commands to create and activate a virtualenv in a development directory:
@@ -62,15 +46,27 @@ Finally, install the SDK:
     pip install globus-sdk
 
 
+Steps
+=====
+
+Step 1: Download ``manage-ap-scope.py``
+---------------------------------------
+
+To assist with scope creation and management, download :download:`manage-ap-scope.py`.
+
+This is a template script; you'll need to fill in several variables in the file
+as you complete steps in this guide.
+
+
 Step 2: Create an Auth Client
 -----------------------------
 
-In Globus Auth, applications are represented as **client**\s.
+In Globus Auth, applications are represented as **clients**.
 Your **client** registration will be your way of managing settings for your
 **action provider**.
 
 When you create your **client**, you will also be prompted to create or use a **project**.
-A **project** is a grouping of **client**\s which lets you assign administrators.
+A **project** is a grouping of **clients** which lets you assign administrators.
 
 #.  Go to `the Globus Web App Developers page`_.
 #.  Click "Advanced registration".
@@ -106,10 +102,10 @@ From the application page, you will create and save a new **client secret**.
 
 ..  note::
 
-    In this guide, we will store the Client UUID and Secret in the ``manage-ap.py`` script.
+    In this guide, we will store the Client UUID and Secret in the ``manage-ap-scope.py`` script.
     You can store this data in another way at your discretion.
 
-#.  Copy the Client UUID and save it in ``manage-ap.py``
+#.  Copy the Client UUID and save it in ``manage-ap-scope.py``
     in the variable named ``CLIENT_ID``.
     For example:
 
@@ -119,7 +115,7 @@ From the application page, you will create and save a new **client secret**.
 
 #.  Click "Add Client Secret".
 #.  Type a name for the Client Secret and click "Generate Secret".
-#.  Save the secret in ``manage-ap.py`` in the variable ``CLIENT_SECRET``.
+#.  Save the secret in ``manage-ap-scope.py`` in the variable ``CLIENT_SECRET``.
     For example:
 
     ..  code-block:: python
@@ -136,10 +132,10 @@ From the application page, you will create and save a new **client secret**.
 Step 4: Verify Your Credentials
 -------------------------------
 
-In this step, we'll run ``manage-ap.py``
+In this step, we'll run ``manage-ap-scope.py``
 to verify that the Client ID and Secret were saved correctly.
 
-Run ``python manage-ap.py show-self``.
+Run ``python manage-ap-scope.py show-client``.
 Your output should look similar to the following:
 
 ..  code-block:: json
@@ -176,12 +172,12 @@ To function properly, an **action provider** must define exactly one scope.
 Additional scopes can be defined as needed,
 but there is only one per **action provider**.
 
-#.  Modify the ``SCOPE_*`` variables in ``manage-ap.py``, if desired.
-#.  Run the ``manage-ap.py`` script, using the ``create-scope`` subcommand:
+#.  Modify the ``SCOPE_*`` variables in ``manage-ap-scope.py``.
+#.  Run the ``manage-ap-scope.py`` script, using the ``create-scope`` subcommand:
 
 ..  code-block:: bash
 
-    python manage-ap.py create-scope
+    python manage-ap-scope.py create
 
 You should see output similar to the following:
 
@@ -211,7 +207,7 @@ You should see output similar to the following:
 
 Congratulations, you have a scope for your **action provider**!
 
-Copy the full scope's ``id`` to the ``manage-ap.py`` script.
+Copy the full scope's ``id`` to the ``manage-ap-scope.py`` script.
 For example:
 
 ..  code-block:: python
@@ -231,7 +227,7 @@ the full scope string.
     which may potentially be owned by other applications.
 
     **Action Providers** almost always need to view a user's groups and memberships.
-    This scope is built into the ``manage-ap.py`` script.
+    This scope is built into the ``manage-ap-scope.py`` script.
     You can confirm the Globus Groups "View My Groups and Memberships" scope ID
     using the Globus CLI:
 
@@ -242,16 +238,16 @@ the full scope string.
             --jq 'scopes[0].id'
 
 Step 6: Verify the scope
-========================
+------------------------
 
-After creating the scope and saving its ID in ``manage-ap.py``,
+After creating the scope and saving its ID in ``manage-ap-scope.py``,
 run one more verification step:
 
 ..  code-block:: shell
 
-    python manage-ap.py show-scope
+    python manage-ap-scope.py show
 
-You should see JSON output identical to the output of the ``create-scope`` subcommand.
+You should see JSON output identical to the output of the ``create`` subcommand.
 
 
 Conclusion
@@ -269,8 +265,8 @@ Next Steps
 ==========
 
 If you want to update the details of your scope,
-you can modify the ``SCOPE_*`` variables in ``manage-ap.py``
-and then run ``python manage-ap.py update-scope``.
+you can modify the ``SCOPE_*`` variables in ``manage-ap-scope.py``
+and then run ``python manage-ap-scope.py update``.
 
 For information on installing Action Provider Tools,
 see the :doc:`installation docs <installation>`.
