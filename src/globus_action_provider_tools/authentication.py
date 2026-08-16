@@ -261,7 +261,12 @@ class AuthState:
 
             # otherwise, the cached value was bad -- fetch and check again,
             # by clearing the cache and asking for the same data
-            del self.dependent_tokens_cache[self._dependent_token_cache_key]
+            try:
+                # To avoid a TOCTOU race condition, blindly delete the cached data
+                # and catch the potential `KeyError`.
+                del self.dependent_tokens_cache[self._dependent_token_cache_key]
+            except KeyError:
+                pass
             _, dependent_tokens = self._get_cached_dependent_tokens()
 
             # check scope again -- this is guaranteed to be fresh data
@@ -279,11 +284,21 @@ class AuthState:
         Return the data paired with a bool indicating whether or not the value was
         cached or a fresh callout.
         """
-        if self._dependent_token_cache_key in self.dependent_tokens_cache:
-            return (True, self.dependent_tokens_cache[self._dependent_token_cache_key])
+
+        try:
+            # To avoid a TOCTOU race condition, blindly access the cached data
+            # and catch the potential `KeyError`.
+            token_response = self.dependent_tokens_cache[
+                self._dependent_token_cache_key
+            ]
+        except KeyError:
+            pass
+        else:
+            return True, token_response
+
         token_response = self.auth_client.oauth2_get_dependent_tokens(self.bearer_token)
         self.dependent_tokens_cache[self._dependent_token_cache_key] = token_response
-        return (False, token_response)
+        return False, token_response
 
     @functools.cached_property
     def _groups_client(self) -> globus_sdk.GroupsClient:
