@@ -190,6 +190,83 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
     assert "bar_scope" in cache_value.by_scopes
 
 
+@pytest.mark.parametrize("evict_at_interaction", range(4))
+def test_get_cached_dependent_tokens_survives_concurrent_eviction(
+    auth_state, racy_evicting_cache, evict_at_interaction
+):
+    """
+    Verify no exceptions are raised due to race conditions in cache interactions.
+
+    Previously, the cache interaction code contained a TOCTOU race condition
+    (`if key in cache: return cache[key]`) which could raise `KeyError`
+    if the cache expired or a competing thread evicted the cache
+    after the `key in cache` condition but before the `cache[key]` lookup.
+
+    This is a regression test that confirms no exception is raised.
+
+    Note that `evict_at_interaction` may need to be increased
+    if the number of cache interactions increases in the future.
+    """
+
+    key = auth_state._dependent_token_cache_key
+    auth_state.dependent_tokens_cache[key] = mock.Mock()
+    racy_evicting_cache(
+        "dependent_tokens_cache",
+        key,
+        evict_at_interaction=evict_at_interaction,
+    )
+
+    # Nothing is asserted here; it is sufficient that no exceptions were raised.
+    auth_state._get_cached_dependent_tokens()
+
+
+@pytest.mark.parametrize("evict_at_interaction", range(4))
+def test_get_authorizer_for_scope_survives_concurrent_del(
+    auth_state, racy_evicting_cache, evict_at_interaction
+):
+    """
+    Verify that competing threads that both see a miss for the requested scope
+    can both attempt to delete the same cached dependent token data without crashing.
+
+    Previously, the cache interaction code did not guard `del cache[key]`,
+    and this test exists to help prevent a regression.
+
+    Note that `evict_at_interaction` may need to be increased
+    if the number of cache interactions increases in the future.
+    """
+
+    key = auth_state._dependent_token_cache_key
+    mock_response = mock.Mock()
+    mock_response.by_scopes = {}  # The requested scope will never be found here
+    auth_state.dependent_tokens_cache[key] = mock_response
+
+    # Register a response for the scope we'll request
+    # so the forced re-fetch can succeed.
+    RegisteredResponse(
+        service="auth",
+        path="/v2/oauth2/token",
+        method="POST",
+        json=[
+            {
+                "resource_server": "bar",
+                "scope": "bar_scope",
+                "expires_at_seconds": time.time() + 100,
+                "access_token": "bar_AT",
+            }
+        ],
+    ).replace()
+
+    racy_evicting_cache(
+        "dependent_tokens_cache",
+        key,
+        evict_at_interaction=evict_at_interaction,
+    )
+
+    authorizer = auth_state.get_authorizer_for_scope("bar_scope")
+
+    assert isinstance(authorizer, globus_sdk.AccessTokenAuthorizer)
+
+
 def test_invalid_scopes_error(get_auth_state_instance, introspect_success_response):
     with pytest.raises(InvalidTokenScopesError) as excinfo:
         get_auth_state_instance(["bad-scope"])

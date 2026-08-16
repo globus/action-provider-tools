@@ -89,6 +89,91 @@ def _clear_auth_state_cache():
     AuthState.introspect_cache.clear()
 
 
+class _RacyCacheProxy:
+    """
+    Wraps a TypedTTLCache so that every operation on it first runs
+    `before_call`, simulating a concurrent thread's cache mutation
+    happening in the gap between this call and whatever the caller
+    does next.
+    """
+
+    def __init__(self, cache, before_call) -> None:
+        self._cache = cache
+        self._before_call = before_call
+
+    def get(self, key):
+        self._before_call(key)
+        return self._cache.get(key)
+
+    def __contains__(self, key):
+        self._before_call(key)
+        return key in self._cache
+
+    def __getitem__(self, key):
+        self._before_call(key)
+        return self._cache[key]
+
+    def __setitem__(self, key, value):
+        self._before_call(key)
+        self._cache[key] = value
+
+    def __delitem__(self, key):
+        self._before_call(key)
+        del self._cache[key]
+
+    def clear(self):
+        self._cache.clear()
+
+
+@pytest.fixture
+def racy_evicting_cache(monkeypatch):
+    """
+    Simulate cache eviction race conditions.
+
+    Code that interacts with a cache via separate check-then-use operations
+    (for example, `if key in cache: token_data = cache[key]`) is vulnerable to
+    a race condition known as "time-of-check to time-of-use" (TOCTOU): another
+    thread can evict the entry in the gap between the check and the use.
+
+    This fixture helps tests simulate a single concurrent thread winning
+    that race exactly once.
+
+    Usage:
+
+        install(cache_attribute_name, key, evict_at_interaction=2)
+
+    patches AuthState.<cache_attribute_name> so that, immediately before the
+    `evict_at_interaction`-th operation performed against `key`, the entry
+    is deleted once. Every other operation against `key` -- before or
+    after -- is left alone and observes the real cache state.
+
+    `evict_at_interaction` has no single correct value: it depends on how
+    many legitimate cache operations the code under test performs against
+    `key` before the operation you want to race, and callers must pass it
+    explicitly. Tests should parametrize over a small range of values
+    rather than hardcoding one, so the race is exercised regardless of
+    exactly which call it lands on.
+    """
+
+    def install(cache_attribute_name, key, *, evict_at_interaction):
+        real_cache = getattr(AuthState, cache_attribute_name)
+        call_count = 0
+
+        def before_call(k):
+            nonlocal call_count
+            if k != key:
+                return
+            call_count += 1
+            if call_count == evict_at_interaction:
+                real_cache._cache.pop(key, None)
+
+        monkeypatch.setattr(
+            AuthState, cache_attribute_name, _RacyCacheProxy(real_cache, before_call)
+        )
+
+    return install
+
+
 @pytest.fixture
 def auth_state(
     mocked_responses,
