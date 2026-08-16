@@ -3,7 +3,6 @@ from __future__ import annotations
 import functools
 import hashlib
 import logging
-import warnings
 from collections.abc import Iterable
 
 import globus_sdk
@@ -197,39 +196,6 @@ class AuthState:
             group_set = frozenset(group_principal(g["id"]) for g in group_data)
             self.group_membership_cache[self._token_hash] = group_set
         return group_set
-
-    def get_dependent_tokens(
-        self, *, bypass_cache_lookup: bool = False
-    ) -> globus_sdk.OAuthDependentTokenResponse:
-        """
-        Returns OAuthTokenResponse representing the dependent tokens associated
-        with a particular access token.
-        """
-        # this mehtod is no longer used by `get_authorizer_for_scope()`, which now uses logic which cannot
-        # be satisfied by the contract provided by this method
-        warnings.warn(
-            "`get_dependent_tokens` is deprecated and will be removed in a future version.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if not bypass_cache_lookup:
-            resp = self.dependent_tokens_cache.get(self._dependent_token_cache_key)
-            if resp is not None:
-                log.info(
-                    f"Using cached dependent token response (key={self._dependent_token_cache_key})"
-                )
-                return resp
-
-        log.info(f"Doing a dependent token grant for token ***{self.sanitized_token}")
-        resp = self.auth_client.oauth2_get_dependent_tokens(
-            self.bearer_token, additional_params={"access_type": "offline"}
-        )
-        log.info(
-            f"Caching dependent token response for token ***{self.sanitized_token}"
-        )
-        self.dependent_tokens_cache[self._dependent_token_cache_key] = resp
-        return resp
 
     def get_authorizer_for_scope(
         self, scope: str | globus_sdk.Scope
