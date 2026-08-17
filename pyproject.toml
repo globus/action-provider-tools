@@ -98,7 +98,10 @@ no_implicit_optional = true
 # pytest
 # ------
 
-[tool.pytest.ini_options]
+[tool.pytest]
+addopts = [
+    "--color=yes",
+]
 filterwarnings = [
     "error",
 
@@ -106,6 +109,7 @@ filterwarnings = [
     "ignore:.+? is deprecated and will be removed:DeprecationWarning:werkzeug|ast",
     "ignore:Constant\\.__init__ missing 1 required positional argument:DeprecationWarning:ast",
 ]
+strict = true
 
 
 # scriv
