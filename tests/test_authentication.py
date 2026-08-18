@@ -192,7 +192,7 @@ def test_dependent_token_callout_success_fixes_bad_cache(auth_state):
 
 @pytest.mark.parametrize("evict_at_interaction", range(4))
 def test_get_cached_dependent_tokens_survives_concurrent_eviction(
-    auth_state, racy_evicting_cache, evict_at_interaction
+    auth_state, evicting_dependent_tokens_cache, evict_at_interaction
 ):
     """
     Verify no exceptions are raised due to race conditions in cache interactions.
@@ -210,11 +210,7 @@ def test_get_cached_dependent_tokens_survives_concurrent_eviction(
 
     key = auth_state._dependent_token_cache_key
     auth_state.dependent_tokens_cache[key] = mock.Mock()
-    racy_evicting_cache(
-        "dependent_tokens_cache",
-        key,
-        evict_at_interaction=evict_at_interaction,
-    )
+    evicting_dependent_tokens_cache(key, evict_at_interaction=evict_at_interaction)
 
     # Nothing is asserted here; it is sufficient that no exceptions were raised.
     auth_state._get_cached_dependent_tokens()
@@ -222,7 +218,7 @@ def test_get_cached_dependent_tokens_survives_concurrent_eviction(
 
 @pytest.mark.parametrize("evict_at_interaction", range(4))
 def test_get_authorizer_for_scope_survives_concurrent_del(
-    auth_state, racy_evicting_cache, evict_at_interaction
+    auth_state, evicting_dependent_tokens_cache, evict_at_interaction
 ):
     """
     Verify that competing threads that both see a miss for the requested scope
@@ -256,11 +252,7 @@ def test_get_authorizer_for_scope_survives_concurrent_del(
         ],
     ).replace()
 
-    racy_evicting_cache(
-        "dependent_tokens_cache",
-        key,
-        evict_at_interaction=evict_at_interaction,
-    )
+    evicting_dependent_tokens_cache(key, evict_at_interaction=evict_at_interaction)
 
     authorizer = auth_state.get_authorizer_for_scope("bar_scope")
 

@@ -126,37 +126,28 @@ class _RacyCacheProxy:
 
 
 @pytest.fixture
-def racy_evicting_cache(monkeypatch):
+def evicting_dependent_tokens_cache(monkeypatch):
     """
     Simulate cache eviction race conditions.
 
-    Code that interacts with a cache via separate check-then-use operations
-    (for example, `if key in cache: token_data = cache[key]`) is vulnerable to
-    a race condition known as "time-of-check to time-of-use" (TOCTOU): another
-    thread can evict the entry in the gap between the check and the use.
+    Code that interacts with the cache must avoid check-then-use interactions
+    (`if key in cache: token_data = cache[key]`), which is vulnerable to
+    a race condition known as "time-of-check to time-of-use" (TOCTOU):
+    another thread can evict the entry in the gap between the check and the use.
 
-    This fixture helps tests simulate a single concurrent thread winning
-    that race exactly once.
+    This fixture helps tests simulate cache eviction caused by a competing thread.
 
     Usage:
 
-        install(cache_attribute_name, key, evict_at_interaction=2)
+        evicting_dependent_tokens_cache(key, evict_at_interaction=2)
 
-    patches AuthState.<cache_attribute_name> so that, immediately before the
-    `evict_at_interaction`-th operation performed against `key`, the entry
-    is deleted once. Every other operation against `key` -- before or
-    after -- is left alone and observes the real cache state.
-
-    `evict_at_interaction` has no single correct value: it depends on how
-    many legitimate cache operations the code under test performs against
-    `key` before the operation you want to race, and callers must pass it
-    explicitly. Tests should parametrize over a small range of values
-    rather than hardcoding one, so the race is exercised regardless of
-    exactly which call it lands on.
+    This patches ``AuthState.dependent_tokens_cache`` so that,
+    immediately before the `evict_at_interaction`-th operation performed against `key`,
+    the entry is deleted once.
     """
 
-    def install(cache_attribute_name, key, *, evict_at_interaction):
-        real_cache = getattr(AuthState, cache_attribute_name)
+    def _setup_mock(key, *, evict_at_interaction):
+        real_cache = AuthState.dependent_tokens_cache
         call_count = 0
 
         def before_call(k):
@@ -168,10 +159,12 @@ def racy_evicting_cache(monkeypatch):
                 real_cache._cache.pop(key, None)
 
         monkeypatch.setattr(
-            AuthState, cache_attribute_name, _RacyCacheProxy(real_cache, before_call)
+            AuthState,
+            "dependent_tokens_cache",
+            _RacyCacheProxy(real_cache, before_call),
         )
 
-    return install
+    return _setup_mock
 
 
 @pytest.fixture
