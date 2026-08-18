@@ -136,9 +136,6 @@ class ActionRequest(BaseModel):
         ),
         regex=principal_urn_regex,
     )
-    allowed_clients: list[str] = Field(
-        default_factory=list, regex="^(public|globus|creator|.$)$"
-    )
 
 
 # We provide some helper types for open dict fields like details. But, even when the
