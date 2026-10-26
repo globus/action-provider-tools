@@ -19,24 +19,24 @@ repos:
       - id: check-added-large-files
 
   - repo: https://github.com/sirosen/texthooks
-    rev: 0.7.1
+    rev: 1.0.0
     hooks:
       - id: alphabetize-codeowners
 
   # Enforce Python 3.10+ idioms.
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
+    rev: v3.22.0
     hooks:
       - id: pyupgrade
         args: [--py310-plus]
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.10.0
+    rev: 26.10.1
     hooks:
       - id: black
 
   - repo: https://github.com/PyCQA/isort
-    rev: 9.0.2
+    rev: 10.0.0b1
     hooks:
       - id: isort
 
@@ -45,7 +45,7 @@ repos:
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-bugbear==24.12.12
+          - flake8-bugbear==26.9.30
 
   - repo: https://github.com/sirosen/slyp
     rev: 0.10.3

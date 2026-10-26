@@ -32,7 +32,7 @@ def identity_principal(id_: str) -> str:
 
 
 class InvalidTokenScopesError(ValueError):
-    def __init__(
+    def __init__(  # noqa: B042
         self, expected_scopes: frozenset[str], actual_scopes: frozenset[str]
     ) -> None:
         self.expected_scopes = expected_scopes
