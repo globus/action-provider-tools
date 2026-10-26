@@ -1,4 +1,4 @@
-certifi==2026.7.22 ; python_version >= "3.10"
+certifi==2026.10.19 ; python_version >= "3.10"
 charset-normalizer==3.4.9 ; python_version >= "3.10"
 colorama==0.4.6 ; python_version >= "3.10" and sys_platform == "win32"
 coverage==7.15.4 ; python_version >= "3.10"
