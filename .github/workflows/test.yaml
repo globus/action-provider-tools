@@ -58,7 +58,7 @@ jobs:
           - name: "Quality"
             runner: "ubuntu-latest"
             cpythons:
-              - "3.12"  # This must match the Read the Docs interpreter version.
+              - "3.14"  # This must match the Read the Docs interpreter version.
             tox-environments:
               - "docs"
               - "mypy"
