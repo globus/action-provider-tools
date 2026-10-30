@@ -39,7 +39,7 @@ whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
 [project.optional-dependencies]
 flask = [
-    "flask (>=2.3, <3)",
+    "flask (>=3, <4)",
 ]
 
 [build-system]
