@@ -10,6 +10,66 @@ Unreleased changes are documented in files in the `changelog.d`_ directory.
 
 ..  scriv-insert-here
 
+.. _changelog-0.22.0:
+
+0.22.0 — 2026-11-09
+===================
+
+Breaking changes
+----------------
+
+*   Require Globus SDK v4.0.0 or higher.
+*   Remove the ``AuthState.get_dependent_tokens()`` method.
+
+    This method has been deprecated since December 2024, and is now removed.
+
+*   Removed the ``AuthState.errors`` attribute.
+
+    In practice, this means that accesses to ``g.auth_state.errors`` will fail,
+    but the attribute was always empty and never contained any information.
+
+Python support
+--------------
+
+*   Drop Python 3.8 and 3.9 support.
+*   Support Python 3.13, 3.14, and 3.15.
+
+Dependencies
+------------
+
+*   Support Flask 3.x, in addition to Flask 2.3.x.
+*   On Python 3.14 and higher, the ``flask`` extra requires ``werkzeug>=2.3.5``.
+
+Bugfixes
+--------
+
+*   Eliminate race conditions in token cache handling code.
+
+    If triggered, this would have manifested as uncaught ``KeyError`` exceptions.
+
+*   Fix an HTTP 500 error returned when an unauthorized user enumerates actions.
+
+Changes
+-------
+
+*   Remove the ``allowed_clients`` request field, which was unused.
+*   Remove a Globus Auth token length restriction.
+
+Documentation
+-------------
+
+*   Overhaul the project/app/client-secret/scope creation docs.
+*   Rename and expand the ``manage-ap-scope.py`` script to offer more functionality,
+    including ``show`` and ``update`` subcommands.
+*   Ensure that AP scopes are created/updated with ``advertised=True``.
+
+Development
+-----------
+
+*   Migrate to PEP 621 metadata.
+*   Add project URLs that will display on PyPI.
+*   Remove the "License :: Free To Use But Restricted" trove classifier.
+
 .. _changelog-0.21.0:
 
 0.21.0 — 2025-02-11
