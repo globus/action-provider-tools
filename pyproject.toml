@@ -39,7 +39,9 @@ whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
 [project.optional-dependencies]
 flask = [
-    "flask (>=2.3, <3)",
+    "flask (>=2.3, <4)",
+    # Werkzeug < 2.3.5 uses `ast.Str`, which was removed in Python 3.14.
+    "werkzeug (>=2.3.5) ; python_version >= '3.14'",
 ]
 
 [build-system]
