@@ -7,7 +7,8 @@ from unittest import mock
 import pytest
 import responses
 import yaml
-from globus_sdk._testing import load_response, register_response_set
+from globus_sdk.testing import load_response, register_response_set
+from globus_sdk.transport import RetryConfig
 
 from globus_action_provider_tools.authentication import AuthState
 from globus_action_provider_tools.client_factory import ClientFactory
@@ -21,8 +22,7 @@ except ModuleNotFoundError:
 
 
 class NoRetryClientFactory(ClientFactory):
-    DEFAULT_AUTH_TRANSPORT_PARAMS = (("max_retries", 0),)
-    DEFAULT_GROUPS_TRANSPORT_PARAMS = (("max_retries", 0),)
+    DEFAULT_RETRY_CONFIG = RetryConfig(max_retries=0)
 
 
 _NO_RETRY_FACTORY = NoRetryClientFactory()
@@ -87,6 +87,84 @@ def _clear_auth_state_cache():
     AuthState.dependent_tokens_cache.clear()
     AuthState.group_membership_cache.clear()
     AuthState.introspect_cache.clear()
+
+
+class _RacyCacheProxy:
+    """
+    Wraps a TypedTTLCache so that every operation on it first runs
+    `before_call`, simulating a concurrent thread's cache mutation
+    happening in the gap between this call and whatever the caller
+    does next.
+    """
+
+    def __init__(self, cache, before_call) -> None:
+        self._cache = cache
+        self._before_call = before_call
+
+    def get(self, key):
+        self._before_call(key)
+        return self._cache.get(key)
+
+    def __contains__(self, key):
+        self._before_call(key)
+        return key in self._cache
+
+    def __getitem__(self, key):
+        self._before_call(key)
+        return self._cache[key]
+
+    def __setitem__(self, key, value):
+        self._before_call(key)
+        self._cache[key] = value
+
+    def __delitem__(self, key):
+        self._before_call(key)
+        del self._cache[key]
+
+    def clear(self):
+        self._cache.clear()
+
+
+@pytest.fixture
+def evicting_dependent_tokens_cache(monkeypatch):
+    """
+    Simulate cache eviction race conditions.
+
+    Code that interacts with the cache must avoid check-then-use interactions
+    (`if key in cache: token_data = cache[key]`), which is vulnerable to
+    a race condition known as "time-of-check to time-of-use" (TOCTOU):
+    another thread can evict the entry in the gap between the check and the use.
+
+    This fixture helps tests simulate cache eviction caused by a competing thread.
+
+    Usage:
+
+        evicting_dependent_tokens_cache(key, evict_at_interaction=2)
+
+    This patches ``AuthState.dependent_tokens_cache`` so that,
+    immediately before the `evict_at_interaction`-th operation performed against `key`,
+    the entry is deleted once.
+    """
+
+    def _setup_mock(key, *, evict_at_interaction):
+        real_cache = AuthState.dependent_tokens_cache
+        call_count = 0
+
+        def before_call(k):
+            nonlocal call_count
+            if k != key:
+                return
+            call_count += 1
+            if call_count == evict_at_interaction:
+                real_cache._cache.pop(key, None)
+
+        monkeypatch.setattr(
+            AuthState,
+            "dependent_tokens_cache",
+            _RacyCacheProxy(real_cache, before_call),
+        )
+
+    return _setup_mock
 
 
 @pytest.fixture

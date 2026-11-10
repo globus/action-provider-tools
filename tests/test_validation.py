@@ -14,7 +14,6 @@ def test_valid_action_request():
             "urn:globus:auth:identity:ca73e829-715f-4522-9dec-a507fe57a661",
             "urn:globus:auth:identity:ae2a1750-d274-11e5-b867-e74762c29f57",
         ],
-        "allowed_clients": ["public"],
         "deadline": "2019-06-21T17:01:55.806781+00:00",
         "release_after": "P30D",
     }

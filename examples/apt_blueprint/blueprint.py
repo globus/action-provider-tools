@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import Dict, List, Set
 
 from flask import request
 from pydantic import BaseModel, Field
@@ -59,7 +58,7 @@ aptb = ActionProviderBlueprint(
 
 
 @aptb.action_enumerate
-def action_enumeration(auth: AuthState, params: Dict[str, Set]) -> List[ActionStatus]:
+def action_enumeration(auth: AuthState, params: dict[str, set]) -> list[ActionStatus]:
     """
     This is an optional endpoint, useful for allowing requesters to enumerate
     actions filtered by ActionStatus and role.

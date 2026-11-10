@@ -3,9 +3,10 @@ from __future__ import annotations
 import inspect
 import json
 import typing as t
+from collections.abc import Callable, Iterable
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, Iterable
+from typing import Any
 
 import flask
 import jsonschema
@@ -50,7 +51,7 @@ if t.TYPE_CHECKING:
     from pydantic.error_wrappers import Loc
 
 
-ActionInputValidatorType = Callable[[Dict[str, Any]], None]
+ActionInputValidatorType = Callable[[dict[str, Any]], None]
 
 
 class FlaskAuthStateBuilder(AuthStateBuilder):
@@ -76,8 +77,6 @@ class FlaskAuthStateBuilder(AuthStateBuilder):
                 "No Bearer token in Authorization header"
             )
         access_token = access_token[len("Bearer ") :].strip()
-        if not 10 <= len(access_token) <= 2048:
-            raise UnverifiedAuthenticationError("Bearer token length is unexpected")
 
         try:
             return super().build(access_token)

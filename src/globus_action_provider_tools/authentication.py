@@ -3,8 +3,7 @@ from __future__ import annotations
 import functools
 import hashlib
 import logging
-import warnings
-from typing import Iterable
+from collections.abc import Iterable
 
 import globus_sdk
 from globus_sdk import (
@@ -33,7 +32,7 @@ def identity_principal(id_: str) -> str:
 
 
 class InvalidTokenScopesError(ValueError):
-    def __init__(
+    def __init__(  # noqa: B042
         self, expected_scopes: frozenset[str], actual_scopes: frozenset[str]
     ) -> None:
         self.expected_scopes = expected_scopes
@@ -78,9 +77,6 @@ class AuthState:
         self.sanitized_token = self.bearer_token[-7:]
         self.expected_scopes = expected_scopes
         self._client_factory = client_factory or ClientFactory()
-
-        self.errors: list[Exception] = []
-
         self._token_data = self.introspect_token()
 
     @functools.cached_property
@@ -198,40 +194,9 @@ class AuthState:
             self.group_membership_cache[self._token_hash] = group_set
         return group_set
 
-    def get_dependent_tokens(
-        self, *, bypass_cache_lookup: bool = False
-    ) -> globus_sdk.OAuthDependentTokenResponse:
-        """
-        Returns OAuthTokenResponse representing the dependent tokens associated
-        with a particular access token.
-        """
-        # this mehtod is no longer used by `get_authorizer_for_scope()`, which now uses logic which cannot
-        # be satisfied by the contract provided by this method
-        warnings.warn(
-            "`get_dependent_tokens` is deprecated and will be removed in a future version.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if not bypass_cache_lookup:
-            resp = self.dependent_tokens_cache.get(self._dependent_token_cache_key)
-            if resp is not None:
-                log.info(
-                    f"Using cached dependent token response (key={self._dependent_token_cache_key})"
-                )
-                return resp
-
-        log.info(f"Doing a dependent token grant for token ***{self.sanitized_token}")
-        resp = self.auth_client.oauth2_get_dependent_tokens(
-            self.bearer_token, additional_params={"access_type": "offline"}
-        )
-        log.info(
-            f"Caching dependent token response for token ***{self.sanitized_token}"
-        )
-        self.dependent_tokens_cache[self._dependent_token_cache_key] = resp
-        return resp
-
-    def get_authorizer_for_scope(self, scope: str) -> AccessTokenAuthorizer:
+    def get_authorizer_for_scope(
+        self, scope: str | globus_sdk.Scope
+    ) -> AccessTokenAuthorizer:
         """
         Get dependent tokens for the caller's token, then retrieve token data for the
         requested scope and attempt to build an authorizer from that data.
@@ -244,6 +209,7 @@ class AuthState:
         :raises ValueError: If the dependent token data for the caller does not match
             the requested scope.
         """
+        scope = str(scope)
         retrieved_from_cache, dependent_tokens = self._get_cached_dependent_tokens()
 
         # if the dependent token data (which could have been cached) failed to meet
@@ -258,7 +224,12 @@ class AuthState:
 
             # otherwise, the cached value was bad -- fetch and check again,
             # by clearing the cache and asking for the same data
-            del self.dependent_tokens_cache[self._dependent_token_cache_key]
+            try:
+                # To avoid a TOCTOU race condition, blindly delete the cached data
+                # and catch the potential `KeyError`.
+                del self.dependent_tokens_cache[self._dependent_token_cache_key]
+            except KeyError:
+                pass
             _, dependent_tokens = self._get_cached_dependent_tokens()
 
             # check scope again -- this is guaranteed to be fresh data
@@ -276,11 +247,21 @@ class AuthState:
         Return the data paired with a bool indicating whether or not the value was
         cached or a fresh callout.
         """
-        if self._dependent_token_cache_key in self.dependent_tokens_cache:
-            return (True, self.dependent_tokens_cache[self._dependent_token_cache_key])
+
+        try:
+            # To avoid a TOCTOU race condition, blindly access the cached data
+            # and catch the potential `KeyError`.
+            token_response = self.dependent_tokens_cache[
+                self._dependent_token_cache_key
+            ]
+        except KeyError:
+            pass
+        else:
+            return True, token_response
+
         token_response = self.auth_client.oauth2_get_dependent_tokens(self.bearer_token)
         self.dependent_tokens_cache[self._dependent_token_cache_key] = token_response
-        return (False, token_response)
+        return False, token_response
 
     @functools.cached_property
     def _groups_client(self) -> globus_sdk.GroupsClient:

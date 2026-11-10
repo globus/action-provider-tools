@@ -1,3 +1,5 @@
+import logging
+import re
 import typing as t
 from unittest import mock
 
@@ -132,3 +134,39 @@ def test_invalid_token_results_in_401_unauthorized(create_app_from_blueprint):
         "The server could not verify that you are authorized "
         "to access the URL requested."
     )
+
+
+@pytest.mark.parametrize("route_name", ["introspect", "enumerate", "run"])
+def test_unauthorized_check_results_in_401(
+    create_app_from_blueprint, route_name, caplog
+):
+    """
+    Verify that unauthorized access to top-level routes returns HTTP 401.
+
+    This is a regression test. A past bug triggered HTTP 500 for unauthorized access.
+    """
+
+    # Restrict access to a bogus "nobody" value, which avoids short-circuit logic
+    # that would trigger if "public" or "all_authenticated_users" was specified.
+    restricted_description = ap_description.copy(
+        update={"visible_to": ["nobody"], "runnable_by": ["nobody"]}
+    )
+    blueprint = ActionProviderBlueprint(
+        name="RestrictedBlueprint",
+        import_name=__name__,
+        url_prefix="/restricted",
+        provider_description=restricted_description,
+    )
+    app = create_app_from_blueprint(blueprint)
+    client = ActionProviderClient(app.test_client(), blueprint.url_prefix)
+
+    target = "globus_action_provider_tools.authentication.AuthState.check_authorization"
+    with (
+        mock.patch(target, return_value=False),
+        caplog.at_level(logging.INFO),
+    ):
+        resp = getattr(client, route_name)(assert_status=401)
+
+    assert resp.json["code"] == "UnauthorizedRequest"
+
+    assert re.search("urn:globus:auth:identity:.+ is not authorized", caplog.text)

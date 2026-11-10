@@ -2,7 +2,7 @@ ci:
   autoupdate_schedule: "quarterly"
 
 default_language_version:
-  python: "python3.12"
+  python: "python3.13"
 
 repos:
   - repo: meta
@@ -11,7 +11,7 @@ repos:
       - id: check-useless-excludes
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -19,43 +19,45 @@ repos:
       - id: check-added-large-files
 
   - repo: https://github.com/sirosen/texthooks
-    rev: 0.6.8
+    rev: 1.0.0
     hooks:
       - id: alphabetize-codeowners
 
-  # Enforce Python 3.8+ idioms.
+  # Enforce Python 3.10+ idioms.
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+    rev: v3.22.0
     hooks:
       - id: pyupgrade
-        args: [--py38-plus]
+        args: [--py310-plus]
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.10.0
+    rev: 26.10.1
     hooks:
       - id: black
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
+    rev: 10.0.0b1
     hooks:
       - id: isort
 
   - repo: https://github.com/pycqa/flake8
-    rev: 7.1.1
+    rev: 7.4.1
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-bugbear==24.10.31
+          - flake8-bugbear==26.9.30
 
   - repo: https://github.com/sirosen/slyp
-    rev: 0.8.1
+    rev: 0.10.3
     hooks:
       - id: slyp
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.6
+    rev: v1.7.12
     hooks:
       - id: actionlint
+        additional_dependencies:
+          - github.com/wasilibs/go-shellcheck/cmd/shellcheck@v0.11.1
 
   - repo: https://github.com/kurtmckee/pre-commit-hooks
     rev: v1.0.0

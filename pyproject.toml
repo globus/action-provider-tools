@@ -1,17 +1,9 @@
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-
-# poetry
-# ------
-
-[tool.poetry]
+[project]
 name = "globus-action-provider-tools"
-version = "0.21.0"
+version = "0.22.0"
 description = "Tools to help developers build services that implement the Action Provider specification."
 authors = [
-    "Globus Team <support@globus.org>",
+    { name = "Globus Team", email = "support@globus.org" },
 ]
 keywords = [
   "globus",
@@ -22,30 +14,39 @@ keywords = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
-  "License :: Free To Use But Restricted",
   "Topic :: Internet :: WWW/HTTP",
   "Topic :: Software Development :: Libraries :: Application Frameworks",
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
-
 readme = "README.rst"
+requires-python = ">=3.10"
 license = "Apache-2.0"
+dependencies = [
+    "globus-sdk (>=4.0.0, <5)",
+    "jsonschema (>=4.17, <5)",
+    "pyyaml (>=6, <7)",
+    "pydantic (>=1.7.3, <2)",
+    "isodate (>=0.6, <0.7)",
+    "cachetools (>=5.0, <6)",
+]
 
-[tool.poetry.scripts]
+[project.urls]
+Source = "https://github.com/globus/action-provider-tools"
+Documentation = "https://action-provider-tools.readthedocs.io/en/latest/"
+
+[project.scripts]
 whattimeisit-provider = "examples.flask.whattimeisitrightnow.app.app:main"
 
-[tool.poetry.dependencies]
-python = ">=3.8"
-globus-sdk=">=3.9,<4"
-jsonschema = ">=4.17,<5"
-pyyaml = ">=6,<7"
-pydantic = ">=1.7.3,<2"
-isodate = ">=0.6,<0.7"
-cachetools = ">=5.0,<6"
-flask = {version = ">=2.3,<3", optional = true}
+[project.optional-dependencies]
+flask = [
+    "flask (>=2.3, <4)",
+    # Werkzeug < 2.3.5 uses `ast.Str`, which was removed in Python 3.14.
+    "werkzeug (>=2.3.5) ; python_version >= '3.14'",
+]
 
-[tool.poetry.extras]
-flask = ["flask"]
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 
 # coverage
@@ -99,13 +100,18 @@ no_implicit_optional = true
 # pytest
 # ------
 
-[tool.pytest.ini_options]
+[tool.pytest]
+addopts = [
+    "--color=yes",
+]
 filterwarnings = [
     "error",
 
     # Minimum Flask versions use a werkzeug version that triggers AST warnings.
     "ignore:.+? is deprecated and will be removed:DeprecationWarning:werkzeug|ast",
+    "ignore:Constant\\.__init__ missing 1 required positional argument:DeprecationWarning:ast",
 ]
+strict = true
 
 
 # scriv
@@ -124,5 +130,5 @@ categories = [
     "Documentation",
     "Development",
 ]
-version = "literal: pyproject.toml: tool.poetry.version"
+version = "literal: pyproject.toml: project.version"
 new_fragment_template = "file: fragment-template.rst.txt"

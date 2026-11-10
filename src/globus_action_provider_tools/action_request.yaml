@@ -25,10 +25,6 @@ properties:
       $ref: "#/components/schemas/PrincipalURN"
     description: A list of principal URN containing identities which are allowed to manage the progress of the action using the /cancel and /release operations. When not provided, defaults to the user that initiated the action.
     uniqueItems: true
-  allowed_clients:
-    type: array
-    items:
-      $ref: "#/components/schemas/AllowedClients"
   deadline:
     type: string
     format: date-time
@@ -47,7 +43,3 @@ components:
       type: string
       pattern: '^P(?!$)(\d+(?:\.\d+)?Y)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?W)?(\d+(?:\.\d+)?D)?(T(?=\d)(\d+(?:\.\d+)?H)?(\d+(?:\.\d+)?M)?(\d+(?:\.\d+)?S)?)?$'
       description: ISO8601 duration format. Regex sourced from https://stackoverflow.com/a/32045167/845210
-    AllowedClients:
-      type: string
-      description: ""
-      pattern: "^(public|globus|creator|.$)$"
